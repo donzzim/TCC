@@ -193,6 +193,24 @@ class PedidosMobileService
     }
 
     /**
+     * Pedidos do usuário no setor (mesmo filtro de pedidosDoUsuario) ainda em análise.
+     *
+     * @param  array{id_egap:int|null,setor:int}  $scope
+     */
+    public function contarAbertos(array $scope): int
+    {
+        if (empty($scope['id_egap'])) {
+            return 0;
+        }
+
+        return Pedidos::query()
+            ->where('Solicitante', $scope['id_egap'])
+            ->where('Setor', $scope['setor'])
+            ->where('idSituacao', self::STATUS_EM_ANALISE)
+            ->count();
+    }
+
+    /**
      * @param  array{unidade_judiciaria:int}  $scope
      */
     private function materiaisConsumo(array $scope, ?string $search, int $perPage): LengthAwarePaginator

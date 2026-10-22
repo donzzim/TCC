@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Egap\MobileApi\BensController;
 use App\Http\Controllers\Egap\MobileApi\ConferenciaBensController;
+use App\Http\Controllers\Egap\MobileApi\DashboardController;
 use App\Http\Controllers\Egap\MobileApi\MobileAuthController;
 use App\Http\Controllers\Egap\MobileApi\PedidosController;
 use App\Http\Controllers\Egap\MobileApi\SessaoController;
@@ -19,9 +20,11 @@ Route::prefix('mobile-api')->group(function (): void {
             Route::post('/logout', [SessaoController::class, 'logout'])->name('mobile.logout');
         });
 
-        Route::get('/dashboard', [BensController::class, 'dashboard'])->name('mobile.dashboard');
-        Route::get('/bens', [BensController::class, 'index'])->name('mobile.bens');
-        Route::get('/bens/{numPatrimonio}', [BensController::class, 'show'])->name('mobile.bens.show');
+        Route::middleware(['mobile.sessao', 'mobile.setor'])->group(function () {
+            Route::get('/dashboard', [DashboardController::class, 'show'])->name('mobile.dashboard');
+            Route::get('/bens', [BensController::class, 'index'])->name('mobile.bens');
+            Route::get('/bens/{patrimonio}', [BensController::class, 'show'])->name('mobile.bens.show');
+        });
 
         Route::prefix('pedidos')->name('mobile.pedidos.')->group(function () {
             Route::get('/', [PedidosController::class, 'index'])->name('index');
