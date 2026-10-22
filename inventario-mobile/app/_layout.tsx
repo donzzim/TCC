@@ -22,6 +22,7 @@ function Rotas() {
                 <Stack.Screen name="setor" />
                 <Stack.Screen name="perfil" />
                 <Stack.Screen name="tutorial" />
+                <Stack.Screen name="bem/[patrimonio]" />
                 <Stack.Screen name="leitura" options={{ presentation: 'fullScreenModal' }} />
             </Stack.Protected>
         </Stack>
