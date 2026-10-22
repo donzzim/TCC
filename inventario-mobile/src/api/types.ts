@@ -242,10 +242,72 @@ export interface Material {
     imagem?: string | null;
 }
 
+export interface PedidoItem {
+    id: number;
+    material_id: number | null;
+    descricao_detalhada_id: number | null;
+    material: string | null;
+    quantidade: number;
+    quantidade_atendida: number;
+    situacao: { id: number | string | null; descricao: string | null };
+    justificativa: string | null;
+    valor_material: number;
+}
+
+/** Espelha PedidosMobileService::pedidoToArray (GET /pedidos). */
 export interface Pedido {
     id: number;
     data: string | null;
     tipo: PedidoTipo;
     situacao: { id: number | string | null; descricao: string | null };
-    itens_total: number;
+    complemento_setor: { id: number | null; descricao: string | null };
+    observacao: string | null;
+    itens: PedidoItem[];
+}
+
+export interface Complemento {
+    id: number;
+    descricao: string;
+}
+
+/** GET /pedidos/contexto. */
+export interface PedidoContexto {
+    complementos: Complemento[];
+}
+
+export interface PedidosPagina {
+    pedidos: Pedido[];
+    meta: PaginationMeta & { from: number | null; to: number | null };
+}
+
+export interface MateriaisPagina {
+    materiais: Material[];
+    meta: PaginationMeta & { from: number | null; to: number | null };
+}
+
+export interface PedidoItemPayload {
+    material_id: number;
+    quantidade: number;
+    tipo_atendimento?: 'adicao' | 'substituicao';
+    justificativa?: string;
+    patrimonio_substituido?: string;
+}
+
+export interface PedidoPayload {
+    tipo: PedidoTipo;
+    complemento_setor_id: number;
+    justificativa?: string;
+    itens: PedidoItemPayload[];
+}
+
+/** Resposta 201 de POST /pedidos. */
+export interface PedidoCriado {
+    message: string;
+    pedido: {
+        id: number;
+        data: string | null;
+        tipo: PedidoTipo;
+        situacao: { id: number | string | null; descricao: string | null };
+        itens_total: number;
+    };
 }

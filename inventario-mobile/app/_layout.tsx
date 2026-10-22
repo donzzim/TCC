@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { CartProvider } from '@/src/cart/CartProvider';
 import { SessionProvider, useSessao } from '@/src/session/SessionProvider';
 import { ThemeProvider } from '@/src/theme/ThemeProvider';
 
@@ -23,6 +24,8 @@ function Rotas() {
                 <Stack.Screen name="perfil" />
                 <Stack.Screen name="tutorial" />
                 <Stack.Screen name="bem/[patrimonio]" />
+                <Stack.Screen name="pedidos/novo" />
+                <Stack.Screen name="pedidos/carrinho" />
                 <Stack.Screen name="leitura" options={{ presentation: 'fullScreenModal' }} />
             </Stack.Protected>
         </Stack>
@@ -39,10 +42,12 @@ export default function RootLayout() {
             <SafeAreaProvider>
                 <QueryClientProvider client={queryClient}>
                     <SessionProvider>
-                        <ThemeProvider>
-                            <StatusBar style="light" />
-                            <Rotas />
-                        </ThemeProvider>
+                        <CartProvider>
+                            <ThemeProvider>
+                                <StatusBar style="light" />
+                                <Rotas />
+                            </ThemeProvider>
+                        </CartProvider>
                     </SessionProvider>
                 </QueryClientProvider>
             </SafeAreaProvider>
