@@ -45,7 +45,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         RateLimiter::for('mobile-login', fn ($request) => Limit::perMinute(5)
-            ->by(strtolower((string) $request->input('login')) . '|' . $request->ip()));
+            ->by(strtolower(trim((string) $request->input('login'))) . '|' . $request->ip()));
 
         Auth::provider('hybrid', function ($app, array $config): HybridUserProvider {
             return new HybridUserProvider(

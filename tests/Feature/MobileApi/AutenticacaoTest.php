@@ -112,6 +112,18 @@ class AutenticacaoTest extends TestCase
         $this->logar($user->login, 'senha-incorreta')->assertStatus(429);
     }
 
+    public function test_login_throttle_ignora_espacos_do_login(): void
+    {
+        $user = $this->usuarioDeLogin();
+        $variantes = [$user->login, ' '.$user->login, $user->login.' ', ' '.$user->login.' ', $user->login];
+
+        foreach ($variantes as $login) {
+            $this->logar($login, 'senha-incorreta')->assertUnauthorized();
+        }
+
+        $this->logar(' '.$user->login, 'senha-incorreta')->assertStatus(429);
+    }
+
     public function test_token_sem_sessao_recebe_401(): void
     {
         $user = $this->usuarioDeLogin();

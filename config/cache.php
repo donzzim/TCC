@@ -31,6 +31,9 @@ return [
     |
     */
 
+    // Store do RateLimiter (throttle). Separado do default para limitar entre requisições mesmo com CACHE_STORE=array.
+    'limiter' => env('CACHE_LIMITER', 'file'),
+
     'stores' => [
 
         'array' => [
