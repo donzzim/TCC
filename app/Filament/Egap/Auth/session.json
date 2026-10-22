@@ -1,0 +1,15 @@
+﻿{
+    "egap_session" : {
+        "user_id" : "id do usuario logado -> users.id",
+        "egap_id" : "valor de egap_mat_infousers.usuario onde o egap_mat_infousers.cpf for = a users.cpf (sendo o id de users = o id do usuario logado",
+        "lotacao" : {
+            "codigodauo" : "pegar o setor que esta sendo utilizado na sessao e colocar o valor da coluna codigodauo do registro dele",
+            "setor" : "pegar o valor do select que esta disponivel para o usuario, sempre que mudar o select esse campo tambem muda"
+        },
+        "info" : {
+            "nome" : "nome do usuario",
+            "cpf": "cpf do usuario",
+            "cargo": "cargo do usuario"
+        }
+    }
+}

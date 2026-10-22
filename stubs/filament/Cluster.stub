@@ -1,0 +1,15 @@
+<?php
+
+namespace {{ namespace }};
+
+use Filament\Clusters\Cluster;
+
+class {{ class }} extends Cluster
+{
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-squares-2x2';
+    protected static ?string $modelLabel = 'label ';
+    protected static ?string $puralModelLabel = 'label ';
+    protected static ?string $navigationLabel = 'label ';
+    protected static string | UnitEnum | null $navigationGroup = 'group';
+    protected static ?int $navigationSort = 99;
+}

@@ -1,0 +1,85 @@
+<?php
+
+namespace {{ namespace }};
+
+{{ clusterImport }}use {{ resource }}\Pages;
+use {{ resource }}\RelationManagers;
+use {{ model }};
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+
+class {{ resourceClass }} extends Resource
+{
+    protected static ?string $model = {{ modelClass }}::class;
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';{{ clusterAssignment }}
+    protected static ?string $cluster = PatCadastroCluster::class;
+    protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
+    protected static ?string $recordTitleAttribute = 'campo';
+    protected static ?string $modelLabel = 'tabela ';
+    protected static ?string $puralModelLabel = 'tabela ';
+    protected static ?string $navigationLabel = 'tabela ';
+    protected static string | UnitEnum | null $navigationGroup = 'Cadastro';
+    protected static ?int $navigationSort = 7;
+
+    public static function getFormfields(): array
+    {
+        return [
+{{ formSchema }}
+            Forms\Components\TextInput::make('Descricao')
+                ->label('Descrição')
+                ->required()
+                ->maxLength(255),
+        ];
+    }
+
+    public static function form(Schema $form): Schema
+    {
+        return $form
+            ->schema(static::getFormFields());
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+{{ tableColumns }}
+                Tables\Columns\TextColumn::make('Descricao')
+                    ->label('Descrição')
+                    ->searchable(),
+            ])
+            ->filters([
+{{ tableFilters }}
+            ])
+            ->recordActions([
+{{ tableActions }}
+                EditAction::make()
+                    ->hiddenLabel(),
+                ViewAction::make()
+                    ->hiddenLabel(),
+                DeleteAction::make()
+                    ->hiddenLabel(),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+{{ tableBulkActions }}
+                ]),
+            ])
+             ->selectCurrentPageOnly()
+            ->paginated([50, 100, 150, 200, 'all'])
+            ->defaultPaginationPageOption(50)
+            ->striped()
+            ->deferLoading();
+    }
+{{ relations }}
+    public static function getPages(): array
+    {
+        return [
+{{ pages }}
+        ];
+    }{{ eloquentQuery }}
+}

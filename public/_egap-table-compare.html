@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>EGAP · comparativo de tabela</title>
+<!-- CSS real do painel EGAP: tema padrão do Filament + table.css publicado -->
+<link rel="stylesheet" href="/css/filament/filament/app.css">
+<link rel="stylesheet" href="/css/app/table.css">
+<style>
+  /* Variáveis que o painel injeta via @filamentStyles (FilamentColor) */
+  :root{
+    --gray-50:oklch(0.985 0 0);--gray-100:oklch(0.967 0.001 286.375);--gray-200:oklch(0.92 0.004 286.32);
+    --gray-300:oklch(0.871 0.006 286.286);--gray-400:oklch(0.705 0.015 286.067);--gray-500:oklch(0.552 0.016 285.938);
+    --gray-600:oklch(0.442 0.017 285.786);--gray-700:oklch(0.37 0.013 285.805);--gray-800:oklch(0.274 0.006 286.033);
+    --gray-900:oklch(0.21 0.006 285.885);--gray-950:oklch(0.141 0.005 285.823);
+    --primary-500:oklch(0.769 0.188 70.08);--primary-600:oklch(0.666 0.179 58.318);
+  }
+  body{margin:0;background:#f4f4f5;font-family:ui-sans-serif,system-ui,sans-serif}
+  .wrap{display:grid;grid-template-columns:1fr;gap:2rem;padding:2rem;max-width:940px}
+  h2{font:600 13px ui-sans-serif;margin:0 0 .5rem;color:#3f3f46}
+</style>
+</head>
+<body class="fi-body">
+<div class="wrap">
+  <div>
+    <h2>COM egap-table-defaults</h2>
+    <div class="fi-ta egap-table-defaults" id="com"></div>
+  </div>
+  <div>
+    <h2>SEM (Filament puro)</h2>
+    <div class="fi-ta" id="sem"></div>
+  </div>
+</div>
+
+<script>
+const COLS = ['Material','Setor','Complemento do Setor','Situação','Valor de aquisição','Data'];
+const DATA = [
+  ['CAPA DE AUTUAÇÃO PODER JUDICIÁRIO','AFONSO CLÁUDIO - 2ª VARA','SALA DE AUDIÊNCIA','Ativo','R$ 1.203,40','01/02/2026'],
+  ['CAPA DE AUTUAÇÃO CARTÓRIO','AFONSO CLÁUDIO - SECRETARIA','2º ANDAR','Ativo','R$ 980,00','03/02/2026'],
+  ['ESTANTE EM AÇO, MEDIDAS 1,98M','AFONSO CLÁUDIO - 1ª VARA','GABINETE','Ativo','R$ 2.340,00','07/02/2026'],
+  ['CAFÉ TORRADO E MOÍDO, PACOTE','TJES - DEPÓSITO SERRA','2026 - 1º LEILÃO','Baixado','R$ 32,90','09/02/2026'],
+  ['PAPEL A4, 210 X 297 MM, BRANCO','TJES - DEPÓSITO SERRA','2026 - 1º LEILÃO','Ativo','R$ 24,00','11/02/2026'],
+  ['PROTOCOLADOR ELETRÔNICO','TJES - ALMOXARIFADO','PRATELEIRA 12','Ativo','R$ 540,00','12/02/2026'],
+  ['BEBEDOURO PARA GALÃO 20L','TJES - ALMOXARIFADO','PRATELEIRA 03','Ativo','R$ 410,00','15/02/2026'],
+  ['ARMÁRIO DE AÇO COM 2 PORTAS','CARIACICA - 3ª VARA CRIMINAL','SALA 210','Ativo','R$ 1.780,00','17/02/2026'],
+  ['CADEIRA GIRATÓRIA COM BRAÇOS','CARIACICA - 3ª VARA CRIMINAL','SALA 210','Ativo','R$ 690,00','18/02/2026'],
+  ['MESA EM L, 1,60 X 1,40 M','VILA VELHA - 1ª VARA CÍVEL','GABINETE','Ativo','R$ 1.120,00','20/02/2026'],
+];
+
+function table() {
+  const head = COLS.map(c => `<th class="fi-ta-header-cell"><span class="fi-ta-header-cell-label">${c}</span></th>`).join('');
+  const rows = DATA.map((r, i) => `
+    <tr class="fi-ta-row fi-clickable${i % 2 ? ' fi-striped' : ''}">
+      <td class="fi-ta-cell fi-ta-selection-cell"><input type="checkbox" class="fi-ta-record-checkbox fi-checkbox-input"></td>
+      ${r.map(v => `<td class="fi-ta-cell"><div class="fi-ta-text"><div class="fi-ta-text-item"><span class="fi-ta-text-item-label">${v}</span></div></div></td>`).join('')}
+      <td class="fi-ta-cell">
+        <div class="fi-ta-actions">
+          <button type="button" class="fi-icon-btn">✎</button>
+          <button type="button" class="fi-icon-btn">👁</button>
+          <button type="button" class="fi-icon-btn">🗑</button>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  return `
+  <div class="fi-ta-ctn fi-ta-ctn-with-header fi-ta-ctn-with-footer">
+    <div class="fi-ta-main">
+      <div class="fi-ta-header-ctn">
+        <div class="fi-ta-header-toolbar">
+          <div><span class="fi-ta-search-field"><input class="fi-input" placeholder="Pesquisar"></span></div>
+          <div><button type="button" class="fi-icon-btn">⚙</button></div>
+        </div>
+      </div>
+      <div class="fi-ta-content-ctn fi-fixed-positioning-context">
+        <div class="fi-ta-content">
+          <table class="fi-ta-table">
+            <thead><tr>
+              <th class="fi-ta-cell fi-ta-selection-cell"><input type="checkbox" class="fi-ta-page-checkbox fi-checkbox-input"></th>
+              ${head}
+              <th class="fi-ta-actions-header-cell fi-ta-empty-header-cell"></th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="fi-pagination">
+        <div class="fi-pagination-overview">Exibindo 1 a 25 de 234 resultados</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+document.getElementById('com').innerHTML = table();
+document.getElementById('sem').innerHTML = table();
+</script>
+</body>
+</html>

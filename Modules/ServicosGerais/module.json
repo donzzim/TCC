@@ -1,0 +1,11 @@
+{
+    "name": "ServicosGerais",
+    "alias": "servicosgerais",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        
+    ],
+    "files": []
+}

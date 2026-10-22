@@ -1,0 +1,108 @@
+<?php
+
+namespace {{ namespace }};
+
+use Illuminate\Auth\Access\Response;
+use Illuminate\Auth\Access\HandlesAuthorization;
+use {{ namespacedModel }};
+use {{ namespacedUserModel }};
+
+class {{ class }}
+{
+    /**
+     * Determine whether the user can view any models.
+     */
+    public function viewAny({{ user }} $user): bool
+    {
+        return $user->can('view_any_{{ user }}');
+    }
+
+    /**
+     * Determine whether the user can view the model.
+     */
+    public function view({{ user }} $user, {{ model }} ${{ modelVariable }}): bool
+    {
+        return $user->can('view_{{ user }}');
+    }
+
+    /**
+     * Determine whether the user can create models.
+     */
+    public function create({{ user }} $user): bool
+    {
+        return $user->can('create_{{ user }}');
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     */
+    public function update({{ user }} $user, {{ model }} ${{ modelVariable }}): bool
+    {
+        return $user->can('update_{{ user }}');
+    }
+
+    /**
+     * Determine whether the user can delete the model.
+     */
+    public function delete({{ user }} $user, {{ model }} ${{ modelVariable }}): bool
+    {
+        return $user->can('delete_{{ user }}');
+    }
+
+    /**
+     * Determine whether the user can bulk delete.
+
+     */
+    public function deleteAny({{ user }} $user): bool
+    {
+        return $user->can('delete_any_{{ user }}');
+    }
+
+    /**
+     * Determine whether the user can permanently delete the model.
+     */
+    public function forceDelete({{ user }} $user, {{ model }} ${{ modelVariable }}): bool
+    {
+        return $user->can('force_delete_{{ user }}');
+    }
+
+    /**
+     * Determine whether the user can permanently delete the model.
+     */
+    public function forceDeleteAny({{ user }} $user, {{ model }} ${{ modelVariable }}): bool
+    {
+        return $user->can('force_delete_any_{{ user }}');
+    }
+
+    /**
+     * Determine whether the user can restore the model.
+     */
+    public function restore({{ user }} $user, {{ model }} ${{ modelVariable }}): bool
+    {
+        return $user->can('restore_{{ user }}');
+    }
+
+    /**
+     * Determine whether the user can bulk restore.
+     */
+    public function restoreAny({{ user }} $user): bool
+    {
+        return $user->can('restore_any_{{ user }}');
+    }
+
+    /**
+     * Determine whether the user can bulk restore.
+     */
+    public function replicate({{ user }} $user): bool
+    {
+        return $user->can('replicate_{{ user }}');
+    }
+
+    /**
+     * Determine whether the user can reorder.
+     */
+    public function reorder({{ user }} $user): bool
+    {
+        return $user->can('reorder_{{ user }}');
+    }
+}

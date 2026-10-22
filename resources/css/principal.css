@@ -1,0 +1,92 @@
+@reference "tailwindcss";
+
+/*
+** Header
+*/
+.header-top {
+    @apply flex flex-row items-center justify-center w-full gap-32 text-sm text-white h-9 bg-sky-800;
+}
+.header-logo {
+    @apply flex flex-row items-center justify-center w-full gap-3 bg-white h-28;
+}
+.header-logo-img {
+    @apply col-span-3;
+}
+.header-menu {
+    @apply w-full h-12 bg-sky-800;
+}
+.header-menu-nav {
+    @apply w-full h-12 border-b-4 border-yellow-600 bg-sky-800;
+}
+.header-menu-nav-ul {
+    @apply flex flex-row items-center justify-center;
+}
+.header-menu-nav-li-active {
+    @apply px-5 pt-1 m-0 text-lg text-white bg-yellow-600 border-l-2 h-11;
+}
+.header-menu-nav-li {
+    @apply px-5 pt-1 m-0 text-lg text-white border-l-2 border-white h-11 bg-sky-800;
+}
+.header-banner {
+    @apply w-full;
+}
+.header-destaque {
+    @apply bg-white;
+}
+
+/*
+** Main
+*/
+.main-div {
+    @apply m-4 size-auto;
+}
+.main-header {
+    @apply flex flex-row items-start justify-center gap-10;
+}
+.main-header-title {
+    @apply my-10 text-3xl border-b-4 text-sky-900 border-b-yellow-600;
+}
+.main-section-courses {
+    @apply grid items-start justify-center grid-cols-4 gap-y-10;
+}
+.main-course-card {
+    @apply max-w-md bg-white border rounded-lg shadow-sm border-sky-200;
+}
+.main-course-card-img {
+    @apply rounded-t-lg;
+}
+.main-course-card-title {
+    @apply mb-2 text-2xl font-bold tracking-tight text-sky-900 dark:text-white;
+}
+.main-course-card-content {
+    @apply flex flex-col mb-5 font-normal text-sky-700;
+}
+.main-btn-blue {
+    @apply inline-flex items-center px-3 py-2 mt-2 text-xs font-medium text-center text-white rounded-lg bg-sky-700 hover:bg-sky-800 focus:ring-4 focus:outline-none focus:ring-sky-300;
+}
+.main-btn-gree {
+    @apply inline-flex items-center px-3 py-2 mt-2 text-xs font-medium text-center text-white bg-green-700 rounded-lg hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300;
+}
+.main-btn-yellow {
+    @apply inline-flex items-center px-3 py-2 mt-2 text-xs font-medium text-center text-white bg-yellow-700 rounded-lg hover:bg-yellow-800 focus:ring-4 focus:outline-none focus:ring-yellow-300;
+}
+
+
+/*
+** Footer
+*/
+.footer-address {
+    @apply inset-x-0 bottom-0 w-full h-auto border-t-4 border-yellow-600 bg-sky-800;
+}
+.footer-address-div {
+    @apply flex flex-col gap-2 p-4 text-lg text-white ml-80;
+}
+.footer-address-text {
+    @apply w-full text-white;
+}
+.footer-copyright {
+    @apply inset-x-0 bottom-0 w-full h-9 bg-sky-900;
+}
+.footer-copyright-text {
+    @apply h-10 pt-2 text-center text-white;
+}

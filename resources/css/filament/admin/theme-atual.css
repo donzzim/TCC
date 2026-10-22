@@ -1,0 +1,144 @@
+@import "/vendor/filament/filament/resources/css/theme.css";
+@import '/vendor/awcodes/filament-tiptap-editor/resources/css/plugin.css';
+@config 'tailwind.config.js';
+
+/*
+** Scrollbars
+*/
+::-webkit-scrollbar {
+    @apply w-1 h-1;
+}
+::-webkit-scrollbar-track {
+    @apply bg-gray-100 rounded-full;
+}
+::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+}
+/*
+** login page
+*/
+.fi-simple-layout {
+    @apply bg-blue-100 bg-[url(/public/images/fundo01.jpg)];
+}
+.fi-simple-main {
+    @apply !bg-cyan-50;
+}
+/*
+** main
+*/
+.fi-main {
+    @apply px-2 md:px-3 lg:px-4;
+}
+/*
+** page
+*/
+.fi-page section {
+    @apply p-0 m-0 gap-y-2;
+}
+/*
+** breadcrumbs
+*/
+.fi-breadcrumbs {
+    @apply gap-0 p-0 m-0;
+}
+/*
+** dashboard page
+*/
+.fi-header .gap-y-8 {
+    @apply gap-1;
+}
+.fi-wi {
+    @apply gap-1;
+}
+.fi-main {
+    @apply !bg-gray-50;
+}
+
+.fi-layout {
+    @apply !bg-gray-50;
+}
+
+.fi-topbar {
+    @apply bg-gradient-to-br from-blue-50 to-white;
+}
+/*
+** sidebar
+*/
+.fi-sidebar {
+    @apply !bg-blue-50;
+}
+
+.fi-sidebar-header {
+    @apply bg-blue-50;
+}
+.fi-sidebar-nav {
+    @apply py-0 gap-y-0 bg-gradient-to-br from-blue-50 to-white;
+}
+
+.fi-sidebar-nav-groups {
+    @apply gap-y-0;
+}
+.fi-sidebar-group-button {
+    @apply gap-0 py-0;
+}
+.fi-sidebar-group-items {
+    @apply gap-0;
+}
+.fi-sidebar-group-label {
+    @apply !text-blue-900;
+}
+
+.fi-sidebar-item a {
+    @apply py-0 my-[2px];
+}
+
+.fi-sidebar-item-icon {
+    @apply !text-blue-600;
+}
+
+.fi-sidebar-item-label {
+    @apply !text-blue-600;
+}
+/*
+** Forms
+*/
+.fi-section-header{
+    @apply py-3 m-1;
+}
+.fi-fo-component-ctn {
+    @apply gap-2 py-1 m-1;
+}
+/*
+** Tables
+*/
+.fi-ta-header{
+    @apply p-1 m-1;
+}
+.fi-ta-filters-above-content-ctn{
+    @apply p-1 m-1;
+}
+.fi-ta-header-toolbar{
+    @apply p-1 m-1;
+}
+.fi-ta-text {
+    @apply !text-blue-600 px-1 py-2;
+}
+/*
+** Table Summary
+*/
+.fi-ta-text-summary {
+    @apply !text-blue-600 py-1 mx-1 flex;
+}
+.fi-ta-range-summary {
+    @apply !text-blue-600 py-1 mx-1 flex;
+}
+/*
+** Progress Column
+*/
+.progress-bar {
+    @apply h-4 w-full bg-gray-100 dark:bg-gray-800 rounded-full shadow-inner overflow-hidden
+}
+
+.progress-bar-value {
+    @apply flex items-center justify-center h-full text-xs font-bold text-white rounded-r-full shadow-inner bg-primary-600 dark:bg-primary-500;
+}

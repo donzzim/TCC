@@ -1,0 +1,56 @@
+{
+  "public/images/fundo01.jpg": {
+    "file": "assets/fundo01-HBlwQ4eA.jpg",
+    "src": "public/images/fundo01.jpg"
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-MYugHOwR.css",
+    "src": "resources/css/app.css"
+  },
+  "resources/css/filament/admin/theme.css": {
+    "file": "assets/theme-iECO7C7L.css",
+    "src": "resources/css/filament/admin/theme.css"
+  },
+  "resources/css/filament/app/theme.css": {
+    "file": "assets/theme-BgpCR9Yw.css",
+    "name": "theme",
+    "names": [
+      "theme.css"
+    ],
+    "src": "resources/css/filament/app/theme.css",
+    "isEntry": true,
+    "css": [
+      "assets/theme-iECO7C7L.css"
+    ],
+    "assets": [
+      "assets/fundo01-HBlwQ4eA.jpg"
+    ]
+  },
+  "resources/css/filament/egap/app.css": {
+    "file": "assets/app-Gr9LgtEe.css",
+    "name": "app",
+    "names": [
+      "app.css"
+    ],
+    "src": "resources/css/filament/egap/app.css",
+    "isEntry": true,
+    "css": [
+      "assets/app-MYugHOwR.css"
+    ]
+  },
+  "resources/css/principal.css": {
+    "file": "assets/principal-CThV9sUq.css",
+    "name": "principal",
+    "names": [
+      "principal.css"
+    ],
+    "src": "resources/css/principal.css",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-DCxYGUcJ.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  }
+}

@@ -1,0 +1,36 @@
+<?php
+
+namespace {{ namespace }};
+
+{{ factoryImport }}
+use Illuminate\Database\Eloquent\Model;
+
+class {{ class }} extends Model
+{
+    {{ factory }}
+    protected $connection = 'egap';
+    protected $table = 'mat_table';
+    protected $fillable = [
+        'campo',
+        'campo',
+    ];
+
+    /*
+    public function tag(): BelongsTo
+    {
+        return $this->belongsTo(Tags::class, 'tag_id', 'id');
+    }
+    public function cursos(): BelongsToMany
+    {
+        return $this->belongsToMany(Cursos::class, 'esc_instrutores', 'instrutor_id', 'curso_id')
+            ->using(Cursos::class)
+            ->withPivot('atualizado_por', 'created_at', 'updated_at')
+            ->withTimestamps();
+        ;
+    }
+    public function atividades(): HasMany
+    {
+        return $this->HasMany(CursoAtividades::class, 'cursoatividade_id', 'id');
+    }
+    */
+}

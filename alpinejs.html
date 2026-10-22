@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <script src="//unpkg.com/alpinejs" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    </head>
+    <body>
+        <div x-data="products" x-init="init()">
+            <h1>Products</h1>
+            <div>
+                <template x-for="c in columns">
+                    <label>
+                        <input
+                            type="checkbox"
+                            x-model="selectedColumns"
+                            :value="c"
+                        />
+                        <span x-text="c"></span>
+                    </label>
+                </template>
+            </div>
+            <hr />
+            <table class="w-auto table-auto">
+                <thead>
+                    <tr>
+                        <th x-show="showTd('id')">ID</th>
+                        <th x-show="showTd('name')">Name</th>
+                        <th x-show="showTd('price')">Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="p in data">
+                        <tr>
+                            <td x-show="showTd('id')" x-text="p.id"></td>
+                            <td x-show="showTd('name')" x-text="p.name"></td>
+                            <td x-show="showTd('price')" x-text="p.price"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <script>
+            function products() {
+                return {
+                    data: [
+                        {
+                            id: 1,
+                            name: "Product 1",
+                            price: 10.0,
+                        },
+                        {
+                            id: 2,
+                            name: "Product 2",
+                            price: 20.0,
+                        },
+                        {
+                            id: 3,
+                            name: "Product 3",
+                            price: 30.0,
+                        },
+                    ],
+                    columns: ["id", "name", "price"],
+                    selectedColumns: [],
+                    init() {
+                        this.selectedColumns = [...this.columns];
+                    },
+                    showTd(column) {
+                        var result = this.selectedColumns.find((e) => {
+                            return e.toLowerCase() === column.toLowerCase();
+                        });
+                        return result != undefined;
+                    },
+                };
+            }
+        </script>
+    </body>
+</html>

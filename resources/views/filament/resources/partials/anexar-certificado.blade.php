@@ -1,0 +1,1 @@
+<livewire:AnexarCertificadoExterno :curso="$curso" />

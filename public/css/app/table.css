@@ -1,0 +1,227 @@
+.fi-ta[class*='egap-table'] {
+    --egap-table-height-offset: 13rem;
+    --egap-table-min-height: 24rem;
+    --egap-table-height: none;
+
+    --egap-table-actions-position: static;
+    --egap-table-actions-shadow: 0 0 0 0 transparent;
+
+    --egap-table-surface: #fff;
+    --egap-table-muted-surface: var(--gray-50);
+
+    --egap-table-head-surface: var(--egap-table-muted-surface);
+
+    --egap-table-divider: var(--gray-200);
+    --egap-table-shadow-color: rgb(0 0 0 / 0.12);
+
+    --egap-table-head-shadow: 0 1px 0 0 var(--egap-table-divider);
+
+    --egap-table-row-surface: var(--egap-table-surface);
+}
+
+.dark .fi-ta[class*='egap-table'] {
+    --egap-table-surface: var(--gray-900);
+
+    --egap-table-muted-surface: color-mix(in srgb, #fff 5%, var(--gray-900));
+
+    --egap-table-divider: color-mix(in srgb, #fff 10%, transparent);
+
+    --egap-table-shadow-color: rgb(0 0 0 / 0.5);
+}
+
+.fi-ta.egap-table-defaults,
+.fi-ta.egap-table-sticky,
+.fi-ta.egap-table-sticky-actions {
+    --egap-table-actions-position: sticky;
+    --egap-table-actions-shadow:
+        -1px 0 0 0 var(--egap-table-divider),
+        -0.75rem 0 0.75rem -0.75rem var(--egap-table-shadow-color);
+}
+
+.fi-ta.egap-table-defaults,
+.fi-ta.egap-table-sticky,
+.fi-ta.egap-table-sticky-toolbar,
+.fi-ta.egap-table-sticky-pagination {
+    --egap-table-height:
+        max(
+            var(--egap-table-min-height),
+            calc(100dvh - var(--egap-table-height-offset))
+        );
+}
+
+
+.fi-ta.egap-table-auto-height {
+    --egap-table-height: none;
+}
+
+.fi-ta.egap-table-no-sticky-actions {
+    --egap-table-actions-position: static;
+    --egap-table-actions-shadow: 0 0 0 0 transparent;
+}
+
+.fi-ta[class*='egap-table'] .fi-ta-main {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+
+    max-height: var(--egap-table-height);
+}
+
+.fi-ta[class*='egap-table'] .fi-ta-content-ctn {
+    flex: 1 1 auto;
+    min-height: 0;
+
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
+.fi-ta[class*='egap-table'] .fi-ta-content {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+}
+
+.fi-ta[class*='egap-table'] .fi-ta-empty-state {
+    flex: 1 1 auto;
+}
+
+.fi-ta[class*='egap-table'] .fi-ta-header-ctn {
+    position: relative;
+    z-index: 5;
+
+    flex: 0 0 auto;
+}
+
+
+.fi-ta[class*='egap-table'] .fi-pagination {
+    position: relative;
+    z-index: 5;
+
+    flex: 0 0 auto;
+}
+
+
+.fi-ta[class*='egap-table'] .fi-ta-table > thead > tr:last-child > th {
+    position: sticky;
+
+    top: 0;
+    z-index: 2;
+
+    background-color: var(--egap-table-head-surface);
+
+    box-shadow: var(--egap-table-head-shadow);
+}
+
+.fi-ta[class*='egap-table'] .fi-ta-table > thead > tr:not(:last-child) > th {
+    position: static;
+}
+
+.fi-ta[class*='egap-table']
+    .fi-ta-table:has(> tbody > tr > td:last-child > .fi-ta-actions)
+    > thead
+    > tr
+    > th:last-child {
+    position: var(--egap-table-actions-position);
+    right: 0;
+
+    z-index: 3;
+
+    background-color: var(--egap-table-head-surface);
+
+    box-shadow: var(--egap-table-actions-shadow), var(--egap-table-head-shadow);
+}
+
+.fi-ta[class*='egap-table']
+    .fi-ta-table:has(> tbody > tr > td:last-child > .fi-ta-actions)
+    > tbody
+    > tr
+    > td:last-child {
+    position: var(--egap-table-actions-position);
+    right: 0;
+    z-index: 1;
+
+    background-color: var(--egap-table-row-surface);
+    box-shadow: var(--egap-table-actions-shadow);
+}
+
+.fi-ta[class*='egap-table'] .fi-ta-table > tbody > .fi-ta-row.fi-striped,
+.fi-ta[class*='egap-table'] .fi-ta-table > tbody > .fi-ta-row.fi-selected,
+.fi-ta[class*='egap-table'] .fi-ta-table > tbody > .fi-ta-group-header-row {
+    --egap-table-row-surface: var(--egap-table-muted-surface);
+}
+
+@media (hover: hover) {
+    .fi-ta[class*='egap-table']
+        .fi-ta-table
+        > tbody
+        > .fi-ta-row.fi-clickable:hover {
+        --egap-table-row-surface: var(--egap-table-muted-surface);
+    }
+}
+
+.fi-ta[class*='egap-table']
+    .fi-ta-table
+    > tbody
+    > tr
+    > .fi-ta-cell:has(> .fi-ta-actions):focus-within,
+.fi-ta[class*='egap-table']
+    .fi-ta-table
+    > tbody
+    > tr
+    > .fi-ta-cell:has(
+        > .fi-ta-actions
+            .fi-dropdown-panel:not([x-cloak]):not([style*='display: none'])
+    ) {
+    z-index: 4;
+}
+
+.fi-ta[class*='egap-table'] .fi-ta-actions .fi-dropdown-panel {
+    z-index: 1;
+}
+
+.egap-modal-content .fi-ta[class*='egap-table'] {
+    --egap-table-height: none;
+}
+
+@media (max-width: 639px) {
+    .fi-ta[class*='egap-table'] {
+        --egap-table-height: none;
+    }
+
+    .fi-ta[class*='egap-table'] .fi-ta-table-stacked-on-mobile {
+        --egap-table-actions-position: static;
+        --egap-table-actions-shadow: 0 0 0 0 transparent;
+    }
+}
+
+
+:root {
+    --egap-filters-width: min(92vw, 44rem);
+
+    --egap-filters-column: 13rem;
+}
+
+.fi-dropdown.fi-ta-filters-dropdown > .fi-dropdown-panel {
+    min-width: var(--egap-filters-width);
+}
+
+.fi-ta-filters-dropdown .fi-ta-filters > .fi-sc.fi-grid,
+.fi-ta-filters-modal .fi-modal-content > .fi-sc.fi-grid {
+    grid-template-columns:
+        repeat(auto-fit, minmax(var(--egap-filters-column), 1fr));
+}
+
+.fi-ta-filters-before-content-ctn .fi-ta-filters > .fi-sc.fi-grid,
+.fi-ta-filters-after-content-ctn .fi-ta-filters > .fi-sc.fi-grid {
+    grid-template-columns:
+        repeat(auto-fit, minmax(var(--egap-filters-column), 1fr));
+}
+
+.egap-modal-content
+    .fi-dropdown.fi-ta-filters-dropdown
+    > .fi-dropdown-panel {
+    --egap-filters-width: min(88vw, 34rem);
+
+    max-height: min(22rem, 50dvh);
+    overflow-y: auto;
+}

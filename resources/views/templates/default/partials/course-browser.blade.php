@@ -1,0 +1,15 @@
+@livewire('portal.course-browser', [
+    'heading' => $heading ?? 'Ações Disponíveis',
+    'showHeading' => $showHeading ?? true,
+    'showAllLink' => $showAllLink ?? false,
+    'sectionClasses' => $sectionClasses ?? 'py-20 bg-slate-50',
+    'innerClasses' => $innerClasses ?? 'container px-4 mx-auto sm:px-6 lg:px-8',
+    'emptyMessage' => $emptyMessage ?? 'Nenhum curso disponível no momento.',
+    'cardsLimit' => $cardsLimit ?? 9,
+    'cardsPageSize' => $cardsPageSize ?? 12,
+    'cardsLazyLoad' => $cardsLazyLoad ?? false,
+    'listInitialLimit' => $listInitialLimit ?? 12,
+    'listPageSize' => $listPageSize ?? 12,
+    'view' => $view ?? 'cards',
+    'dateSort' => $dateSort ?? 'near_today',
+])

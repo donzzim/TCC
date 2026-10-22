@@ -1,0 +1,12 @@
+<?php
+
+namespace {{ namespace }};
+
+{{ clusterImport }}use Filament\Pages\Page;
+
+class {{ class }} extends Page
+{
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-document-text';
+
+    protected string $view = '{{ view }}';{{ clusterAssignment }}
+}

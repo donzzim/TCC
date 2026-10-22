@@ -1,0 +1,55 @@
+name: Validar sintaxe PHP
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  php-syntax:
+    name: PHP alterado
+    runs-on: ubuntu-latest
+    env:
+      BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+      HEAD_SHA: ${{ github.sha }}
+
+    steps:
+      - name: Baixar repositório completo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Preparar PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, dom, fileinfo, sqlite3, pdo_sqlite
+          tools: composer:v2
+
+      - name: Validar composer.json
+        run: composer validate --no-check-publish --no-interaction
+
+      - name: Validar sintaxe dos PHP enviados
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            echo "Base do evento indisponível; validando todos os PHP versionados."
+            mapfile -t php_files < <(git ls-files '*.php')
+          else
+            mapfile -t php_files < <(git diff --name-only --diff-filter=ACMR "${BASE_SHA}" "${HEAD_SHA}" -- '*.php')
+          fi
+
+          if [ "${#php_files[@]}" -eq 0 ]; then
+            echo 'Nenhum arquivo PHP alterado neste evento.'
+            exit 0
+          fi
+
+          for file in "${php_files[@]}"; do
+            echo "Validando ${file}"
+            php -l "${file}"
+          done

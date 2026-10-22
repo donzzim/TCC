@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ "${EMES_RUN_UNIT_TESTS:-0}" = "1" ]; then
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/validate.ps1
+else
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/validate.ps1 -SyntaxOnly
+fi
+exit $?

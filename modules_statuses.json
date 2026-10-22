@@ -1,0 +1,11 @@
+{
+    "PlanejamentoEstrategico": true,
+    "PlanejamentoOrcamentario": true,
+    "Contratacao": true,
+    "ProjetoPedagogico": true,
+    "Administrativo": true,
+    "TabelasApoio": true,
+    "Almoxarifado": true,
+    "Patrimonio": true,
+    "ServicosGerais": true
+}

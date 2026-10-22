@@ -1,0 +1,4 @@
+#!/bin/sh
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/validate.ps1 -SyntaxOnly -Staged
+exit $?

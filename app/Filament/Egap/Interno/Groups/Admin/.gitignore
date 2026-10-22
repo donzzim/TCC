@@ -1,0 +1,3 @@
+﻿migracao_04_ajuste_usuarios_existentes.sql
+migracao_05_cargo_matricula_LOCAL.sql
+migracao_06_guard_egap_LOCAL.sql
