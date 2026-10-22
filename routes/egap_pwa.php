@@ -4,16 +4,20 @@ use App\Http\Controllers\Egap\MobileApi\BensController;
 use App\Http\Controllers\Egap\MobileApi\ConferenciaBensController;
 use App\Http\Controllers\Egap\MobileApi\MobileAuthController;
 use App\Http\Controllers\Egap\MobileApi\PedidosController;
+use App\Http\Controllers\Egap\MobileApi\SessaoController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('mobile-api')->group(function (): void {
     Route::post('/login', [MobileAuthController::class, 'login'])
+        ->middleware('throttle:mobile-login')
         ->name('mobile-login');
 
     Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/me', [MobileAuthController::class, 'me'])->name('mobile.me');
-
-        Route::post('/logout', [MobileAuthController::class, 'logout'])->name('mobile.logout');
+        Route::middleware('mobile.sessao')->group(function () {
+            Route::get('/sessao', [SessaoController::class, 'show'])->name('mobile.sessao');
+            Route::put('/sessao/setor', [SessaoController::class, 'trocarSetor'])->name('mobile.sessao.setor');
+            Route::post('/logout', [SessaoController::class, 'logout'])->name('mobile.logout');
+        });
 
         Route::get('/dashboard', [BensController::class, 'dashboard'])->name('mobile.dashboard');
         Route::get('/bens', [BensController::class, 'index'])->name('mobile.bens');
