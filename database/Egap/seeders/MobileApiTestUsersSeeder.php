@@ -3,125 +3,98 @@
 namespace Database\Seeders;
 
 use App\Models\egap\Admin\InfoUser;
-use App\Models\egap\Admin\Lotacao;
+use App\Models\egap\User;
 use App\Models\egap\UserEgap;
-use App\Models\User;
+use App\Models\egap\UserLotacao;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 class MobileApiTestUsersSeeder extends Seeder
 {
+    private const LOGIN = 'mobile.teste';
+
     private const PASSWORD = 'mobile123';
 
-    private const UNIDADE_JUDICIARIA = 766;
+    private const CPF = '90000000001';
 
-    private const SETOR = 2296;
+    /** Setor principal (unidade judiciária 766) e um segundo setor da mesma unidade. */
+    private const SETOR_PRINCIPAL = 2296;
+
+    private const SETOR_SECUNDARIO = 767;
+
+    /** Usuários de versões anteriores do seeder, sem uso na API atual. */
+    private const LOGINS_LEGADOS = ['mobile.local', 'mobile.egap.local', 'mobile.sem-vinculo'];
 
     public function run(): void
     {
-        $this->createLocalLinkedUser();
-        $this->createEgapLinkedUser();
-        $this->createLocalUserWithoutMobileLink();
+        $this->removerUsuariosLegados();
 
-        $this->command?->info('Usuários de teste da API mobile criados/atualizados.');
-        $this->command?->line('Senha padrão: ' . self::PASSWORD);
-        $this->command?->line('Login local com vínculo: mobile.local');
-        $this->command?->line('Login EGAP com vínculo: mobile.egap');
-        $this->command?->line('Login local sem vínculo mobile: mobile.sem-vínculo');
-    }
-
-    private function createLocalLinkedUser(): void
-    {
-        $cpf = '90000000001';
-
-        $user = $this->upsertLocalUser([
-            'login' => 'mobile.local',
-            'name' => 'Mobile Local Teste',
-            'email' => 'mobile.local@egap.test',
-            'cpf' => $cpf,
-            'matricula' => 'MOB001',
-            'numero_funcional' => 'MOB001',
-            'telefone' => '(11) 99999-0001',
-        ]);
-
-        $egapUser = $this->upsertEgapUser([
-            'name' => $user->name,
-            'username' => 'mobile.local.egap',
-            'email' => 'mobile.local.egap@egap.test',
-        ]);
-
-        $this->upsertInfoUser($egapUser, $cpf, 'MOB001', 'Teste API Mobile Local');
-        $this->upsertLotacao($egapUser);
-    }
-
-    private function createEgapLinkedUser(): void
-    {
-        $cpf = '90000000002';
-
-        $this->upsertLocalUser([
-            'login' => 'mobile.egap.local',
-            'name' => 'Mobile EGAP Teste',
-            'email' => 'mobile.egap.local@egap.test',
-            'cpf' => $cpf,
-            'matricula' => 'MOB002',
-            'numero_funcional' => 'MOB002',
-            'telefone' => '(11) 99999-0002',
-        ]);
-
-        $egapUser = $this->upsertEgapUser([
-            'name' => 'Mobile EGAP Teste',
-            'username' => 'mobile.egap',
-            'email' => 'mobile.egap@egap.test',
-        ]);
-
-        $this->upsertInfoUser($egapUser, $cpf, 'MOB002', 'Teste API Mobile EGAP');
-        $this->upsertLotacao($egapUser);
-    }
-
-    private function createLocalUserWithoutMobileLink(): void
-    {
-        $this->upsertLocalUser([
-            'login' => 'mobile.sem-vinculo',
-            'name' => 'Mobile Sem Vinculo Teste',
-            'email' => 'mobile.sem-vinculo@egap.test',
-            'cpf' => '90000000003',
-            'matricula' => 'MOB003',
-            'numero_funcional' => 'MOB003',
-            'telefone' => '(11) 99999-0003',
-        ]);
-    }
-
-    private function upsertLocalUser(array $attributes): User
-    {
-        return User::query()->updateOrCreate(
-            ['login' => $attributes['login']],
+        $user = User::query()->updateOrCreate(
+            ['login' => self::LOGIN],
             [
-                'name' => $attributes['name'],
-                'email' => $attributes['email'],
-                'cpf' => $attributes['cpf'],
-                'telefone' => $attributes['telefone'],
-                'matricula' => $attributes['matricula'],
-                'numero_funcional' => $attributes['numero_funcional'],
+                'name' => 'Mobile Teste',
+                'email' => 'mobile.teste@egap.test',
+                'cpf' => self::CPF,
+                'telefone' => '(11) 99999-0001',
+                'matricula' => 'MOB001',
+                'numero_funcional' => 'MOB001',
                 'ativo' => 1,
                 'email_verified_at' => now(),
                 'password' => Hash::make(self::PASSWORD),
             ],
         );
+
+        $user->syncRoles([User::ROLE_USER]);
+
+        $this->upsertLotacoes($user);
+        $this->upsertInfoUser($this->upsertEgapUser($user));
+
+        $this->command?->info('Usuário de teste da API mobile criado/atualizado.');
+        $this->command?->line('Login: ' . self::LOGIN . ' / senha: ' . self::PASSWORD);
     }
 
-    private function upsertEgapUser(array $attributes): UserEgap
+    private function removerUsuariosLegados(): void
     {
-        $user = UserEgap::query()->firstOrNew([
-            'username' => $attributes['username'],
-        ]);
+        $legados = User::query()->whereIn('login', self::LOGINS_LEGADOS)->get();
 
-        $user->fill([
-            'name' => $attributes['name'],
-            'email' => $attributes['email'],
+        foreach ($legados as $legado) {
+            UserLotacao::query()->where('user_id', $legado->getKey())->delete();
+            $legado->tokens()->delete();
+            $legado->syncRoles([]);
+            $legado->delete();
+        }
+
+        UserEgap::query()->whereIn('username', ['mobile.local.egap', 'mobile.egap'])->get()
+            ->each(function (UserEgap $egap): void {
+                InfoUser::query()->where('usuario_id', $egap->getKey())->delete();
+                $egap->delete();
+            });
+    }
+
+    private function upsertLotacoes(User $user): void
+    {
+        foreach ([self::SETOR_PRINCIPAL => true, self::SETOR_SECUNDARIO => false] as $setorId => $principal) {
+            UserLotacao::query()->updateOrCreate(
+                ['user_id' => $user->getKey(), 'setor_id' => $setorId],
+                ['principal' => $principal, 'atualizado_por' => $user->getKey()],
+            );
+        }
+    }
+
+    /**
+     * O egap_id da sessão mobile vem de egap_mat_infousers (por CPF) -> usuário EGAP legado.
+     */
+    private function upsertEgapUser(User $user): UserEgap
+    {
+        $egap = UserEgap::query()->firstOrNew(['username' => self::LOGIN]);
+
+        $egap->fill([
+            'name' => $user->name,
+            'email' => $user->email,
             'password' => Hash::make(self::PASSWORD),
             'block' => false,
             'sendEmail' => false,
-            'registerDate' => now(),
+            'registerDate' => $egap->registerDate ?? now(),
             'lastvisitDate' => now(),
             'activation' => '',
             'params' => '{}',
@@ -131,39 +104,16 @@ class MobileApiTestUsersSeeder extends Seeder
             'otep' => '',
             'requireReset' => false,
         ]);
+        $egap->save();
 
-        $user->save();
-
-        return $user;
+        return $egap;
     }
 
-    private function upsertInfoUser(UserEgap $user, string $cpf, string $matricula, string $cargo): void
+    private function upsertInfoUser(UserEgap $egap): void
     {
         InfoUser::query()->updateOrCreate(
-            [
-                'usuario_id' => $user->getKey(),
-                'cpf' => $cpf,
-            ],
-            [
-                'date_time' => now(),
-                'matricula' => $matricula,
-                'cargo' => $cargo,
-            ],
+            ['usuario_id' => $egap->getKey(), 'cpf' => self::CPF],
+            ['matricula' => 'MOB001', 'cargo' => 'Teste API Mobile'],
         );
-    }
-
-    private function upsertLotacao(UserEgap $user): void
-    {
-        Lotacao::withoutEvents(fn() => Lotacao::query()->updateOrCreate(
-            [
-                'id_user' => $user->getKey(),
-                'unidade_judiciaria' => self::UNIDADE_JUDICIARIA,
-                'setor' => self::SETOR,
-            ],
-            [
-                'date_time' => now(),
-                'usuario' => $user->getKey(),
-            ],
-        ));
     }
 }

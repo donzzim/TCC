@@ -33,13 +33,13 @@ Route::prefix('mobile-api')->group(function (): void {
                 Route::post('/divergencias', [ConferenciaController::class, 'divergencias'])->name('mobile.conferencia.divergencias');
                 Route::post('/finalizar', [ConferenciaController::class, 'finalizar'])->name('mobile.conferencia.finalizar');
             });
-        });
 
-        Route::prefix('pedidos')->name('mobile.pedidos.')->group(function () {
-            Route::get('/', [PedidosController::class, 'index'])->name('index');
-            Route::get('/contexto', [PedidosController::class, 'contexto'])->name('contexto');
-            Route::get('/materiais', [PedidosController::class, 'materiais'])->name('materiais');
-            Route::post('/', [PedidosController::class, 'store'])->name('store');
+            Route::prefix('pedidos')->name('mobile.pedidos.')->group(function () {
+                Route::get('/', [PedidosController::class, 'index'])->name('index');
+                Route::get('/contexto', [PedidosController::class, 'contexto'])->name('contexto');
+                Route::get('/materiais', [PedidosController::class, 'materiais'])->name('materiais');
+                Route::post('/', [PedidosController::class, 'store'])->name('store');
+            });
         });
     });
 });

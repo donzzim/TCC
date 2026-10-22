@@ -2,26 +2,21 @@
 
 namespace App\Http\Controllers\Egap\MobileApi;
 
+use App\Filament\Egap\Auth\MobileEgapSession;
 use App\Http\Controllers\Controller;
-use App\Models\egap\UserMobile;
+use App\Http\Requests\Egap\MobileApi\CriarPedidoRequest;
+use App\Http\Requests\Egap\MobileApi\ListarMateriaisRequest;
 use App\Services\Egap\Mobile\PedidosMobileService;
-use App\Services\Egap\UsersConnectionService;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class PedidosController extends Controller
 {
-    public function contexto(
-        Request $request,
-        UsersConnectionService $usersConnectionService,
-        PedidosMobileService $pedidosService,
-    ): JsonResponse {
-        $scope = $this->scope($request, $usersConnectionService, $pedidosService);
-
-        if ($scope instanceof JsonResponse) {
-            return $scope;
-        }
+    public function contexto(MobileEgapSession $sessao, PedidosMobileService $pedidosService): JsonResponse
+    {
+        $scope = $this->scope($sessao);
 
         return response()->json([
             'scope' => $scope,
@@ -30,21 +25,12 @@ class PedidosController extends Controller
     }
 
     public function materiais(
-        Request $request,
-        UsersConnectionService $usersConnectionService,
+        ListarMateriaisRequest $request,
+        MobileEgapSession $sessao,
         PedidosMobileService $pedidosService,
     ): JsonResponse {
-        $scope = $this->scope($request, $usersConnectionService, $pedidosService);
-
-        if ($scope instanceof JsonResponse) {
-            return $scope;
-        }
-
-        $validated = $request->validate([
-            'tipo' => ['required', 'in:consumo,permanente'],
-            'search' => ['nullable', 'string', 'max:120'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:60'],
-        ]);
+        $scope = $this->scope($sessao);
+        $validated = $request->validated();
 
         $paginator = $pedidosService->materiais(
             scope: $scope,
@@ -55,28 +41,13 @@ class PedidosController extends Controller
 
         return response()->json([
             'materiais' => $paginator->items(),
-            'meta' => [
-                'current_page' => $paginator->currentPage(),
-                'per_page' => $paginator->perPage(),
-                'total' => $paginator->total(),
-                'last_page' => $paginator->lastPage(),
-                'from' => $paginator->firstItem(),
-                'to' => $paginator->lastItem(),
-                'has_more' => $paginator->hasMorePages(),
-            ],
+            'meta' => $this->meta($paginator),
         ]);
     }
 
-    public function index(
-        Request $request,
-        UsersConnectionService $usersConnectionService,
-        PedidosMobileService $pedidosService,
-    ): JsonResponse {
-        $scope = $this->scope($request, $usersConnectionService, $pedidosService);
-
-        if ($scope instanceof JsonResponse) {
-            return $scope;
-        }
+    public function index(Request $request, MobileEgapSession $sessao, PedidosMobileService $pedidosService): JsonResponse
+    {
+        $scope = $this->scope($sessao);
 
         $validated = $request->validate([
             'per_page' => ['nullable', 'integer', 'min:1', 'max:30'],
@@ -86,40 +57,17 @@ class PedidosController extends Controller
 
         return response()->json([
             'pedidos' => $paginator->items(),
-            'meta' => [
-                'current_page' => $paginator->currentPage(),
-                'per_page' => $paginator->perPage(),
-                'total' => $paginator->total(),
-                'last_page' => $paginator->lastPage(),
-                'from' => $paginator->firstItem(),
-                'to' => $paginator->lastItem(),
-                'has_more' => $paginator->hasMorePages(),
-            ],
+            'meta' => $this->meta($paginator),
         ]);
     }
 
     public function store(
-        Request $request,
-        UsersConnectionService $usersConnectionService,
+        CriarPedidoRequest $request,
+        MobileEgapSession $sessao,
         PedidosMobileService $pedidosService,
     ): JsonResponse {
-        $scope = $this->scope($request, $usersConnectionService, $pedidosService);
-
-        if ($scope instanceof JsonResponse) {
-            return $scope;
-        }
-
-        $validated = $request->validate([
-            'tipo' => ['required', 'in:consumo,permanente'],
-            'complemento_setor_id' => ['required', 'integer'],
-            'justificativa' => ['nullable', 'string', 'max:500'],
-            'itens' => ['required', 'array', 'min:1'],
-            'itens.*.material_id' => ['required', 'integer'],
-            'itens.*.quantidade' => ['required', 'integer', 'min:1', 'max:5000'],
-            'itens.*.tipo_atendimento' => ['nullable', 'in:adicao,substituicao'],
-            'itens.*.justificativa' => ['nullable', 'string', 'max:500'],
-            'itens.*.patrimonio_substituido' => ['nullable', 'string', 'max:120'],
-        ]);
+        $scope = $this->scope($sessao);
+        $validated = $request->validated();
 
         $pedido = $pedidosService->criarPedido($scope, $validated);
 
@@ -139,28 +87,33 @@ class PedidosController extends Controller
     }
 
     /**
-     * @return array{user_id:int,id_egap:int,setor:int,unidade_judiciaria:int}|JsonResponse
+     * Escopo vem sempre da sessão mobile; pedidos exigem vínculo EGAP.
+     *
+     * @return array{user_id:int,id_egap:int,setor:int,unidade_judiciaria:int}
      */
-    private function scope(
-        Request $request,
-        UsersConnectionService $usersConnectionService,
-        PedidosMobileService $pedidosService,
-    ): array|JsonResponse {
-        $mobileUser = $usersConnectionService->findByUser($request->user());
+    private function scope(MobileEgapSession $sessao): array
+    {
+        $scope = $sessao->escopo();
 
-        if (! $mobileUser instanceof UserMobile) {
-            return response()->json([
-                'message' => 'Usuário sem vinculo valido para pedidos mobile.',
-            ], 403);
+        if (empty($scope['id_egap'])) {
+            throw ValidationException::withMessages([
+                'user' => 'Usuário sem vinculo EGAP, unidade judiciaria ou setor valido para criar pedidos.',
+            ]);
         }
 
-        try {
-            return $pedidosService->resolveScope($mobileUser);
-        } catch (ValidationException $exception) {
-            return response()->json([
-                'message' => collect($exception->errors())->flatten()->first() ?: 'Usuario sem escopo valido para pedidos.',
-                'errors' => $exception->errors(),
-            ], 422);
-        }
+        return $scope;
+    }
+
+    private function meta(LengthAwarePaginator $paginator): array
+    {
+        return [
+            'current_page' => $paginator->currentPage(),
+            'per_page' => $paginator->perPage(),
+            'total' => $paginator->total(),
+            'last_page' => $paginator->lastPage(),
+            'from' => $paginator->firstItem(),
+            'to' => $paginator->lastItem(),
+            'has_more' => $paginator->hasMorePages(),
+        ];
     }
 }
