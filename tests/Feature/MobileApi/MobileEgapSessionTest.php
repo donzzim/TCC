@@ -119,7 +119,7 @@ class MobileEgapSessionTest extends TestCase
         [$sessao] = $this->sessaoPara($this->usuarioComVariasLotacoes());
 
         foreach (['lotacao' => ['setor' => 1, 'codigodauo' => null], 'lotacaoResolvida' => true] as $prop => $valor) {
-            $r = new ReflectionProperty($sessao, $prop);
+            $r = new \ReflectionProperty($sessao, $prop);
             $r->setValue($sessao, $valor);
         }
 
