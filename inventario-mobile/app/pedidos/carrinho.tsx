@@ -139,9 +139,9 @@ export default function Carrinho() {
                         (k) =>
                             k === 'complemento_setor_id' ||
                             (k === 'justificativa' && tipo === 'consumo') ||
-                            (/^itens.d+.(quantidade|material_id)$/.test(k) && Number(k.split('.')[1]) < itens.length) ||
+                            (/^itens\.\d+\.(quantidade|material_id)$/.test(k) && Number(k.split('.')[1]) < itens.length) ||
                             (tipo === 'permanente' &&
-                                /^itens.d+.(tipo_atendimento|patrimonio_substituido|justificativa)$/.test(k) &&
+                                /^itens\.\d+\.(tipo_atendimento|patrimonio_substituido|justificativa)$/.test(k) &&
                                 Number(k.split('.')[1]) < itens.length),
                     );
 
