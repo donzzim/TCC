@@ -133,11 +133,23 @@ export default function Carrinho() {
                     }
 
                     setErros(porCampo);
-                    setFalha(
-                        gerais.length > 0 || Object.keys(porCampo).length === 0
-                            ? { rede: false, mensagem: gerais.join(' ') || e.message }
-                            : null,
+
+                    // Erro de campo que a tela não exibe (ex.: itens.N, justificativa em consumo) não pode ficar mudo.
+                    const exibidos = Object.keys(porCampo).filter(
+                        (k) =>
+                            k === 'complemento_setor_id' ||
+                            (k === 'justificativa' && tipo === 'consumo') ||
+                            (/^itens.d+.(quantidade|material_id)$/.test(k) && Number(k.split('.')[1]) < itens.length) ||
+                            (tipo === 'permanente' &&
+                                /^itens.d+.(tipo_atendimento|patrimonio_substituido|justificativa)$/.test(k) &&
+                                Number(k.split('.')[1]) < itens.length),
                     );
+
+                    if (gerais.length === 0 && exibidos.length === 0) {
+                        gerais.push(...Object.values(porCampo), e.message);
+                    }
+
+                    setFalha(gerais.length > 0 ? { rede: false, mensagem: [...new Set(gerais)].join(' ') } : null);
                     return;
                 }
 
