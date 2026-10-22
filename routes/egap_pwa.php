@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\Egap\Api\BensController;
-use App\Http\Controllers\Egap\Api\ConferenciaBensController;
-use App\Http\Controllers\Egap\Api\MobileAuthController;
-use App\Http\Controllers\Egap\Api\PedidosController;
+use App\Http\Controllers\Egap\MobileApi\BensController;
+use App\Http\Controllers\Egap\MobileApi\ConferenciaBensController;
+use App\Http\Controllers\Egap\MobileApi\MobileAuthController;
+use App\Http\Controllers\Egap\MobileApi\PedidosController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('mobile-api')->group(function (): void {

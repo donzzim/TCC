@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Egap\Api;
+namespace App\Http\Controllers\Egap\MobileApi;
 
 use App\Http\Controllers\Controller;
 use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
