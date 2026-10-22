@@ -190,6 +190,44 @@ export interface LeituraResultado {
     bem: BemConferencia | null;
 }
 
+/** Leitura que localizou (ou achou já conferido) o bem: resultado de `localizar`, sem `pode_localizar`. */
+export interface LeituraLocalizada {
+    status: 'localizado' | 'ja_conferido';
+    message: string;
+    bem: BemConferencia;
+    resumo: ConferenciaResumo;
+}
+
+/** Leitura que não localizou: resultado de `validarLeitura` + `resumo`. */
+export interface LeituraRejeitada {
+    status: LeituraStatus;
+    message: string;
+    pode_localizar: false;
+    bem: BemConferencia | null;
+    resumo: ConferenciaResumo;
+}
+
+/** `POST /conferencia/leituras` devolve um dos dois formatos. */
+export type LeituraConferencia = LeituraLocalizada | LeituraRejeitada;
+
+export type ConferenciaFiltro = 'todos' | Exclude<ConferenciaStatus, 'registrado'>;
+
+export interface ConferenciaBensPagina {
+    inventario: ConferenciaAtual['inventario'];
+    atividade: ConferenciaAtual['atividade'];
+    total: number;
+    bens: BemConferencia[];
+    resumo: ConferenciaResumo;
+    meta: PaginationMeta & { from: number | null; to: number | null };
+}
+
+export interface DivergenciaPayload {
+    bem_id?: number;
+    codigo?: string;
+    campos?: string[];
+    observacao: string;
+}
+
 export type PedidoTipo = 'consumo' | 'permanente';
 
 export interface Material {
