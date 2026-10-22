@@ -11,7 +11,7 @@ export interface Lotacao {
     id: number;
     setor: string;
     unidade: string;
-    codigodauo: number;
+    codigodauo: number | null;
     principal?: boolean;
 }
 
@@ -50,30 +50,83 @@ export type ConferenciaStatus =
     | 'cadastrado_manualmente'
     | 'registrado';
 
+export interface Referencia {
+    id: number | null;
+    nome: string | null;
+}
+
+/** Espelha app/Http/Resources/Egap/MobileApi/BemResource.php (GET /bens e GET /bens/{patrimonio}). */
 export interface Bem {
     id: number;
-    patrimonio?: string | null;
-    codigo?: string | null;
-    descricao?: string | null;
-    marca?: string | null;
-    modelo?: string | null;
-    numero_serie?: string | null;
-    situacao?: string | null;
-    estado_conservacao?: string | null;
-    setor?: string | null;
-    unidade_judiciaria?: string | null;
-    localizacao?: string | null;
-    responsavel?: string | null;
-    valor_aquisicao?: number | null;
-    data_incorporacao?: string | null;
+    patrimonio: string | number | null;
+    patrimonio_anterior: string | number | null;
+    tombo_smarapd: string | number | null;
+    num_tombo_smarapd: string | number | null;
+    numero_serie: string | null;
+    descricao: string | null;
+    descricao_resumida: string | null;
+    marca: string | null;
+    modelo: string | null;
+    tipo_bem: string | null;
+    estado_conservacao: string | null;
+    voltagem: string | null;
+    situacao_id: number | null;
+    situacao: string | null;
+    situacao_elegivel: boolean;
+    unidade_judiciaria: Referencia;
+    setor: Referencia;
+    complemento_setor: Referencia;
+    andar_setor: string | number | null;
+    /** decimal:2 no servidor: normalmente string ("1234.50"). */
+    valor_aquisicao: string | number | null;
+    valor: string | number | null;
+    data_incorporacao: string | null;
+    data_cadastro: string | null;
+    data_baixa: string | null;
+    processo_baixa: string | null;
+    numero_processo: string | null;
+    nota_empenho: string | null;
+    nota_liquidacao: string | null;
+    data_liquidacao: string | null;
+    observacao: string | null;
+    /** So vem em GET /bens/{patrimonio}. */
     pertence_ao_setor?: boolean;
-    situacao_elegivel?: boolean;
-    conferencia?: {
+}
+
+/** Espelha ConferenciaBensService::bemToArray (conferencia: lista, leitura e acoes). */
+export interface BemConferencia {
+    id: number;
+    patrimonio: string | number | null;
+    patrimonio_anterior: string | number | null;
+    tombo_smarapd: string | number | null;
+    num_tombo_smarapd: string | number | null;
+    numero_serie: string | null;
+    descricao: string | null;
+    descricao_resumida: string | null;
+    descricao_detalhada: string | null;
+    marca: string | null;
+    modelo: string | null;
+    estado_conservacao: string | null;
+    situacao_bem_id: number | null;
+    situacao: string | null;
+    sit_inventario: number | string | null;
+    id_inventario: number | null;
+    unidade_judiciaria: Referencia;
+    setor: Referencia;
+    complemento_setor: Referencia;
+    andar_setor: string | number | null;
+    valor_aquisicao: string | number | null;
+    valor: string | number | null;
+    observacao: string | null;
+    conferencia: {
         status: ConferenciaStatus;
         status_label: string;
+        id_inventario: number | null;
         ja_registrado: boolean;
+        item_id: number | null;
+        situacao_item: string | null;
+        observacao_item: string | null;
     };
-    [key: string]: unknown;
 }
 
 export interface DashboardSituacao {
@@ -134,7 +187,7 @@ export interface LeituraResultado {
     status: LeituraStatus;
     message: string;
     pode_localizar?: boolean;
-    bem: Bem | null;
+    bem: BemConferencia | null;
 }
 
 export type PedidoTipo = 'consumo' | 'permanente';

@@ -16,7 +16,7 @@ import type { Sessao } from '@/src/api/types';
 
 import { limparToken, lerToken, salvarToken } from './tokenStorage';
 
-type Status = 'carregando' | 'anonimo' | 'autenticado';
+type Status = 'carregando' | 'anonimo' | 'autenticado' | 'erro';
 
 interface SessionValue {
     status: Status;
@@ -24,6 +24,8 @@ interface SessionValue {
     entrar: (login: string, senha: string) => Promise<void>;
     trocarSetor: (id: number) => Promise<void>;
     sair: () => Promise<void>;
+    /** Refaz a checagem inicial (GET /sessao) depois de status 'erro'. */
+    recarregar: () => Promise<void>;
 }
 
 const SessionContext = createContext<SessionValue | null>(null);
@@ -49,37 +51,37 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return () => onUnauthorized(null);
     }, [descartar]);
 
-    useEffect(() => {
-        let ativo = true;
+    const iniciar = useCallback(async () => {
+        const salvo = await lerToken();
 
-        (async () => {
-            const salvo = await lerToken();
+        if (!salvo) {
+            setStatus('anonimo');
+            return;
+        }
 
-            if (!salvo) {
-                if (ativo) setStatus('anonimo');
-                return;
+        setAuthToken(salvo);
+
+        try {
+            const atual = await sessaoApi.atual();
+            setSessao(atual);
+            setStatus('autenticado');
+        } catch (erro) {
+            // 401 já é tratado por onUnauthorized (limpa o token e vai para anonimo).
+            // Rede/5xx mantêm o token: as telas mostram o erro com "Tentar novamente".
+            if (!(erro instanceof ApiError && erro.status === 401)) {
+                setStatus('erro');
             }
-
-            setAuthToken(salvo);
-
-            try {
-                const atual = await sessaoApi.atual();
-                if (ativo) {
-                    setSessao(atual);
-                    setStatus('autenticado');
-                }
-            } catch (erro) {
-                // 401 já é tratado por onUnauthorized; rede/5xx não invalidam o token.
-                if (ativo && !(erro instanceof ApiError && erro.status === 401)) {
-                    setStatus('anonimo');
-                }
-            }
-        })();
-
-        return () => {
-            ativo = false;
-        };
+        }
     }, []);
+
+    useEffect(() => {
+        void iniciar();
+    }, [iniciar]);
+
+    const recarregar = useCallback(async () => {
+        setStatus('carregando');
+        await iniciar();
+    }, [iniciar]);
 
     const entrar = useCallback(async (login: string, senha: string) => {
         const resposta = await sessaoApi.login(login, senha, Platform.OS);
@@ -110,8 +112,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }, [descartar]);
 
     const value = useMemo(
-        () => ({ status, sessao, entrar, trocarSetor, sair }),
-        [status, sessao, entrar, trocarSetor, sair],
+        () => ({ status, sessao, entrar, trocarSetor, sair, recarregar }),
+        [status, sessao, entrar, trocarSetor, sair, recarregar],
     );
 
     return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
