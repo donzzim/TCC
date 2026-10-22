@@ -44,8 +44,7 @@ class BensController extends Controller
     public function show(Request $request, MobileEgapSession $sessao, string $patrimonio): JsonResponse
     {
         $patrimonio = trim($patrimonio);
-        // Sem nenhum dígito o MySQL converte o texto para 0 nas colunas int e casaria bens com NumPatrimonio 0.
-        $bem = preg_match('/\d/',$patrimonio) === 1 ? $this->buscarBemPorPatrimonio($patrimonio) : null;
+        $bem = $patrimonio === '' ? null : $this->buscarBemPorPatrimonio($patrimonio);
 
         if ($bem === null) {
             return response()->json(['message' => 'Bem não encontrado.'], 404);
@@ -138,17 +137,25 @@ class BensController extends Controller
         $somenteDigitos = preg_replace('/\D+/', '', $codigo) ?? '';
         $semZeros = ltrim($somenteDigitos !== '' ? $somenteDigitos : $codigo, '0') ?: '0';
 
-        // orWhereRaw necessario: remove zeros a esquerda no valor armazenado
-        // (TRIM LEADING), funcao que o query builder do Eloquent nao expõe.
-        $query
-            ->where('NumPatrimonio', $codigo)
-            ->orWhere('NumPatrimonio', $semZeros)
-            ->orWhereRaw("TRIM(LEADING '0' FROM NumPatrimonio) = ?", [$semZeros])
-            ->orWhere('TomboSmarapd', $codigo)
-            ->orWhere('NumTomboSmarapd', $codigo)
+        // Colunas int (NumPatrimonio, NumTomboSmarapd): sem nenhum dígito o MySQL
+        // converte o texto para 0 e casaria bens com valor 0, então só entram
+        // na busca quando o código tem dígito. Os campos de texto continuam.
+        $temDigito = $somenteDigitos !== '';
+
+        $query->where('TomboSmarapd', $codigo)
             ->orWhere('NumerodePatAnterior', $codigo);
 
-        if ($somenteDigitos !== '' && $somenteDigitos !== $codigo) {
+        if ($temDigito) {
+            $query
+                ->orWhere('NumPatrimonio', $codigo)
+                ->orWhere('NumPatrimonio', $semZeros)
+                // orWhereRaw necessario: remove zeros a esquerda no valor armazenado
+                // (TRIM LEADING), funcao que o query builder do Eloquent nao expõe.
+                ->orWhereRaw("TRIM(LEADING '0' FROM NumPatrimonio) = ?", [$semZeros])
+                ->orWhere('NumTomboSmarapd', $codigo);
+        }
+
+        if ($temDigito && $somenteDigitos !== $codigo) {
             $query
                 ->orWhere('NumPatrimonio', $somenteDigitos)
                 ->orWhere('TomboSmarapd', $somenteDigitos)

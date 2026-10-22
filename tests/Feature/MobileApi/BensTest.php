@@ -114,6 +114,32 @@ class BensTest extends TestCase
         $this->withToken($plain)->getJson('/mobile-api/bens/inexistente')->assertNotFound();
     }
 
+    public function test_show_codigo_inexistente_404(): void
+    {
+        [, , $plain] = $this->usuarioComBens();
+
+        $this->withToken($plain)->getJson('/mobile-api/bens/999999999')->assertNotFound();
+        $this->withToken($plain)->getJson('/mobile-api/bens/inexistente')->assertNotFound();
+    }
+
+    public function test_show_acha_bem_por_patrimonio_anterior_nao_numerico(): void
+    {
+        [, , $plain] = $this->usuarioComBens();
+
+        $bem = BemMovel::query()
+            ->whereNotNull('NumerodePatAnterior')
+            ->whereRaw("NumerodePatAnterior REGEXP '^[A-Za-z]+$'")
+            ->first();
+
+        if ($bem === null) {
+            $this->markTestSkipped('nenhum bem com patrimônio anterior não numérico');
+        }
+
+        $this->withToken($plain)->getJson('/mobile-api/bens/'.rawurlencode($bem->NumerodePatAnterior))
+            ->assertOk()
+            ->assertJsonPath('data.patrimonio_anterior', $bem->NumerodePatAnterior);
+    }
+
     public function test_show_bem_do_setor_marca_pertence(): void
     {
         [, $sessao, $plain] = $this->usuarioComBens();
