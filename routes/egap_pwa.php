@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Egap\MobileApi\BensController;
-use App\Http\Controllers\Egap\MobileApi\ConferenciaBensController;
+use App\Http\Controllers\Egap\MobileApi\ConferenciaController;
 use App\Http\Controllers\Egap\MobileApi\DashboardController;
 use App\Http\Controllers\Egap\MobileApi\MobileAuthController;
 use App\Http\Controllers\Egap\MobileApi\PedidosController;
@@ -24,6 +24,15 @@ Route::prefix('mobile-api')->group(function (): void {
             Route::get('/dashboard', [DashboardController::class, 'show'])->name('mobile.dashboard');
             Route::get('/bens', [BensController::class, 'index'])->name('mobile.bens');
             Route::get('/bens/{patrimonio}', [BensController::class, 'show'])->name('mobile.bens.show');
+
+            Route::prefix('conferencia')->group(function () {
+                Route::get('/', [ConferenciaController::class, 'atual'])->name('mobile.conferencia.atual');
+                Route::get('/bens', [ConferenciaController::class, 'bens'])->name('mobile.conferencia.bens');
+                Route::post('/leituras', [ConferenciaController::class, 'leituras'])->name('mobile.conferencia.leituras');
+                Route::post('/nao-localizados', [ConferenciaController::class, 'naoLocalizados'])->name('mobile.conferencia.nao-localizados');
+                Route::post('/divergencias', [ConferenciaController::class, 'divergencias'])->name('mobile.conferencia.divergencias');
+                Route::post('/finalizar', [ConferenciaController::class, 'finalizar'])->name('mobile.conferencia.finalizar');
+            });
         });
 
         Route::prefix('pedidos')->name('mobile.pedidos.')->group(function () {
@@ -31,16 +40,6 @@ Route::prefix('mobile-api')->group(function (): void {
             Route::get('/contexto', [PedidosController::class, 'contexto'])->name('contexto');
             Route::get('/materiais', [PedidosController::class, 'materiais'])->name('materiais');
             Route::post('/', [PedidosController::class, 'store'])->name('store');
-        });
-
-        Route::prefix('conferencia')->name('mobile.conferencia.')->group(function () {
-            Route::get('/atual', [ConferenciaBensController::class, 'atual'])->name('atual');
-            Route::get('/bens', [ConferenciaBensController::class, 'bens'])->name('bens');
-            Route::post('/validar-leitura', [ConferenciaBensController::class, 'validarLeitura'])->name('validar-leitura');
-            Route::post('/localizar', [ConferenciaBensController::class, 'localizar'])->name('localizar');
-            Route::post('/nao-localizados', [ConferenciaBensController::class, 'naoLocalizados'])->name('nao-localizados');
-            Route::post('/divergencias', [ConferenciaBensController::class, 'divergencias'])->name('divergencias');
-            Route::post('/finalizar', [ConferenciaBensController::class, 'finalizar'])->name('finalizar');
         });
     });
 });
