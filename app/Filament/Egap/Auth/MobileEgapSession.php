@@ -179,7 +179,7 @@ class MobileEgapSession
     {
         $lotacao = $this->lotacao();
 
-        if ($lotacao === null) {
+        if ($lotacao === null || blank($lotacao['codigodauo'] ?? null)) {
             return null;
         }
 
@@ -187,7 +187,7 @@ class MobileEgapSession
             'user_id' => (int) $this->sessao->user_id,
             'id_egap' => $this->sessao->egap_id,
             'setor' => $lotacao['setor'],
-            'unidade_judiciaria' => (int) ($lotacao['codigodauo'] ?? 0),
+            'unidade_judiciaria' => (int) $lotacao['codigodauo'],
         ];
     }
 

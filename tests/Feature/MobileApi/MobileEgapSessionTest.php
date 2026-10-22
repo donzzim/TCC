@@ -114,6 +114,18 @@ class MobileEgapSessionTest extends TestCase
         $this->assertTrue($sessao->paraResposta()['lotacao_legada']);
     }
 
+    public function test_escopo_e_nulo_sem_unidade_na_lotacao(): void
+    {
+        [$sessao] = $this->sessaoPara($this->usuarioComVariasLotacoes());
+
+        foreach (['lotacao' => ['setor' => 1, 'codigodauo' => null], 'lotacaoResolvida' => true] as $prop => $valor) {
+            $r = new ReflectionProperty($sessao, $prop);
+            $r->setValue($sessao, $valor);
+        }
+
+        $this->assertNull($sessao->escopo());
+    }
+
     public function test_escopo_tem_contrato_dos_services(): void
     {
         [$sessao] = $this->sessaoPara($this->usuarioComVariasLotacoes());
