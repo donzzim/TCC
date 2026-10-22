@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { queryOptions, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 import { bensApi } from '@/src/api/bens';
 import { useSessao } from '@/src/session/SessionProvider';
@@ -17,13 +17,20 @@ export function useBens(search: string) {
     });
 }
 
+/** Opções compartilhadas (detalhe e leitura): a mesma chave de cache sempre guarda `Bem`. */
+export function bemQueryOptions(setorId: number | null, patrimonio: string) {
+    return queryOptions({
+        queryKey: ['bem', setorId, patrimonio],
+        queryFn: async () => (await bensApi.obter(patrimonio)).data,
+        staleTime: CINCO_MIN,
+    });
+}
+
 export function useBem(patrimonio: string | undefined) {
     const { sessao } = useSessao();
 
     return useQuery({
-        queryKey: ['bem', sessao?.setor_atual?.id ?? null, patrimonio],
-        queryFn: async () => (await bensApi.obter(patrimonio as string)).data,
+        ...bemQueryOptions(sessao?.setor_atual?.id ?? null, patrimonio ?? ''),
         enabled: !!patrimonio,
-        staleTime: CINCO_MIN,
     });
 }

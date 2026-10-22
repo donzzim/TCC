@@ -16,12 +16,11 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ApiError } from '@/src/api/client';
-import { bensApi } from '@/src/api/bens';
 import { Scanner } from '@/src/components/Scanner';
+import { bemQueryOptions } from '@/src/hooks/useBens';
 import { useSessao } from '@/src/session/SessionProvider';
 import { useTheme } from '@/src/theme/ThemeProvider';
 import { radius } from '@/src/theme/tokens';
-import { soDigitos } from '@/src/utils/format';
 import { registrarRecente } from '@/src/utils/recentes';
 
 type Modo = 'consulta' | 'conferencia';
@@ -46,11 +45,11 @@ export default function Leitura() {
     };
 
     const consultar = async (codigoBruto: string) => {
-        const codigo = soDigitos(codigoBruto);
+        const codigo = codigoBruto.trim();
 
         if (!codigo || ocupado.current) {
             if (!codigo) {
-                setMensagem('Informe um número de patrimônio válido.');
+                setMensagem('Informe o código do patrimônio.');
             }
             return;
         }
@@ -65,16 +64,10 @@ export default function Leitura() {
                 return;
             }
 
-            const bem = (
-                await queryClient.fetchQuery({
-                    queryKey: ['bem', sessao?.setor_atual?.id ?? null, codigo],
-                    queryFn: () => bensApi.obter(codigo),
-                    staleTime: 60_000,
-                })
-            ).data;
+            const bem = await queryClient.fetchQuery(bemQueryOptions(sessao?.setor_atual?.id ?? null, codigo));
 
             await registrarRecente(String(bem.patrimonio ?? codigo), bem.descricao_resumida || bem.descricao);
-            router.replace({ pathname: '/bem/[patrimonio]', params: { patrimonio: String(bem.patrimonio ?? codigo) } });
+            router.replace({ pathname: '/bem/[patrimonio]', params: { patrimonio: codigo } });
         } catch (e) {
             if (e instanceof ApiError && e.status === 404) {
                 setMensagem('Bem não encontrado');
@@ -116,14 +109,15 @@ export default function Leitura() {
                     </Text>
                 ) : null}
 
-                <Text style={{ color: colors.textMuted, fontSize: 13 }}>Ou digite o número do patrimônio</Text>
+                <Text style={{ color: colors.textMuted, fontSize: 13 }}>Ou digite o código do patrimônio</Text>
                 <View style={styles.entrada}>
                     <TextInput
                         value={digitado}
                         onChangeText={setDigitado}
                         placeholder="Ex.: 104552"
                         placeholderTextColor={colors.textMuted}
-                        keyboardType="number-pad"
+                        autoCapitalize="characters"
+                        autoCorrect={false}
                         returnKeyType="search"
                         onSubmitEditing={() => void consultar(digitado)}
                         style={[styles.input, { color: colors.text, backgroundColor: colors.card, borderColor: colors.border }]}

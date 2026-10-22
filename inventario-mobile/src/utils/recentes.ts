@@ -44,3 +44,16 @@ export async function registrarRecente(patrimonio: string, descricao: string | n
         // histórico é só conveniência
     }
 }
+
+/** Chamado no logout/401: o histórico é por aparelho e não pode vazar para o próximo usuário. */
+export async function limparRecentes(): Promise<void> {
+    try {
+        if (Platform.OS === 'web') {
+            window.localStorage.removeItem(KEY);
+        } else {
+            await SecureStore.deleteItemAsync(KEY);
+        }
+    } catch {
+        // nada a limpar
+    }
+}
