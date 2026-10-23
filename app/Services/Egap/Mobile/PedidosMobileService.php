@@ -98,7 +98,7 @@ class PedidosMobileService
 
         if ($complementoId === null || ! ComplementoSetor::query()->whereKey($complementoId)->exists()) {
             throw ValidationException::withMessages([
-                'complemento_setor_id' => 'Selecione um complemento de setor valido.',
+                'complemento_setor_id' => 'Selecione um complemento de setor válido.',
             ]);
         }
 
@@ -373,19 +373,19 @@ class PedidosMobileService
 
         if (! in_array($tipoAtendimento, ['adicao', 'substituicao'], true)) {
             throw ValidationException::withMessages([
-                "itens.{$index}.tipo_atendimento" => 'Selecione adicao ou substituicao.',
+                "itens.{$index}.tipo_atendimento" => 'Selecione adição ou substituição.',
             ]);
         }
 
         if ($justificativa === '') {
             throw ValidationException::withMessages([
-                "itens.{$index}.justificativa" => 'Informe a justificativa do material permanente.',
+                "itens.{$index}.justificativa" => 'Informe a justificativa do material.',
             ]);
         }
 
         if ($tipoAtendimento === 'substituicao' && $patrimonioSubstituido === '') {
             throw ValidationException::withMessages([
-                "itens.{$index}.patrimonio_substituido" => 'Informe o patrimonio que sera substituido.',
+                "itens.{$index}.patrimonio_substituido" => 'Informe o patrimônio que será substituído.',
             ]);
         }
 

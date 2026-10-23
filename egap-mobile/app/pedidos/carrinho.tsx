@@ -231,7 +231,7 @@ export default function Carrinho() {
                             value={justificativa}
                             onChangeText={(v) => definir(tipo, { justificativa: v })}
                             multiline
-                            maxLength={500}
+                            maxLength={300}
                             placeholder="Por que este pedido é necessário?"
                             placeholderTextColor={colors.textMuted}
                             style={[styles.campo, styles.multilinha, { color: colors.text, borderColor: borda('justificativa') }]}
@@ -337,7 +337,7 @@ export default function Carrinho() {
                                     value={item.justificativa}
                                     onChangeText={(v) => atualizarItem(tipo, item.materialId, { justificativa: v })}
                                     multiline
-                                    maxLength={500}
+                                    maxLength={300}
                                     placeholder="Justificativa do item"
                                     placeholderTextColor={colors.textMuted}
                                     style={[
