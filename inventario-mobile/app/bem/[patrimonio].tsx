@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { Text } from '@/src/components/Text';
 import { ApiError } from '@/src/api/client';
 import type { Bem } from '@/src/api/types';
 import { Card } from '@/src/components/Card';

@@ -1,13 +1,17 @@
+import { useFonts } from 'expo-font';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
+import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { CartProvider } from '@/src/cart/CartProvider';
 import { SessionProvider, useSessao } from '@/src/session/SessionProvider';
+import { fontes } from '@/src/theme/fonts';
 import { ThemeProvider } from '@/src/theme/ThemeProvider';
+
+SplashScreen.preventAutoHideAsync();
 
 function Rotas() {
     const { status } = useSessao();
@@ -36,6 +40,14 @@ export default function RootLayout() {
     const [queryClient] = useState(
         () => new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 30_000 } } }),
     );
+    // Em caso de erro no carregamento, segue com a fonte do sistema em vez de travar na splash.
+    const [fontesProntas, erroFontes] = useFonts(fontes);
+
+    useEffect(() => {
+        if (fontesProntas || erroFontes) SplashScreen.hideAsync();
+    }, [fontesProntas, erroFontes]);
+
+    if (!fontesProntas && !erroFontes) return null;
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>

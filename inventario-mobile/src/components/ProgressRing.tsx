@@ -1,6 +1,7 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
+import { Text } from '@/src/components/Text';
 import { useTheme } from '@/src/theme/ThemeProvider';
 
 interface Props {

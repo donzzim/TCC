@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import { Text, TextInput } from '@/src/components/Text';
 import { BemRow } from '@/src/components/BemRow';
 import { EmptyState } from '@/src/components/EmptyState';
 import { GradientHeader } from '@/src/components/GradientHeader';

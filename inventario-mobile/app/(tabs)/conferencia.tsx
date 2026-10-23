@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { Text, TextInput } from '@/src/components/Text';
 import type { BemConferencia, ConferenciaFiltro } from '@/src/api/types';
 import { Card } from '@/src/components/Card';
 import { DivergenciaModal } from '@/src/components/DivergenciaModal';

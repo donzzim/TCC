@@ -1,7 +1,8 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRef } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Text } from '@/src/components/Text';
 import { useTheme } from '@/src/theme/ThemeProvider';
 import { radius } from '@/src/theme/tokens';
 

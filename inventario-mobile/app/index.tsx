@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Redirect } from 'expo-router';
-import { useRef, useState } from 'react';
+import { type ComponentRef, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     KeyboardAvoidingView,
@@ -9,12 +9,11 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
-    Text,
-    TextInput,
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Text, TextInput } from '@/src/components/Text';
 import { ApiError } from '@/src/api/client';
 import { EmptyState } from '@/src/components/EmptyState';
 import { useSessao } from '@/src/session/SessionProvider';
@@ -47,7 +46,7 @@ export default function Index() {
     const { status, sessao, entrar, recarregar } = useSessao();
     const insets = useSafeAreaInsets();
     const veioDoLogin = useRef(false);
-    const senhaRef = useRef<TextInput>(null);
+    const senhaRef = useRef<ComponentRef<typeof TextInput>>(null);
 
     const [login, setLogin] = useState('');
     const [senha, setSenha] = useState('');

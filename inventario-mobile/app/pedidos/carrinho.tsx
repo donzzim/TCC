@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { Text, TextInput } from '@/src/components/Text';
 import { ApiError } from '@/src/api/client';
 import type { PedidoItemPayload, PedidoPayload, PedidoTipo } from '@/src/api/types';
 import { QUANTIDADE_MAX, useCarrinho, type ItemCarrinho } from '@/src/cart/CartProvider';

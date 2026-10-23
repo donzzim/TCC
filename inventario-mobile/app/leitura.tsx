@@ -10,12 +10,11 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
-    Text,
-    TextInput,
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Text, TextInput } from '@/src/components/Text';
 import { ApiError } from '@/src/api/client';
 import type { LeituraConferencia } from '@/src/api/types';
 import { DivergenciaModal } from '@/src/components/DivergenciaModal';

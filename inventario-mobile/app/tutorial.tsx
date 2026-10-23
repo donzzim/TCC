@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Text } from '@/src/components/Text';
 import { Card } from '@/src/components/Card';
 import { GradientHeader } from '@/src/components/GradientHeader';
 import { Screen } from '@/src/components/Screen';

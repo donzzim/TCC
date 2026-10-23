@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
+import { Text } from '@/src/components/Text';
 import type { Pedido, PedidoTipo } from '@/src/api/types';
 import { Card } from '@/src/components/Card';
 import { EmptyState } from '@/src/components/EmptyState';

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
+import { Text, TextInput } from '@/src/components/Text';
 import { mensagemErro, useDivergencia } from '@/src/hooks/useConferencia';
 import { Folha } from '@/src/components/Folha';
 import { useTheme } from '@/src/theme/ThemeProvider';

@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
+import { Text } from '@/src/components/Text';
 import { GradientHeader } from '@/src/components/GradientHeader';
 import { Screen } from '@/src/components/Screen';
 import { SetorLista } from '@/src/components/SetorSheet';

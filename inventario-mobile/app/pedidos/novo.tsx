@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
+import { Text, TextInput } from '@/src/components/Text';
 import type { Material, PedidoTipo } from '@/src/api/types';
 import { QUANTIDADE_MAX, useCarrinho } from '@/src/cart/CartProvider';
 import { Card } from '@/src/components/Card';
