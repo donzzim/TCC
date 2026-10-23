@@ -109,6 +109,81 @@ class PedidosTest extends TestCase
         $this->assertSame($sessao->resolverAtual(), (int) $pedido->Solicitante);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function payloadPermanente(string $plain): array
+    {
+        $materiais = $this->withToken($plain)->getJson('/mobile-api/pedidos/materiais?tipo=permanente&per_page=5')
+            ->assertOk()->json('materiais');
+        $complementos = $this->withToken($plain)->getJson('/mobile-api/pedidos/contexto')
+            ->assertOk()->json('complementos');
+
+        if ($materiais === [] || $complementos === []) {
+            $this->markTestSkipped('catálogo de permanentes ou complementos vazios neste banco');
+        }
+
+        return [
+            'tipo' => 'permanente',
+            'complemento_setor_id' => $complementos[0]['id'],
+            'itens' => [[
+                'material_id' => $materiais[0]['id'],
+                'quantidade' => 1,
+                'tipo_atendimento' => 'adicao',
+                'justificativa' => 'Teste automatizado da API mobile',
+            ]],
+        ];
+    }
+
+    // Mesmas regras do carrinho do Ambiente Externo: no consumo a justificativa
+    // é do pedido; no permanente, de cada item (até 300 caracteres).
+    public function test_consumo_exige_justificativa_do_pedido(): void
+    {
+        [, $plain] = $this->sessaoComEgapId();
+        [$payload] = $this->payloadConsumo($plain);
+
+        foreach ([null, '', '   '] as $vazia) {
+            $this->withToken($plain)->postJson('/mobile-api/pedidos', ['justificativa' => $vazia] + $payload)
+                ->assertStatus(422)
+                ->assertJsonValidationErrors(['justificativa' => 'Informe a justificativa do pedido.']);
+        }
+
+        $this->withToken($plain)->postJson('/mobile-api/pedidos', ['justificativa' => str_repeat('a', 301)] + $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('justificativa');
+    }
+
+    public function test_permanente_exige_justificativa_de_cada_item(): void
+    {
+        [, $plain] = $this->sessaoComEgapId();
+        $payload = $this->payloadPermanente($plain);
+
+        foreach ([null, '   ', str_repeat('a', 301)] as $invalida) {
+            $payload['itens'][0]['justificativa'] = $invalida;
+
+            $this->withToken($plain)->postJson('/mobile-api/pedidos', $payload)
+                ->assertStatus(422)
+                ->assertJsonValidationErrors('itens.0.justificativa');
+        }
+    }
+
+    public function test_permanente_substituicao_exige_patrimonio(): void
+    {
+        [, $plain] = $this->sessaoComEgapId();
+        $payload = $this->payloadPermanente($plain);
+        $payload['itens'][0]['tipo_atendimento'] = 'substituicao';
+
+        $this->withToken($plain)->postJson('/mobile-api/pedidos', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['itens.0.patrimonio_substituido' => 'Informe o patrimônio que será substituído.']);
+
+        unset($payload['itens'][0]['tipo_atendimento']);
+
+        $this->withToken($plain)->postJson('/mobile-api/pedidos', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('itens.0.tipo_atendimento');
+    }
+
     public function test_pedido_ignora_setor_enviado_pelo_cliente(): void
     {
         [$sessao, $plain] = $this->sessaoComEgapId();
