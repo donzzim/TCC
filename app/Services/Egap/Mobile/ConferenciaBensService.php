@@ -46,7 +46,7 @@ class ConferenciaBensService
 
         return [
             'inventario' => $this->inventarioToArray($inventario),
-            'atividade' => $this->atividadeToArray($atividade, $scope, $resumo),
+            'atividade' => $this->atividadeToArray($inventario, $atividade, $scope, $resumo),
             'resumo' => $resumo,
             'scope' => $scope,
         ];
@@ -85,7 +85,7 @@ class ConferenciaBensService
 
         return [
             'inventario' => $this->inventarioToArray($inventario),
-            'atividade' => $this->atividadeToArray($atividade, $scope, $resumo),
+            'atividade' => $this->atividadeToArray($inventario, $atividade, $scope, $resumo),
             'total' => $paginator->total(),
             'bens' => $bens,
             'resumo' => $resumo,
@@ -433,7 +433,7 @@ class ConferenciaBensService
         return [
             'message' => 'Conferência do setor finalizada.',
             'inventario' => $this->inventarioToArray($inventario),
-            'atividade' => $this->atividadeToArray($atividade->fresh(), $scope, $this->resumo($inventario, $scope)),
+            'atividade' => $this->atividadeToArray($inventario, $atividade->fresh(), $scope, $this->resumo($inventario, $scope)),
         ];
     }
 
@@ -467,6 +467,10 @@ class ConferenciaBensService
 
     private function atividadeEditavel(Inventario $inventario, array $scope): AtividadeInventario
     {
+        if ($inventario->estaFinalizado()) {
+            throw new HttpException(403, 'Inventário concluído.');
+        }
+
         $atividade = $this->atividadeDoSetor($inventario, $scope);
 
         if ($atividade && ! $this->atividadePodeEditar($atividade)) {
@@ -1142,9 +1146,9 @@ class ConferenciaBensService
         ];
     }
 
-    private function atividadeToArray(?AtividadeInventario $atividade, array $scope, array $resumo): array
+    private function atividadeToArray(Inventario $inventario, ?AtividadeInventario $atividade, array $scope, array $resumo): array
     {
-        $podeEditar = $this->atividadePodeEditar($atividade);
+        $podeEditar = ! $inventario->estaFinalizado() && $this->atividadePodeEditar($atividade);
 
         return [
             'id' => $atividade?->id,
