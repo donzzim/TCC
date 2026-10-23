@@ -202,6 +202,22 @@ class ConferenciaTest extends TestCase
         $this->assertSame('1', $consulta['bindings'][0]);
     }
 
+    public function test_transferencias_consultadas_uma_vez_por_setor(): void
+    {
+        $service = app(ConferenciaBensService::class);
+        $metodo = new \ReflectionMethod(ConferenciaBensService::class, 'bensComTransferenciaValidadaIds');
+
+        DB::connection('emes')->enableQueryLog();
+        $primeira = $metodo->invoke($service, ['unidade_judiciaria' => 1, 'setor' => 1]);
+        $segunda = $metodo->invoke($service, ['unidade_judiciaria' => 1, 'setor' => 1]);
+        $metodo->invoke($service, ['unidade_judiciaria' => 1, 'setor' => 2]);
+        $consultas = collect(DB::connection('emes')->getQueryLog())
+            ->filter(fn(array $q): bool => str_contains($q['query'], 'egap_mat_transferencia'));
+
+        $this->assertSame($primeira, $segunda);
+        $this->assertCount(2, $consultas);
+    }
+
     public function test_conferencia_exige_sessao(): void
     {
         $this->getJson('/mobile-api/conferencia')->assertUnauthorized();

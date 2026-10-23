@@ -51,7 +51,7 @@ yarn-error.log
 /enviaremail.php
 /consultar_cursos_agendas_especiais.php
 /verificar_intersecoes_cursos.php
-/inventario-mobile/.idea
+/egap-mobile/.idea
 /database/Egap/seeders/SQL/*.sql
 /storage/PsySH
 /storage/framework/lsp-*.php
