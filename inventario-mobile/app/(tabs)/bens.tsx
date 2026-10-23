@@ -37,7 +37,13 @@ export default function Bens() {
         <View style={{ flex: 1, backgroundColor: colors.background }}>
             <GradientHeader
                 title="Bens"
-                subtitle={total !== undefined ? `${numero(total)} no setor` : undefined}
+                subtitle={
+                    total === undefined
+                        ? undefined
+                        : busca.trim()
+                          ? `${numero(total)} ${total === 1 ? 'encontrado' : 'encontrados'}`
+                          : `${numero(total)} no setor`
+                }
                 overlap={28}
             />
             <View style={[styles.busca, { backgroundColor: colors.card, borderColor: colors.border }]}>
