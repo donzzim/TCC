@@ -13,7 +13,9 @@ use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\ItemInventa
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\AtividadeInventarioResource\Pages\EditAtividadeInventario;
 use App\Models\egap\Cadastro\Setores;
 use App\Models\egap\Patrimonio\BensMoveis\AtividadeInventario;
+use App\Jobs\Egap\NotificarAberturaInventario;
 use Filament\Forms\Components\Select;
+use Illuminate\Support\Facades\Bus;
 use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
 use App\Models\egap\Patrimonio\BensMoveis\Inventario;
 use App\Models\egap\Patrimonio\BensMoveis\InventarioComissao;
@@ -157,6 +159,9 @@ class EgapInventarioPainelTest extends TestCase
 
     public function test_so_um_inventario_em_execucao_por_vez(): void
     {
+        // abrir um inventário real avisaria milhares de lotados; aqui só interessa a validação
+        Bus::fake([NotificarAberturaInventario::class]);
+
         [$a, $b] = Inventario::query()->ativos()->latest('id')->take(2)->get()->all();
         $a->update(['situacao' => Inventario::SITUACAO_EM_EXECUCAO]);
 
