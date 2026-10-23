@@ -7,13 +7,16 @@ use App\Jobs\Egap\NotificarAberturaInventario;
 use App\Models\egap\Admin\InfoUser;
 use App\Models\egap\Admin\Lotacao;
 use App\Models\egap\Cadastro\Setores;
+use App\Models\egap\Patrimonio\BensMoveis\AtividadeInventario;
 use App\Models\egap\Patrimonio\BensMoveis\Inventario;
 use App\Models\egap\User;
 use App\Models\egap\UserEgap;
 use App\Models\egap\UserLotacao;
 use App\Services\Egap\Inventario\DestinatariosInventario;
 use App\Services\Egap\Inventario\NotificadorInventario;
+use Carbon\CarbonImmutable;
 use Filament\Notifications\Notification;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Queue;
@@ -241,5 +244,97 @@ class EgapNotificacaoInventarioTest extends TestCase
         $html = Notification::fromDatabase($notificacao)->toEmbeddedHtml();
         $this->assertStringContainsString('Como fazer a conferência:', $html);
         $this->assertMatchesRegularExpression('/Como fazer a conferência:\s*<br\s*\/?>\s*1\./u', $html);
+    }
+
+    private function lembretesDe(User $user)
+    {
+        return $user->notifications()->get()->filter(
+            fn ($n): bool => str_starts_with((string) ($n->data['viewData']['chave'] ?? ''), 'inventario_lembrete:')
+        )->values();
+    }
+
+    public function test_lembrete_7_e_1_dia(): void
+    {
+        $hoje = CarbonImmutable::parse('2026-10-23');
+        [$a, $b, $c] = $this->setores(3);
+        $inventario = $this->novoInventario(['num_inventario' => 55, 'situacao' => Inventario::SITUACAO_EM_EXECUCAO]);
+        $this->cobrir($inventario, $a, $hoje->addDays(7)->format('Y-m-d').' 00:00:00');
+        $this->cobrir($inventario, $b, $hoje->addDay()->format('Y-m-d').' 00:00:00');
+        $this->cobrir($inventario, $c, $hoje->addDays(3)->format('Y-m-d').' 00:00:00');
+        $u7 = $this->usuarioFicticio([$a->id]);
+        $u1 = $this->usuarioFicticio([$b->id]);
+        $u3 = $this->usuarioFicticio([$c->id]);
+
+        $this->assertGreaterThanOrEqual(2, NotificadorInventario::notificarLembretes($hoje));
+
+        $n7 = $this->lembretesDe($u7);
+        $this->assertCount(1, $n7);
+        $this->assertSame('Inventário 55/2026: faltam 7 dias — Prazo: 30/10/2026', $n7->first()->data['title']);
+        $this->assertSame(
+            '<p>A conferência do setor '.e($a->setor).' termina em 30/10/2026. Ainda há bens pendentes: finalize o setor antes do prazo.</p>',
+            $n7->first()->data['body']
+        );
+        $this->assertSame("inventario_lembrete:{$inventario->id}:{$a->id}:7", $n7->first()->data['viewData']['chave']);
+        $this->assertSame('/(tabs)/conferencia', $n7->first()->data['viewData']['rota_app']);
+
+        $n1 = $this->lembretesDe($u1);
+        $this->assertCount(1, $n1);
+        $this->assertSame('Inventário 55/2026: falta 1 dia — Prazo: 24/10/2026', $n1->first()->data['title']);
+
+        $this->assertCount(0, $this->lembretesDe($u3));
+    }
+
+    public function test_setor_finalizado_nao_recebe(): void
+    {
+        $hoje = CarbonImmutable::parse('2026-10-23');
+        [$a] = $this->setores(1);
+        $inventario = $this->novoInventario(['situacao' => Inventario::SITUACAO_EM_EXECUCAO]);
+        $this->cobrir($inventario, $a, $hoje->addDays(7)->format('Y-m-d').' 00:00:00');
+        $user = $this->usuarioFicticio([$a->id]);
+
+        AtividadeInventario::query()->create([
+            'id_inventario' => $inventario->id,
+            'id_unidade' => $a->id,
+            'setor' => $a->id,
+            'situacao' => 'Finalizado',
+        ]);
+
+        NotificadorInventario::notificarLembretes($hoje);
+
+        $this->assertCount(0, $this->lembretesDe($user));
+    }
+
+    public function test_lembrete_nao_repete(): void
+    {
+        $hoje = CarbonImmutable::parse('2026-10-23');
+        [$a] = $this->setores(1);
+        $inventario = $this->novoInventario(['situacao' => Inventario::SITUACAO_EM_EXECUCAO]);
+        $this->cobrir($inventario, $a, $hoje->addDays(7)->format('Y-m-d').' 00:00:00');
+        $user = $this->usuarioFicticio([$a->id]);
+
+        $this->assertGreaterThanOrEqual(1, NotificadorInventario::notificarLembretes($hoje));
+        $this->assertSame(0, NotificadorInventario::notificarLembretes($hoje));
+        $this->assertCount(1, $this->lembretesDe($user));
+    }
+
+    public function test_comando_grava_lembretes_com_data(): void
+    {
+        [$a] = $this->setores(1);
+        $inventario = $this->novoInventario(['situacao' => Inventario::SITUACAO_EM_EXECUCAO]);
+        $this->cobrir($inventario, $a, '2026-10-30 00:00:00');
+        $user = $this->usuarioFicticio([$a->id]);
+
+        $this->artisan('egap:inventario-lembretes', ['--data' => '2026-10-23'])->assertSuccessful();
+
+        $this->assertCount(1, $this->lembretesDe($user));
+    }
+
+    public function test_comando_agendado(): void
+    {
+        $evento = collect(app(Schedule::class)->events())
+            ->first(fn ($e): bool => str_contains((string) $e->command, 'egap:inventario-lembretes'));
+
+        $this->assertNotNull($evento);
+        $this->assertSame('0 7 * * *', $evento->expression);
     }
 }

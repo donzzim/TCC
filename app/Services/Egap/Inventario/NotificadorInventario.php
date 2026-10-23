@@ -4,6 +4,7 @@ namespace App\Services\Egap\Inventario;
 
 use App\Filament\Egap\Externo\Groups\Patrimonio\Pages\BensNoSetor;
 use App\Models\egap\Cadastro\Setores;
+use App\Models\egap\Patrimonio\BensMoveis\AtividadeInventario;
 use App\Models\egap\Patrimonio\BensMoveis\Inventario;
 use App\Models\egap\User;
 use Carbon\CarbonImmutable;
@@ -77,6 +78,73 @@ class NotificadorInventario
                 ];
             },
         );
+    }
+
+    /**
+     * Lembra, nos inventários em execução, os setores que vencem em 7 ou 1 dia e ainda não foram finalizados.
+     *
+     * @return int quantas notificações foram gravadas
+     */
+    public static function notificarLembretes(CarbonImmutable $hoje): int
+    {
+        $total = 0;
+        $alvos = [7 => $hoje->addDays(7)->format('Y-m-d'), 1 => $hoje->addDay()->format('Y-m-d')];
+
+        foreach (Inventario::query()->emExecucao()->get() as $inventario) {
+            $cobertos = AbrangenciaInventario::setoresCobertos($inventario);
+
+            $vencendo = $cobertos->filter(fn (array $c): bool => $c['prazo'] !== null && in_array($c['prazo']->format('Y-m-d'), $alvos, true));
+
+            if ($vencendo->isEmpty()) {
+                continue;
+            }
+
+            $finalizados = AtividadeInventario::query()
+                ->doInventario($inventario)
+                ->whereIn('setor', $vencendo->keys()->all())
+                ->get()
+                ->filter(fn (AtividadeInventario $a): bool => $a->estaFinalizada())
+                ->pluck('setor')
+                ->map(fn ($id): int => (int) $id)
+                ->flip();
+
+            $pendentes = $vencendo->reject(fn (array $c, int $setorId): bool => $finalizados->has($setorId));
+
+            if ($pendentes->isEmpty()) {
+                continue;
+            }
+
+            $destinatarios = DestinatariosInventario::porSetor($pendentes->keys());
+            $nomes = Setores::query()->whereIn('id', $pendentes->keys()->all())->pluck('setor', 'id');
+            $numero = "{$inventario->num_inventario}/{$inventario->ano_inventario}";
+
+            foreach ($pendentes as $setorId => $cobertura) {
+                $dias = array_search($cobertura['prazo']->format('Y-m-d'), $alvos, true);
+                $prazo = $cobertura['prazo']->format('d/m/Y');
+                $nome = (string) ($nomes[$setorId] ?? "Setor {$setorId}");
+
+                $doSetor = $destinatarios
+                    ->filter(fn (array $setores): bool => in_array($setorId, $setores, true))
+                    ->map(fn (array $setores): array => [$setorId]);
+
+                if ($doSetor->isEmpty()) {
+                    continue;
+                }
+
+                $total += static::enviar(
+                    chave: "inventario_lembrete:{$inventario->id}:{$setorId}:{$dias}",
+                    tipo: 'inventario_lembrete',
+                    rotaApp: '/(tabs)/conferencia',
+                    destinatarios: $doSetor,
+                    montar: fn (array $ids): array => [
+                        'titulo' => "Inventário {$numero}: ".($dias === 1 ? 'falta 1 dia' : "faltam {$dias} dias")." — Prazo: {$prazo}",
+                        'corpo' => '<p>A conferência do setor '.e($nome)." termina em {$prazo}. Ainda há bens pendentes: finalize o setor antes do prazo.</p>",
+                    ],
+                );
+            }
+        }
+
+        return $total;
     }
 
     private static function textoPrazo(?CarbonImmutable $prazo): string
