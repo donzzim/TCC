@@ -56,23 +56,6 @@ Route::get('/course/{uuid}', [PortalController::class, 'detalheCurso'])->name('p
 Route::get('/courses', [PortalController::class, 'showAllCourses'])->name('portal.courses');
 Route::get('/noticias/{slug}', [PortalController::class, 'showPost'])->name('portal.post');
 
-Route::get('/egap-mobile/{path?}', function (?string $path = null) {
-    $path = $path ? trim($path, '/') : 'index';
-    $file = public_path("egap-mobile/{$path}.html");
-
-    if (File::exists($file)) {
-        return response()->file($file);
-    }
-
-    return response()->file(public_path('egap-mobile/index.html'));
-})->where('path', '.*')->name('egap-mobile.pwa');
-
-// endereço antigo do app web (favoritos e atalhos instalados)
-Route::get('/inventario/{path?}', fn(?string $path = null) => redirect()->to(
-    '/egap-mobile'.($path ? '/'.trim($path, '/') : ''),
-    301,
-))->where('path', '.*');
-
 Route::get('/{slug}', [PortalController::class, 'showPage'])->name('portal.page');
 
 // reports
