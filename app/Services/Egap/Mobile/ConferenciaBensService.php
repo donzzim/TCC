@@ -30,6 +30,14 @@ class ConferenciaBensService
 
     private const STATUS_A_INVENTARIAR = 'A INVENTARIAR';
 
+    /**
+     * Uma requisição chama a consulta de transferências mais de uma vez
+     * (lista de pendentes e resumo); o resultado é o mesmo para o setor.
+     *
+     * @var array<string, Collection<int, int>>
+     */
+    private array $transferenciasValidadasPorSetor = [];
+
     public function atual(array $scope): array
     {
         $inventario = $this->inventarioAtual();
@@ -748,6 +756,16 @@ class ConferenciaBensService
      * @return Collection<int, int>
      */
     private function bensComTransferenciaValidadaIds(array $scope): Collection
+    {
+        $chave = $scope['unidade_judiciaria'].'|'.$scope['setor'];
+
+        return $this->transferenciasValidadasPorSetor[$chave] ??= $this->consultarTransferenciasValidadas($scope);
+    }
+
+    /**
+     * @return Collection<int, int>
+     */
+    private function consultarTransferenciasValidadas(array $scope): Collection
     {
         $termosComArquivoValidado = ArquivoDigital::query()
             ->select('termo')
