@@ -47,6 +47,7 @@ function Rotas() {
                     <Stack.Screen name="setor" />
                     <Stack.Screen name="perfil" />
                     <Stack.Screen name="tutorial" />
+                    <Stack.Screen name="notificacoes" />
                     <Stack.Screen name="bem/[patrimonio]" />
                     <Stack.Screen name="pedidos/novo" />
                     <Stack.Screen name="pedidos/carrinho" />

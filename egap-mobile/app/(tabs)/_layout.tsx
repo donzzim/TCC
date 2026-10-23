@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/src/components/Text';
+import { ToastNotificacoes } from '@/src/components/ToastNotificacoes';
 import { useTheme } from '@/src/theme/ThemeProvider';
 import { gradient } from '@/src/theme/tokens';
 
@@ -101,16 +102,20 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
 
 export default function TabsLayout() {
     return (
-        <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
-            <Tabs.Screen name="index" options={{ title: 'Início' }} />
-            <Tabs.Screen name="bens" options={{ title: 'Bens' }} />
-            <Tabs.Screen name="conferencia" options={{ title: 'Conferência' }} />
-            <Tabs.Screen name="pedidos" options={{ title: 'Pedidos' }} />
-        </Tabs>
+        <View style={styles.raiz}>
+            <Tabs screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
+                <Tabs.Screen name="index" options={{ title: 'Início' }} />
+                <Tabs.Screen name="bens" options={{ title: 'Bens' }} />
+                <Tabs.Screen name="conferencia" options={{ title: 'Conferência' }} />
+                <Tabs.Screen name="pedidos" options={{ title: 'Pedidos' }} />
+            </Tabs>
+            <ToastNotificacoes />
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
+    raiz: { flex: 1 },
     fundo: {
         position: 'absolute',
         left: 0,

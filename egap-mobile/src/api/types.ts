@@ -315,3 +315,19 @@ export interface PedidoCriado {
         itens_total: number;
     };
 }
+
+export interface Notificacao {
+    id: string;
+    tipo: string | null;
+    titulo: string;
+    /** Texto simples, com quebras de linha "\n". */
+    corpo: string;
+    rota_app: string | null;
+    lida: boolean;
+    criada_em: string;
+}
+
+export interface NotificacoesPagina {
+    notificacoes: Notificacao[];
+    meta: PaginationMeta & { from: number | null; to: number | null; nao_lidas: number };
+}
