@@ -37,7 +37,7 @@ export function Folha({ visible, title, onClose, children }: Props) {
 
 const styles = StyleSheet.create({
     flex: { flex: 1, justifyContent: 'flex-end' },
-    fundo: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15,23,42,0.5)' },
+    fundo: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,23,42,0.5)' },
     folha: { maxHeight: '85%', flexGrow: 0, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet },
     titulo: { fontSize: 18, fontWeight: '800' },
 });

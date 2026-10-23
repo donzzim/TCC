@@ -30,8 +30,6 @@ export function ProgressRing({ percent, size = 62 }: Props) {
                     strokeLinecap="round"
                     strokeDasharray={`${c} ${c}`}
                     strokeDashoffset={c * (1 - valor / 100)}
-                    rotation={-90}
-                    origin={`${size / 2}, ${size / 2}`}
                 />
             </Svg>
             <View style={styles.center}>
@@ -44,7 +42,8 @@ export function ProgressRing({ percent, size = 62 }: Props) {
 }
 
 const styles = StyleSheet.create({
-    svg: { position: 'absolute' },
-    center: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+    // O traço começa às 12h: gira o SVG inteiro (rotation/origin no Circle quebra no react-native-svg web).
+    svg: { position: 'absolute', transform: [{ rotate: '-90deg' }] },
+    center: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
     label: { fontWeight: '800' },
 });

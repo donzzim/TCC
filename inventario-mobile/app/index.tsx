@@ -45,7 +45,7 @@ export default function Index() {
     const { colors } = useTheme();
     const { status, sessao, entrar, recarregar } = useSessao();
     const insets = useSafeAreaInsets();
-    const veioDoLogin = useRef(false);
+    const [veioDoLogin, setVeioDoLogin] = useState(false);
     const senhaRef = useRef<ComponentRef<typeof TextInput>>(null);
 
     const [login, setLogin] = useState('');
@@ -77,7 +77,7 @@ export default function Index() {
 
     if (status === 'autenticado') {
         // Sessão salva vai direto às abas; após o login com várias lotações, escolhe o setor.
-        const escolherSetor = veioDoLogin.current && (sessao?.lotacoes.length ?? 0) > 1;
+        const escolherSetor = veioDoLogin && (sessao?.lotacoes.length ?? 0) > 1;
 
         return <Redirect href={escolherSetor ? '/setor' : '/(tabs)'} />;
     }
@@ -93,11 +93,11 @@ export default function Index() {
 
         setErro(null);
         setEnviando(true);
-        veioDoLogin.current = true;
+        setVeioDoLogin(true);
         try {
             await entrar(login.trim(), senha);
         } catch (e) {
-            veioDoLogin.current = false;
+            setVeioDoLogin(false);
             setErro(mensagemDeErro(e));
             setEnviando(false);
         }

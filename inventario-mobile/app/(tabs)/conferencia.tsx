@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Text, TextInput } from '@/src/components/Text';
@@ -40,7 +40,7 @@ export default function Conferencia() {
     const { colors } = useTheme();
     const router = useRouter();
     const [filtro, setFiltro] = useState<ConferenciaFiltro>('pendente');
-    const [selecionados, setSelecionados] = useState<number[]>([]);
+    const [selecao, setSelecao] = useState<{ filtro: ConferenciaFiltro; ids: number[] }>({ filtro: 'pendente', ids: [] });
     const [aviso, setAviso] = useState<string | null>(null);
     const [justificando, setJustificando] = useState(false);
     const [justificativa, setJustificativa] = useState('');
@@ -66,19 +66,18 @@ export default function Conferencia() {
     const percentual = progressoConferencia(resumo);
 
     // A seleção vale só para o filtro atual e só para bens ainda pendentes.
-    useEffect(() => setSelecionados([]), [filtro]);
-    useEffect(() => {
+    const selecionados = useMemo(() => {
+        if (selecao.filtro !== filtro) return [];
+
         const pendentes = new Set(itens.filter((b) => b.conferencia.status === 'pendente').map((b) => b.id));
+        const restantes = selecao.ids.filter((id) => pendentes.has(id));
 
-        setSelecionados((atuais) => {
-            const restantes = atuais.filter((id) => pendentes.has(id));
-
-            return restantes.length === atuais.length ? atuais : restantes;
-        });
-    }, [itens]);
+        return restantes.length === selecao.ids.length ? selecao.ids : restantes;
+    }, [selecao, filtro, itens]);
+    const setSelecionados = (ids: number[]) => setSelecao({ filtro, ids });
 
     const alternar = (id: number) =>
-        setSelecionados((atuais) => (atuais.includes(id) ? atuais.filter((x) => x !== id) : [...atuais, id]));
+        setSelecionados(selecionados.includes(id) ? selecionados.filter((x) => x !== id) : [...selecionados, id]);
 
     const marcarNaoLocalizados = async () => {
         setErroJustificativa(null);
