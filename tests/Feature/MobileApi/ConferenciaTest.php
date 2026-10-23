@@ -8,6 +8,7 @@ use App\Models\egap\Patrimonio\BensMoveis\ItemInventario;
 use App\Models\egap\User;
 use App\Services\Egap\Mobile\ConferenciaBensService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Tests\Feature\MobileApi\Concerns\UsaSessaoMobile;
 use Tests\TestCase;
 
@@ -183,6 +184,22 @@ class ConferenciaTest extends TestCase
         [, $plain] = $this->cenario();
 
         $this->withToken($plain)->getJson('/mobile-api/conferencia/atual')->assertNotFound();
+    }
+
+    public function test_transferencias_filtram_setor_como_texto(): void
+    {
+        // SetorAtual é VARCHAR: com binding inteiro o MySQL ignora o índice
+        // e a consulta passa de ~10 ms para vários segundos
+        $escopo = ['unidade_judiciaria' => 1, 'setor' => 1];
+        $metodo = new \ReflectionMethod(ConferenciaBensService::class, 'bensComTransferenciaValidadaIds');
+
+        DB::connection('emes')->enableQueryLog();
+        $metodo->invoke(app(ConferenciaBensService::class), $escopo);
+        $consulta = collect(DB::connection('emes')->getQueryLog())
+            ->first(fn(array $q): bool => str_contains($q['query'], 'egap_mat_transferencia'));
+
+        $this->assertNotNull($consulta);
+        $this->assertSame('1', $consulta['bindings'][0]);
     }
 
     public function test_conferencia_exige_sessao(): void

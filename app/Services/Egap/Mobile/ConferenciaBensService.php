@@ -761,7 +761,9 @@ class ConferenciaBensService
             ->where('situacao', ArquivoDigital::SITUACAO_VALIDADO);
 
         return TransferenciaBemMovel::query()
-            ->where('SetorAtual', $scope['setor'])
+            // SetorAtual é VARCHAR: comparado com inteiro, o MySQL converte a
+            // coluna em cada linha e ignora o índice (segundos por consulta)
+            ->where('SetorAtual', (string) $scope['setor'])
             ->where('UnidadeAtual', $scope['unidade_judiciaria'])
             ->whereIn('Termo', $termosComArquivoValidado)
             ->pluck('NumPatrimonio')
