@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/src/components/Card';
+import { EmptyState } from '@/src/components/EmptyState';
 import { GradientHeader } from '@/src/components/GradientHeader';
 import { ProgressRing } from '@/src/components/ProgressRing';
 import { SetorSheet } from '@/src/components/SetorSheet';
@@ -12,6 +13,7 @@ import { useErroRede } from '@/src/hooks/useErroRede';
 import { useSessao } from '@/src/session/SessionProvider';
 import { useTheme } from '@/src/theme/ThemeProvider';
 import { radius } from '@/src/theme/tokens';
+import { progressoConferencia } from '@/src/utils/conferencia';
 import { moeda, numero } from '@/src/utils/format';
 import { lerRecentes, type Recente } from '@/src/utils/recentes';
 
@@ -47,7 +49,7 @@ export default function Inicio() {
     const [recentes, setRecentes] = useState<Recente[]>([]);
     const [atualizando, setAtualizando] = useState(false);
 
-    useErroRede(dashboard.error, 'dashboard');
+    useErroRede(dashboard.isError && !dashboard.data ? dashboard.error : null, 'dashboard');
 
     useFocusEffect(
         useCallback(() => {
@@ -65,7 +67,7 @@ export default function Inicio() {
     const dados = dashboard.data;
     const conf = dados?.conferencia ?? null;
     const resumo = conf?.resumo;
-    const percentual = resumo && resumo.total > 0 ? (resumo.localizados / resumo.total) * 100 : 0;
+    const percentual = progressoConferencia(resumo);
     const nome = sessao?.usuario.nome ?? '';
     const setor = sessao?.setor_atual;
     const situacaoConf = conf?.atividade.situacao ?? conf?.inventario.situacao ?? '';
@@ -108,6 +110,15 @@ export default function Inicio() {
             <View style={styles.corpo}>
                 {dashboard.isPending && !dados ? (
                     <ActivityIndicator color={colors.primary} style={{ marginTop: 24 }} />
+                ) : null}
+
+                {dashboard.isError && !dados ? (
+                    <EmptyState
+                        title="Não foi possível carregar"
+                        message={dashboard.error.message}
+                        actionLabel="Tentar novamente"
+                        onAction={() => void dashboard.refetch()}
+                    />
                 ) : null}
 
                 {dados ? (

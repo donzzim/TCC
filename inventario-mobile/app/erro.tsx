@@ -20,7 +20,8 @@ export default function Erro() {
     const o = origem ? ORIGENS[origem] : undefined;
 
     const tentarNovamente = () => {
-        router.back();
+        if (router.canGoBack()) router.back();
+        else router.replace('/');
         void queryClient.invalidateQueries();
     };
 

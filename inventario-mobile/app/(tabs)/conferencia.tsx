@@ -22,6 +22,7 @@ import {
 import { useErroRede } from '@/src/hooks/useErroRede';
 import { useTheme } from '@/src/theme/ThemeProvider';
 import { radius } from '@/src/theme/tokens';
+import { progressoConferencia } from '@/src/utils/conferencia';
 import { numero } from '@/src/utils/format';
 
 const FILTROS: { valor: ConferenciaFiltro; rotulo: string }[] = [
@@ -61,7 +62,7 @@ export default function Conferencia() {
     const resumo = atual.data?.resumo;
     const atividade = atual.data?.atividade;
     const editavel = !!atividade?.pode_editar;
-    const percentual = resumo && resumo.total > 0 ? ((resumo.total - resumo.pendentes) / resumo.total) * 100 : 0;
+    const percentual = progressoConferencia(resumo);
 
     // A seleção vale só para o filtro atual e só para bens ainda pendentes.
     useEffect(() => setSelecionados([]), [filtro]);
@@ -114,6 +115,13 @@ export default function Conferencia() {
                         <StatPill label="não localizados" value={numero(resumo.nao_localizados)} tone="danger" />
                         <StatPill label="divergentes" value={numero(resumo.divergentes)} />
                     </View>
+                ) : atual.isError ? (
+                    <EmptyState
+                        title="Não foi possível carregar"
+                        message={atual.error.message}
+                        actionLabel="Tentar novamente"
+                        onAction={() => void atual.refetch()}
+                    />
                 ) : (
                     <ActivityIndicator color={colors.primary} />
                 )}

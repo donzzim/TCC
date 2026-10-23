@@ -7,7 +7,7 @@ O projeto tem duas partes neste repositório:
 - **`inventario-mobile/`**: o aplicativo (Expo / React Native, publicado também como web app em `/emes/inventario`);
 - **`mobile-api`**: a API em Laravel que o app consome. Ela fica no mesmo sistema do painel web EGAP e usa as mesmas regras de negócio.
 
-> Trabalho de Conclusão de Curso de Lucas César. Ele também é usado em produção pelos servidores do TJES.
+> Trabalho de Conclusão de Curso de Lucas César. Ele também será usado em produção pelos servidores do TJES.
 
 ---
 
@@ -117,11 +117,11 @@ flowchart LR
 | Camada | Tecnologia |
 |---|---|
 | App | Expo SDK 54, React Native 0.81, React 19, expo-router 6, TypeScript estrito, `@tanstack/react-query` (cache e requisições), `@shopify/flash-list` (listas grandes), `expo-camera` (código de barras), `expo-secure-store` (token) |
-| API | PHP 8.2+, Laravel 12, Laravel Sanctum 4 (token `mobile-app`), Form Requests e API Resources |
+| API | PHP 8.4, Laravel 12, Laravel Sanctum 4 (token `mobile-app`), Form Requests e API Resources |
 | Painel web (mesmo sistema) | Filament 4. A API reaproveita a regra de lotação e os services de conferência e pedidos que o painel também usa. |
 | Banco | MySQL `emes-egap`, compartilhado com o painel. Conexões `emes` (sem prefixo) e `egap` (prefixo `egap_`). |
 
-**Distribuição**: o build web do app é publicado em `public/inventario` e servido pela rota `/inventario/{path?}` do Laravel. Em produção o sistema fica em `/emes`, então o app abre em `/emes/inventario` e chama a API em `/emes/mobile-api`.
+**Distribuição**: o build web do app é publicado em `public/inventario` e servido pela rota `/inventario/{path?}` do Laravel. Em produção o sistema ficará em `/emes`, então o app abrirá em `/emes/inventario` e chamará a API em `/emes/mobile-api`.
 
 ---
 
@@ -470,7 +470,7 @@ Nenhuma rota de dados aceita setor vindo do cliente. O setor só muda por `PUT /
 
 ### Pré-requisitos
 
-PHP 8.2+ com Composer, Node.js com npm, MySQL com o banco `emes-egap` configurado no `.env` do Laravel.
+PHP 8.4 com Composer, Node.js com npm, MySQL com o banco `emes-egap` configurado no `.env` do Laravel.
 
 ### Backend (Laravel)
 
