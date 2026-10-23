@@ -107,19 +107,23 @@ class EgapCarrinhoDestinoTest extends TestCase
         $this->assertSame(12, $destino['ComplementoSetor'], 'complemento continua vindo do form');
     }
 
-    public function test_the_cart_form_renders_the_destination_as_read_only(): void
+    /**
+     * O formulário não mostra nem deixa escolher o destino: ele vem da lotação
+     * ativa no seletor do topo. Só o Complemento do Setor é preenchido.
+     */
+    public function test_the_cart_form_does_not_let_the_user_pick_the_destination(): void
     {
-        $user = $this->autenticarComLotacao();
-
-        $rotulos = EgapSession::rotulosLotacaoAtual();
+        $this->autenticarComLotacao();
 
         $componente = Livewire::test(CarrinhoMateriaisConsumoForm::class)
             ->assertOk()
-            ->assertSee($user->name)              // Solicitante
-            ->assertSee($rotulos['setor'])
+            ->assertFormFieldExists('ComplementoSetor')
+            ->assertFormFieldDoesNotExist('Solicitante')
+            ->assertFormFieldDoesNotExist('UnidadeJudiciaria')
+            ->assertFormFieldDoesNotExist('Setor')
             ->instance();
 
-        $this->assertTrue($this->destinoVemDaLotacao($componente), 'caminho read-only');
+        $this->assertTrue($this->destinoVemDaLotacao($componente), 'destino vem da lotação');
     }
 
     public function test_it_falls_back_to_manual_selects_without_lotacao(): void
@@ -213,9 +217,9 @@ class EgapCarrinhoDestinoTest extends TestCase
         $this->actingAs($user, User::GUARD)
             ->get('/egap/externo/almoxarifado/requisicao-de-materiais-de-consumo')
             ->assertOk()
+            // o destino aparece no topo da página (usuário e seletor de lotação)
             ->assertSee($user->name)
-            ->assertSee($rotulos['setor'])
-            ->assertSee($rotulos['unidade']);
+            ->assertSee($rotulos['setor']);
     }
 
     private function usuarioComAcessoExterno(): User
