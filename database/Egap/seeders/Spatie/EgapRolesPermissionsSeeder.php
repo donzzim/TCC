@@ -28,6 +28,8 @@ class EgapRolesPermissionsSeeder extends Seeder
         'egap_agendamento' => ['egap_agendamento_access'],
         'egap_cadastro' => ['egap_cadastro_access'],
         'egap_pedido' => ['egap_pedido_access'],
+        // abre, edita e exclui inventários (unidades, comissão e equipes); conferir continua livre
+        'egap_inventario' => ['abrir_inventario'],
         User::ROLE_SUPER_ADMIN => self::ROLE_PERMISSIONS,
     ];
 
@@ -101,7 +103,8 @@ class EgapRolesPermissionsSeeder extends Seeder
             'egap_processo',
             'egap_agendamento',
             'egap_cadastro',
-            'egap_pedido'
+            'egap_pedido',
+            'egap_inventario',
         ];
 
         $permissions = [
@@ -114,7 +117,8 @@ class EgapRolesPermissionsSeeder extends Seeder
             'egap_cadastro_access',
             'egap_pedido_access',
             'egap_access',
-            'egap_superadmin'
+            'egap_superadmin',
+            'abrir_inventario',
         ];
 
         foreach ($roles as $role)

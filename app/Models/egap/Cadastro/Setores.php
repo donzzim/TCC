@@ -2,6 +2,7 @@
 
 namespace App\Models\egap\Cadastro;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use App\Filament\Egap\Auth\EgapSession;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -46,6 +47,26 @@ class Setores extends Model
     public function unidadeOrganizacionalRaiz(): BelongsTo
     {
         return $this->belongsTo(self::class, 'codigodauo', 'id');
+    }
+
+    /** Unidades organizacionais (a linha raiz aponta para si mesma em codigopai). */
+    public function scopeUnidadesInventariaveis(Builder $query): Builder
+    {
+        return $query->whereColumn('id', 'codigopai');
+    }
+
+    public function scopeSetoresInventariaveis(Builder $query): Builder
+    {
+        return $query
+            ->whereNotNull('codigopai')
+            ->whereColumn('id', '<>', 'codigopai');
+    }
+
+    public function scopeFilhosDe(Builder $query, int $unidadeId): Builder
+    {
+        return $query
+            ->where('codigopai', $unidadeId)
+            ->whereColumn('id', '<>', 'codigopai');
     }
 
     public function inventariaUnidadeInteira(): bool

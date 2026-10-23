@@ -2,6 +2,7 @@
 
 namespace App\Filament\Egap\Interno\Clusters;
 
+use App\Filament\Egap\Interno\Permissions\Patrimonio\InventarioAccess;
 use App\Filament\Egap\Interno\Permissions\Patrimonio\PatrimonioAccess;
 use Filament\Clusters\Cluster;
 use Filament\Pages\Enums\SubNavigationPosition;
@@ -18,6 +19,7 @@ class PatrimonioCluster extends Cluster
 
     public static function canAccess(): bool
     {
-        return PatrimonioAccess::allowed();
+        // quem só abre inventário entra no cluster, mas só enxerga as telas de inventário
+        return PatrimonioAccess::allowed() || InventarioAccess::podeAbrir();
     }
 }

@@ -182,5 +182,22 @@ class Inventario extends Model
             $model->atualizado_em = now();
             $model->atualizado_por = EgapSession::resolverAtual() ?? 111;
         });
+
+        // apagar um inventário com conferência deixaria itens e atividades órfãos
+        static::deleting(function (self $model): void {
+            if ($model->temConferencia()) {
+                throw new \RuntimeException('Este inventário já tem conferência registrada e não pode ser excluído.');
+            }
+        });
+    }
+
+    public function temConferencia(): bool
+    {
+        return $this->itens()->exists() || $this->atividades()->exists();
+    }
+
+    public function scopeEmExecucao(Builder $query): Builder
+    {
+        return $query->whereIn('situacao', [self::SITUACAO_EM_EXECUCAO, 'Em execução', 'Em execucao', 'Em andamento']);
     }
 }
