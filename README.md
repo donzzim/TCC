@@ -1,10 +1,10 @@
-# E-Gap Mobile — Inventário patrimonial no celular
+# E-Gap Mobile — o EGAP no celular
 
 Aplicativo para os servidores do **Tribunal de Justiça do Espírito Santo (TJES)** consultarem os bens patrimoniais do seu setor, fazerem a **conferência do inventário** lendo plaquetas e pedirem **materiais de consumo e permanentes**. Tudo pelo celular e sempre no setor escolhido na sessão.
 
 O projeto tem duas partes neste repositório:
 
-- **`inventario-mobile/`**: o aplicativo (Expo / React Native, publicado também como web app em `/emes/inventario`);
+- **`egap-mobile/`**: o aplicativo (Expo / React Native, publicado também como web app em `/egap-mobile`);
 - **`mobile-api`**: a API em Laravel que o app consome. Ela fica no mesmo sistema do painel web EGAP e usa as mesmas regras de negócio.
 
 > Trabalho de Conclusão de Curso de Lucas César. Ele também será usado em produção pelos servidores do TJES.
@@ -63,13 +63,13 @@ Capturas do app rodando em `npx expo start --web`, em viewport de celular (390×
 
 | Login | Escolha do setor | Início |
 |:---:|:---:|:---:|
-| <img src="inventario-mobile/docs/telas/01-login.png" width="240" alt="Tela de login"> | <img src="inventario-mobile/docs/telas/02-setor.png" width="240" alt="Escolha do setor"> | <img src="inventario-mobile/docs/telas/03-inicio.png" width="240" alt="Início"> |
+| <img src="egap-mobile/docs/telas/01-login.png" width="240" alt="Tela de login"> | <img src="egap-mobile/docs/telas/02-setor.png" width="240" alt="Escolha do setor"> | <img src="egap-mobile/docs/telas/03-inicio.png" width="240" alt="Início"> |
 | **Bens** | **Detalhe do bem** | **Conferência** |
-| <img src="inventario-mobile/docs/telas/04-bens.png" width="240" alt="Lista de bens"> | <img src="inventario-mobile/docs/telas/05-detalhe-bem.png" width="240" alt="Detalhe do bem"> | <img src="inventario-mobile/docs/telas/06-conferencia.png" width="240" alt="Conferência"> |
+| <img src="egap-mobile/docs/telas/04-bens.png" width="240" alt="Lista de bens"> | <img src="egap-mobile/docs/telas/05-detalhe-bem.png" width="240" alt="Detalhe do bem"> | <img src="egap-mobile/docs/telas/06-conferencia.png" width="240" alt="Conferência"> |
 | **Pedidos** | **Catálogo (consumo)** | **Carrinho** |
-| <img src="inventario-mobile/docs/telas/07-pedidos.png" width="240" alt="Pedidos"> | <img src="inventario-mobile/docs/telas/08-catalogo.png" width="240" alt="Catálogo de materiais"> | <img src="inventario-mobile/docs/telas/09-carrinho.png" width="240" alt="Carrinho"> |
+| <img src="egap-mobile/docs/telas/07-pedidos.png" width="240" alt="Pedidos"> | <img src="egap-mobile/docs/telas/08-catalogo.png" width="240" alt="Catálogo de materiais"> | <img src="egap-mobile/docs/telas/09-carrinho.png" width="240" alt="Carrinho"> |
 | **Perfil** | | |
-| <img src="inventario-mobile/docs/telas/10-perfil.png" width="240" alt="Perfil"> | | |
+| <img src="egap-mobile/docs/telas/10-perfil.png" width="240" alt="Perfil"> | | |
 
 > Na captura, a conferência do setor de teste já estava **finalizada**, por isso as ações aparecem desabilitadas. A tela de leitura usa a câmera do aparelho e não aparece aqui.
 
@@ -79,7 +79,7 @@ Capturas do app rodando em `npx expo start --web`, em viewport de celular (390×
 
 ```mermaid
 flowchart LR
-    subgraph APP["App — inventario-mobile (Expo / React Native)"]
+    subgraph APP["App — egap-mobile (Expo / React Native)"]
         telas["Telas (expo-router)"]
         hooks["Hooks de dados<br/>React Query"]
         cliente["Cliente HTTP tipado<br/>src/api"]
@@ -121,7 +121,7 @@ flowchart LR
 | Painel web (mesmo sistema) | Filament 4. A API reaproveita a regra de lotação e os services de conferência e pedidos que o painel também usa. |
 | Banco | MySQL `emes-egap`, compartilhado com o painel. Conexões `emes` (sem prefixo) e `egap` (prefixo `egap_`). |
 
-**Distribuição**: o build web do app é publicado em `public/inventario` e servido pela rota `/inventario/{path?}` do Laravel. Em produção o sistema ficará em `/emes`, então o app abrirá em `/emes/inventario` e chamará a API em `/emes/mobile-api`.
+**Distribuição**: o build web do app é publicado em `public/egap-mobile` e servido pela rota `/egap-mobile/{path?}` do Laravel. O app abre em `/egap-mobile` e chama a API em `/mobile-api`, no mesmo domínio.
 
 ---
 
@@ -440,7 +440,7 @@ A migration `database/migrations/2026_10_22_120000_create_egap_mobile_sessoes_ta
 
 ## 9. Endpoints da API
 
-Prefixo `mobile-api` (em produção, `/emes/mobile-api`). Rotas em `routes/egap_pwa.php` e controllers em `app/Http/Controllers/Egap/MobileApi/`.
+Prefixo `mobile-api`. Rotas em `routes/egap_pwa.php` e controllers em `app/Http/Controllers/Egap/MobileApi/`.
 
 | Método | Rota | Middleware | Descrição |
 |---|---|---|---|
@@ -490,14 +490,14 @@ A API fica em `http://127.0.0.1:8000/mobile-api`.
 
 ### App em desenvolvimento
 
-Crie `inventario-mobile/.env.local`:
+Crie `egap-mobile/.env.local`:
 
 ```text
 EXPO_PUBLIC_API_URL=http://127.0.0.1:8000/mobile-api
 ```
 
 ```bash
-cd inventario-mobile
+cd egap-mobile
 npm install
 npx expo start          # Expo Go / emulador (a tecla w abre a versão web)
 npx expo start --web    # direto no navegador
@@ -506,22 +506,22 @@ npx expo start --web    # direto no navegador
 > No celular físico, use o IP da máquina na rede em vez de `127.0.0.1`.
 > Para rodar a versão web local em `localhost:8081`, o navegador precisa que a API responda com cabeçalhos CORS em `mobile-api/*`. Veja `config/cors.php`.
 
-### Publicar o build web (substitui `public/inventario`)
+### Publicar o build web (substitui `public/egap-mobile`)
 
-No **Git Bash**, dentro de `inventario-mobile/`:
+No **Git Bash**, dentro de `egap-mobile/`:
 
 ```bash
-MSYS_NO_PATHCONV=1 EXPO_NO_DOTENV=1 EXPO_PUBLIC_API_URL=/emes/mobile-api \
-  npx expo export --platform web --clear --output-dir ../public/inventario
+MSYS_NO_PATHCONV=1 EXPO_NO_DOTENV=1 EXPO_PUBLIC_API_URL=/mobile-api \
+  npx expo export --platform web --clear --output-dir ../public/egap-mobile
 ```
 
 | Parte | Por quê |
 |---|---|
-| `MSYS_NO_PATHCONV=1` | Impede o Git Bash de converter `/emes/mobile-api` num caminho do Windows (`C:/Program Files/Git/emes/...`). |
+| `MSYS_NO_PATHCONV=1` | Impede o Git Bash de converter `/mobile-api` num caminho do Windows (`C:/Program Files/Git/mobile-api`). |
 | `EXPO_NO_DOTENV=1` | Ignora o `.env.local` de desenvolvimento, para o build não sair apontando para `127.0.0.1`. |
-| `EXPO_PUBLIC_API_URL=/emes/mobile-api` | URL relativa da API no servidor de produção. Ela é embutida no bundle no momento do export. |
+| `EXPO_PUBLIC_API_URL=/mobile-api` | URL relativa da API no servidor de produção. Ela é embutida no bundle no momento do export. |
 | `--clear` | Limpa o cache do Metro, para nenhuma variável de ambiente antiga ficar no bundle. |
-| `--output-dir ../public/inventario` | Grava o build onde o Laravel serve o app (rota `/inventario/{path?}`). O `baseUrl` `/emes/inventario` já está em `app.json`. |
+| `--output-dir ../public/egap-mobile` | Grava o build onde o Laravel serve o app (rota `/egap-mobile/{path?}`). O `baseUrl` `/egap-mobile` já está em `app.json`. |
 
 ---
 
@@ -551,7 +551,7 @@ Também valem para a regra compartilhada com o painel web: `tests/Unit` e `tests
 ### App
 
 ```bash
-cd inventario-mobile
+cd egap-mobile
 npx tsc --noEmit     # tipos
 npx expo lint        # ESLint (config Expo)
 ```
@@ -578,9 +578,9 @@ database/
   Egap/seeders/MobileApiTestUsersSeeder.php
 routes/egap_pwa.php                 # rotas mobile-api
 tests/Feature/MobileApi/            # testes da API
-public/inventario/                  # build web publicado do app
+public/egap-mobile/                  # build web publicado do app
 
-inventario-mobile/
+egap-mobile/
   app/                    # telas (expo-router)
     index.tsx             #   login / restauração da sessão
     setor.tsx             #   escolha do setor
@@ -610,7 +610,7 @@ inventario-mobile/
 - **Services preservados**: `ConferenciaBensService` e `PedidosMobileService` mantêm o contrato do array de escopo, porque o painel web também os usa. Só a montagem do escopo mudou.
 - **Leitura unificada**: validar e localizar numa chamada só (`POST /conferencia/leituras`), o que significa menos idas e voltas na rede durante o inventário. O lock no bem evita item duplicado em toque duplo.
 - **Desempenho**: uma carga de sessão por requisição, colunas explícitas e eager loading só do necessário, dashboard em poucas agregações, paginação em todas as listas. No app, cache com React Query e listas virtualizadas com FlashList.
-- **Transição**: tokens do app antigo não têm linha em `egap_mobile_sessoes` e por isso recebem `401 sessao_invalida`, o que leva ao novo login. O build novo substituiu `public/inventario`.
+- **Transição**: tokens do app antigo não têm linha em `egap_mobile_sessoes` e por isso recebem `401 sessao_invalida`, o que leva ao novo login. O build novo substituiu `public/egap-mobile`.
 
 ### Próximos passos
 
