@@ -15,6 +15,9 @@ Artisan::command('inspire', function () {
 
 // Schedule::command('app:disparar-lembretes')->dailyAt('06:00');
 
+// Lembretes de prazo do inventário (7 e 1 dia) para quem ainda não finalizou o setor
+Schedule::command('egap:inventario-lembretes')->dailyAt('07:00');
+
 Schedule::call(function () {
     app(QueueService::class)->ensureRunning();
 })->everyFifteenMinutes();

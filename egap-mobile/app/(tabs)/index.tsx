@@ -9,6 +9,7 @@ import { EmptyState } from '@/src/components/EmptyState';
 import { GradientHeader } from '@/src/components/GradientHeader';
 import { ProgressRing } from '@/src/components/ProgressRing';
 import { SetorSheet } from '@/src/components/SetorSheet';
+import { SinoNotificacoes } from '@/src/components/SinoNotificacoes';
 import { useDashboard } from '@/src/hooks/useDashboard';
 import { useErroRede } from '@/src/hooks/useErroRede';
 import { useSessao } from '@/src/session/SessionProvider';
@@ -84,14 +85,17 @@ export default function Inicio() {
                 title={nome || 'Início'}
                 overlap={36}
                 right={
-                    <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel="Perfil"
-                        onPress={() => router.push('/perfil')}
-                        style={styles.avatar}
-                    >
-                        <Text style={styles.avatarTexto}>{iniciais(nome) || '?'}</Text>
-                    </Pressable>
+                    <View style={styles.acoes}>
+                        <SinoNotificacoes />
+                        <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel="Perfil"
+                            onPress={() => router.push('/perfil')}
+                            style={styles.avatar}
+                        >
+                            <Text style={styles.avatarTexto}>{iniciais(nome) || '?'}</Text>
+                        </Pressable>
+                    </View>
                 }
             >
                 <Pressable
@@ -230,6 +234,7 @@ export default function Inicio() {
 }
 
 const styles = StyleSheet.create({
+    acoes: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     avatar: {
         width: 36,
         height: 36,

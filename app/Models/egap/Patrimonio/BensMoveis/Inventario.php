@@ -2,6 +2,7 @@
 
 namespace App\Models\egap\Patrimonio\BensMoveis;
 
+use App\Jobs\Egap\NotificarAberturaInventario;
 use App\Models\egap\UserEgap;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -183,12 +184,31 @@ class Inventario extends Model
             $model->atualizado_por = EgapSession::resolverAtual() ?? 111;
         });
 
+        // abriu (criado já em execução ou mudou para isso): avisa os lotados depois da resposta
+        // (created/updated em vez de saved: wasRecentlyCreated continua true nos saves seguintes da mesma instância)
+        static::created(function (self $model): void {
+            $model->avisarSeAbriu();
+        });
+
+        static::updated(function (self $model): void {
+            if ($model->wasChanged('situacao')) {
+                $model->avisarSeAbriu();
+            }
+        });
+
         // apagar um inventário com conferência deixaria itens e atividades órfãos
         static::deleting(function (self $model): void {
             if ($model->temConferencia()) {
                 throw new \RuntimeException('Este inventário já tem conferência registrada e não pode ser excluído.');
             }
         });
+    }
+
+    private function avisarSeAbriu(): void
+    {
+        if ((string) $this->situacao === self::SITUACAO_EM_EXECUCAO) {
+            NotificarAberturaInventario::dispatch((int) $this->getKey())->afterResponse();
+        }
     }
 
     public function temConferencia(): bool

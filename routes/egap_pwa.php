@@ -4,6 +4,7 @@ use App\Http\Controllers\Egap\MobileApi\BensController;
 use App\Http\Controllers\Egap\MobileApi\ConferenciaController;
 use App\Http\Controllers\Egap\MobileApi\DashboardController;
 use App\Http\Controllers\Egap\MobileApi\MobileAuthController;
+use App\Http\Controllers\Egap\MobileApi\NotificacoesController;
 use App\Http\Controllers\Egap\MobileApi\PedidosController;
 use App\Http\Controllers\Egap\MobileApi\SessaoController;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,12 @@ Route::prefix('mobile-api')->group(function (): void {
             Route::get('/sessao', [SessaoController::class, 'show'])->name('mobile.sessao');
             Route::put('/sessao/setor', [SessaoController::class, 'trocarSetor'])->name('mobile.sessao.setor');
             Route::post('/logout', [SessaoController::class, 'logout'])->name('mobile.logout');
+
+            Route::prefix('notificacoes')->name('mobile.notificacoes.')->group(function () {
+                Route::get('/', [NotificacoesController::class, 'index'])->name('index');
+                Route::post('/lidas', [NotificacoesController::class, 'marcarTodasLidas'])->name('lidas');
+                Route::post('/{id}/lida', [NotificacoesController::class, 'marcarLida'])->name('lida');
+            });
         });
 
         Route::middleware(['mobile.sessao', 'mobile.setor'])->group(function () {
