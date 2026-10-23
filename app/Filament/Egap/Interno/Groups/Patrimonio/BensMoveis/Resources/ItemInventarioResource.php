@@ -377,6 +377,10 @@ class ItemInventarioResource extends PatrimonioResource
             $patrimoniosAtualizados = 0;
             $transferenciasRegistradas = 0;
             $itensMarcados = 0;
+            // o local de origem é lido antes de atualizarBemInventariado() mover o bem
+            $localAnterior = $bem
+                ? ['UnidadeAnterior' => $bem->UnidadeJudiciaria, 'SetorAnterior' => $bem->Setor]
+                : [];
 
             if ($status === 'NOVO') {
                 [$bem, $criado] = self::criarOuReaproveitarBemNovo($item);
@@ -386,7 +390,7 @@ class ItemInventarioResource extends PatrimonioResource
             }
 
             if ($bem && ! self::itemJaTransferido($item)) {
-                self::registrarTransferenciaInventario($bem, $item, $status);
+                self::registrarTransferenciaInventario($bem, $item, $status, $localAnterior);
                 $transferenciasRegistradas = 1;
             }
 
@@ -528,7 +532,10 @@ class ItemInventarioResource extends PatrimonioResource
         return true;
     }
 
-    private static function registrarTransferenciaInventario(BemMovel $bem, ItemInventario $item, string $status): void
+    /**
+     * @param  array{UnidadeAnterior?: mixed, SetorAnterior?: mixed}  $localAnterior  local do bem antes do levantamento
+     */
+    private static function registrarTransferenciaInventario(BemMovel $bem, ItemInventario $item, string $status, array $localAnterior): void
     {
         $transferencia = new TransferenciaBemMovel();
         $transferencia->setConnection($item->getConnectionName());
@@ -544,10 +551,7 @@ class ItemInventarioResource extends PatrimonioResource
         ];
 
         if ($status !== 'NOVO') {
-            $bem->refresh();
-
-            $attributes['UnidadeAnterior'] = $bem->UnidadeJudiciaria;
-            $attributes['SetorAnterior'] = $bem->Setor;
+            $attributes += $localAnterior;
         }
 
         $transferencia->forceFill($attributes);

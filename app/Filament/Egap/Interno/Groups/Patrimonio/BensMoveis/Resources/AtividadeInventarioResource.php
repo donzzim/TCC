@@ -163,8 +163,15 @@ class AtividadeInventarioResource extends PatrimonioResource
                                                     'xl' => 3,
                                                 ]),
 
-                                            TextInput::make('situacao')
+                                            // lista fechada: a conferência só trava o setor com
+                                            // "Finalizado"/"carga efetuada" escritos exatamente assim.
+                                            // Valores antigos digitados à mão continuam como opção.
+                                            Select::make('situacao')
                                                 ->label('Situação')
+                                                ->options(fn(?AtividadeInventario $record): array => self::opcoesSituacao($record?->situacao))
+                                                ->default('Aberto')
+                                                ->required()
+                                                ->native(false)
                                                 ->columnSpan([
                                                     'default' => 'full',
                                                     'md' => 1,
@@ -237,6 +244,23 @@ class AtividadeInventarioResource extends PatrimonioResource
             ->orderBy('name')
             ->pluck('name', 'name')
             ->toArray();
+    }
+
+    private static function opcoesSituacao(?string $atual): array
+    {
+        $opcoes = [
+            'Aberto' => 'Aberto',
+            'Em andamento' => 'Em andamento',
+            'Finalizado' => 'Finalizado',
+            'carga efetuada' => 'Carga efetuada',
+        ];
+
+        // registros antigos têm textos livres ("sem efeito", "aposentado"...)
+        if (filled($atual) && ! array_key_exists($atual, $opcoes)) {
+            $opcoes[$atual] = "{$atual} (valor antigo)";
+        }
+
+        return $opcoes;
     }
 
     private static function integranteDaDupla(?string $dupla, int $index): ?string

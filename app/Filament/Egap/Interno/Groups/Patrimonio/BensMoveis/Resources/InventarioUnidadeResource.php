@@ -19,7 +19,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Pages\Enums\SubNavigationPosition;
-use App\Filament\Egap\Interno\Permissions\Patrimonio\PatrimonioResource;
+use App\Filament\Egap\Interno\Permissions\Patrimonio\InventarioGestaoResource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
@@ -28,10 +28,11 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
 use Livewire\Livewire;
 
-class InventarioUnidadeResource extends PatrimonioResource
+class InventarioUnidadeResource extends InventarioGestaoResource
 {
     protected static ?string $model = InventarioUnidade::class;
 
@@ -176,9 +177,10 @@ class InventarioUnidadeResource extends PatrimonioResource
                                                 ->label('Integrante')
                                                 ->relationship('integrantesRef', 'name')
                                                 ->searchable()
-                                                ->preload()
                                                 ->native(false)
-                                                ->required(),
+                                                // obrigatório ao adicionar; registros antigos apontam para pessoas que
+                                                // não existem mais no cadastro e não podem impedir salvar o inventário
+                                                ->required(fn(?Model $record): bool => $record === null),
                                         ]),
                                     ])
                                     ->defaultItems(0)
@@ -207,7 +209,7 @@ class InventarioUnidadeResource extends PatrimonioResource
         return Setores::query()
             ->unidadesInventariaveis()
             ->orderBy('setor')
-            ->get(['id', 'UnidadeOrganizacional', 'Setor', 'CodigoPai'])
+            ->get(['id', 'unidadeorganizacional', 'setor', 'codigopai'])
             ->mapWithKeys(fn(Setores $setor): array => [
                 $setor->id => $setor->rotuloInventario(),
             ])
