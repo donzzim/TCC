@@ -527,8 +527,8 @@ class ConferenciaBensService
                 'id_inventario',
             ])
             ->with([
-                'descricaoResumidaBemRef:id,Descricao',
-                'descricaoDetalhadaRef:id,descricao_detalhada',
+                'descricaoResumidaBemRef:id,Descricao,imagem',
+                'descricaoDetalhadaRef:id,descricao_detalhada,imagem',
                 'marcaRef:id,descricao',
                 'modeloRef:id,descricao',
                 'situacaoBemRef:id,descricao,situacao',
@@ -669,8 +669,8 @@ class ConferenciaBensService
 
         return BemMovel::query()
             ->with([
-                'descricaoResumidaBemRef:id,Descricao',
-                'descricaoDetalhadaRef:id,descricao_detalhada',
+                'descricaoResumidaBemRef:id,Descricao,imagem',
+                'descricaoDetalhadaRef:id,descricao_detalhada,imagem',
                 'marcaRef:id,descricao',
                 'modeloRef:id,descricao',
                 'situacaoBemRef:id,descricao,situacao',
@@ -820,8 +820,8 @@ class ConferenciaBensService
         if (! empty($data['bem_id'])) {
             $bem = BemMovel::query()
                 ->with([
-                    'descricaoResumidaBemRef:id,Descricao',
-                    'descricaoDetalhadaRef:id,descricao_detalhada',
+                    'descricaoResumidaBemRef:id,Descricao,imagem',
+                    'descricaoDetalhadaRef:id,descricao_detalhada,imagem',
                     'marcaRef:id,descricao',
                     'modeloRef:id,descricao',
                     'situacaoBemRef:id,descricao,situacao',
@@ -1014,6 +1014,7 @@ class ConferenciaBensService
             'descricao' => $bem->Descricao,
             'descricao_resumida' => $bem->descricaoResumidaBemRef?->Descricao,
             'descricao_detalhada' => $bem->descricaoDetalhadaRef?->descricao_detalhada,
+            'imagem_url' => ImagemMaterial::url($bem->descricaoDetalhadaRef?->imagem, $bem->descricaoResumidaBemRef?->imagem),
             'marca' => $bem->marcaRef?->descricao,
             'modelo' => $bem->modeloRef?->descricao,
             'estado_conservacao' => $bem->EstadodeConservacao,

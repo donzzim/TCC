@@ -8,6 +8,7 @@ use App\Http\Requests\Egap\MobileApi\CriarPedidoRequest;
 use App\Http\Requests\Egap\MobileApi\ListarMateriaisRequest;
 use App\Services\Egap\Mobile\PedidosMobileService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -95,10 +96,19 @@ class PedidosController extends Controller
     {
         $scope = $sessao->escopo();
 
+        if ($scope === null) {
+            throw new HttpResponseException(response()->json([
+                'message' => 'Você não tem uma lotação válida. Procure a administração para fazer pedidos.',
+                'code' => 'sem_lotacao',
+            ], 403));
+        }
+
+        // o Solicitante do pedido é o cadastro EGAP, achado pelo CPF do usuário
         if (empty($scope['id_egap'])) {
-            throw ValidationException::withMessages([
-                'user' => 'Usuário sem vinculo EGAP, unidade judiciaria ou setor valido para criar pedidos.',
-            ]);
+            throw new HttpResponseException(response()->json([
+                'message' => 'Seu usuário não tem cadastro no EGAP. Procure a administração para fazer pedidos.',
+                'code' => 'sem_vinculo_egap',
+            ], 403));
         }
 
         return $scope;

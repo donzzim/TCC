@@ -58,6 +58,8 @@ export interface Referencia {
 /** Espelha app/Http/Resources/Egap/MobileApi/BemResource.php (GET /bens e GET /bens/{patrimonio}). */
 export interface Bem {
     id: number;
+    /** Foto do material (descrição detalhada ou resumida), servida em /storage/egap. */
+    imagem_url: string | null;
     patrimonio: string | number | null;
     patrimonio_anterior: string | number | null;
     tombo_smarapd: string | number | null;
@@ -96,6 +98,7 @@ export interface Bem {
 /** Espelha ConferenciaBensService::bemToArray (conferencia: lista, leitura e acoes). */
 export interface BemConferencia {
     id: number;
+    imagem_url: string | null;
     patrimonio: string | number | null;
     patrimonio_anterior: string | number | null;
     tombo_smarapd: string | number | null;
@@ -239,7 +242,7 @@ export interface Material {
     preco_medio: number;
     quantidade_estoque: number | null;
     disponivel: boolean;
-    imagem?: string | null;
+    imagem_url: string | null;
 }
 
 export interface PedidoItem {
@@ -247,6 +250,7 @@ export interface PedidoItem {
     material_id: number | null;
     descricao_detalhada_id: number | null;
     material: string | null;
+    imagem_url: string | null;
     quantidade: number;
     quantidade_atendida: number;
     situacao: { id: number | string | null; descricao: string | null };

@@ -8,9 +8,11 @@ import { Text } from '@/src/components/Text';
 import type { Pedido, PedidoTipo } from '@/src/api/types';
 import { Card } from '@/src/components/Card';
 import { EmptyState } from '@/src/components/EmptyState';
+import { Foto } from '@/src/components/Foto';
 import { GradientHeader } from '@/src/components/GradientHeader';
 import { useErroRede } from '@/src/hooks/useErroRede';
 import { usePedidos } from '@/src/hooks/usePedidos';
+import { useSessao } from '@/src/session/SessionProvider';
 import { useTheme } from '@/src/theme/ThemeProvider';
 import { radius } from '@/src/theme/tokens';
 import { dataHora, numero } from '@/src/utils/format';
@@ -37,9 +39,12 @@ function PedidoCard({ pedido }: { pedido: Pedido }) {
                 {pedido.complemento_setor.descricao ? ` · ${pedido.complemento_setor.descricao}` : ''}
             </Text>
             {visiveis.map((item) => (
-                <Text key={item.id} style={{ color: colors.text, fontSize: 13 }} numberOfLines={1}>
-                    {numero(item.quantidade)}× {item.material ?? 'Material'}
-                </Text>
+                <View key={item.id} style={styles.item}>
+                    <Foto uri={item.imagem_url} titulo={item.material} tamanho={32} arredondamento={8} />
+                    <Text style={{ color: colors.text, fontSize: 13, flex: 1 }} numberOfLines={1}>
+                        {numero(item.quantidade)}× {item.material ?? 'Material'}
+                    </Text>
+                </View>
             ))}
             {restantes > 0 ? (
                 <Text style={{ color: colors.textMuted, fontSize: 12 }}>
@@ -53,7 +58,10 @@ function PedidoCard({ pedido }: { pedido: Pedido }) {
 export default function Pedidos() {
     const { colors } = useTheme();
     const router = useRouter();
-    const query = usePedidos();
+    const { sessao } = useSessao();
+    // o solicitante do pedido é o cadastro EGAP (achado pelo CPF); sem ele não há pedidos
+    const semCadastroEgap = !!sessao && sessao.egap_id === null;
+    const query = usePedidos(!semCadastroEgap);
     const pedidos = useMemo(() => query.data?.pages.flatMap((p) => p.pedidos) ?? [], [query.data]);
 
     useErroRede(query.isError && !query.data ? query.error : null, 'pedidos');
@@ -72,12 +80,19 @@ export default function Pedidos() {
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
             <GradientHeader title="Pedidos" subtitle="Histórico do setor" overlap={8} />
-            <View style={styles.botoes}>
-                {novo('consumo', 'Novo pedido de consumo', 'cart-outline')}
-                {novo('permanente', 'Novo pedido de permanente', 'desktop-outline')}
-            </View>
+            {semCadastroEgap ? (
+                <EmptyState
+                    title="Sem cadastro no EGAP"
+                    message="Seu usuário não tem cadastro no EGAP, que é feito pelo CPF. Procure a administração para poder fazer pedidos."
+                />
+            ) : (
+                <View style={styles.botoes}>
+                    {novo('consumo', 'Novo pedido de consumo', 'cart-outline')}
+                    {novo('permanente', 'Novo pedido de permanente', 'desktop-outline')}
+                </View>
+            )}
 
-            {query.isPending ? (
+            {semCadastroEgap ? null : query.isPending ? (
                 <ActivityIndicator color={colors.primary} style={{ marginTop: 32 }} />
             ) : (
                 <FlashList
@@ -135,6 +150,7 @@ const styles = StyleSheet.create({
         borderWidth: StyleSheet.hairlineWidth,
     },
     linha: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+    item: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     numero: { fontSize: 15, fontWeight: '800' },
     selo: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.pill },
 });

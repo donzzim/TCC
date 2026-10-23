@@ -195,7 +195,7 @@ class PedidosMobileService
 
         $paginator = DescricaoDetalhada::query()
             ->with([
-                'descricao_resumida_text:id,Descricao,id_tipo_material',
+                'descricao_resumida_text:id,Descricao,id_tipo_material,imagem',
                 'unidadeMedida:id,Unidade,Sigla',
             ])
             ->select(['id', 'descricao_resumida', 'descricao_detalhada', 'imagem', 'visibilidade', 'unidade_medida'])
@@ -295,7 +295,7 @@ class PedidosMobileService
             'preco_medio' => (float) ($estoque?->preco_medio_estoque ?? 0),
             'quantidade_estoque' => (int) ($estoque?->quantidade_estoque ?? 0),
             'disponivel' => (int) ($estoque?->quantidade_estoque ?? 0) > 0,
-            'imagem' => $this->imagemDetalhada($material->imagem),
+            'imagem_url' => ImagemMaterial::url($material->imagem, $material->descricao_resumida_text?->imagem),
         ];
     }
 
@@ -312,7 +312,7 @@ class PedidosMobileService
             'preco_medio' => (float) ($precos->get($material->id, 0)),
             'quantidade_estoque' => null,
             'disponivel' => true,
-            'imagem' => null,
+            'imagem_url' => ImagemMaterial::url($material->imagem),
         ];
     }
 
@@ -450,6 +450,7 @@ class PedidosMobileService
                 'material_id' => $item->material,
                 'descricao_detalhada_id' => $item->DescricaoDetalhada,
                 'material' => $item->material_nome,
+                'imagem_url' => ImagemMaterial::url($item->descricaoDetalhadaRef?->imagem, $item->materialRef?->imagem),
                 'quantidade' => (int) $item->QuantidadeMaterial,
                 'quantidade_atendida' => (int) $item->QuantidadeMaterialAtendida,
                 'situacao' => [
@@ -469,21 +470,6 @@ class PedidosMobileService
         }
 
         return '{Adi&ccedil;&atilde;o; Justificativa:'.$justificativa.'}';
-    }
-
-    private function imagemDetalhada(mixed $imagem): ?string
-    {
-        if (! is_string($imagem) || trim($imagem) === '') {
-            return null;
-        }
-
-        $decoded = json_decode($imagem);
-
-        if (! is_array($decoded) || empty($decoded[0]->file)) {
-            return null;
-        }
-
-        return (string) $decoded[0]->file;
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Http\Resources\Egap\MobileApi;
 
 use App\Http\Controllers\Egap\MobileApi\BensController;
 use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
+use App\Services\Egap\Mobile\ImagemMaterial;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -27,6 +28,7 @@ class BemResource extends JsonResource
             'numero_serie' => $bem->NumerodeSerie,
             'descricao' => $bem->Descricao,
             'descricao_resumida' => $bem->descricaoResumidaBemRef?->Descricao,
+            'imagem_url' => ImagemMaterial::url($bem->descricaoDetalhadaRef?->imagem, $bem->descricaoResumidaBemRef?->imagem),
             'marca' => $bem->marcaRef?->descricao,
             'modelo' => $bem->modeloRef?->descricao,
             'tipo_bem' => $bem->TipodoBem,
