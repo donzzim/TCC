@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\InventarioResource;
+use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\InventarioResource\Pages\CreateInventario;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\InventarioResource\Pages\EditInventario;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\InventarioResource\Pages\ListInventarios;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\InventarioResource\RelationManagers\UnidadesInventariadasRelationManager;
@@ -227,6 +228,45 @@ class EgapInventarioPainelTest extends TestCase
 
         $this->expectException(\RuntimeException::class);
         $comItens->delete();
+    }
+
+    public function test_cria_inventario_com_unidade_inteira_e_setor_com_filhos(): void
+    {
+        $pai = Setores::query()->setoresInventariaveis()
+            ->whereExists(fn ($q) => $q->from('setores as filho')->whereColumn('filho.codigopai', 'setores.id'))
+            ->first();
+
+        if (! $pai) {
+            $this->markTestSkipped('nenhum setor com filhos neste banco');
+        }
+
+        $filhos = array_map('intval', Setores::descendentesIds($pai->id));
+
+        $unidade = Setores::query()->unidadesInventariaveis()
+            ->whereKeyNot($pai->id)
+            ->whereNotIn('id', $filhos)
+            ->get()
+            ->first(fn (Setores $s): bool => ! in_array((int) $pai->id, array_map('intval', Setores::descendentesIds($s->id)), true));
+
+        $this->assertNotNull($unidade);
+
+        Livewire::test(CreateInventario::class)
+            ->fillForm([
+                'num_inventario' => '987654',
+                'ano_inventario' => (int) date('Y'),
+                'inicio_inventario' => '2030-01-10',
+                'termino_inventario' => '2030-01-20',
+                'situacao' => Inventario::SITUACAO_A_INVENTARIAR,
+                'selecao_unidades' => [$unidade->id],
+                'selecao_setores' => [['setor_id' => $pai->id, 'incluir_filhos' => true]],
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $inventario = Inventario::query()->where('num_inventario', '987654')->firstOrFail();
+
+        $this->assertSame(1 + 1 + count($filhos), $inventario->unidadesInventariadas()->count());
+        $this->assertSame(1, $inventario->unidadesInventariadas()->where('unidades', $unidade->id)->count());
     }
 
     public function test_membro_antigo_inexistente_nao_impede_salvar(): void

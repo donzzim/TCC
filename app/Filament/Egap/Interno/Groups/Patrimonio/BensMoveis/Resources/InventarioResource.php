@@ -25,6 +25,7 @@ use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Enums\SubNavigationPosition;
 use App\Filament\Egap\Interno\Permissions\Patrimonio\InventarioAccess;
@@ -185,6 +186,56 @@ class InventarioResource extends InventarioGestaoResource
                                                 $state['funcao'] ?? null,
                                             ])->filter()->join(' - ') ?: 'Membro da comissão')
                                             ->addActionLabel('Adicionar membro'),
+                                    ]),
+                            ]),
+                        // as unidades de um inventário existente são editadas na tabela da página de edição
+                        Tab::make('Setores inventariados')
+                            ->icon('heroicon-m-building-office')
+                            ->visibleOn('create')
+                            ->schema([
+                                Section::make('Abrangência do inventário')
+                                    ->description('Escolha unidades inteiras e/ou setores específicos. Ao marcar "Incluir setores filhos", todos os setores abaixo do escolhido também são inventariados.')
+                                    ->icon('heroicon-o-building-office')
+                                    ->schema([
+                                        Select::make('selecao_unidades')
+                                            ->label('Unidades inteiras')
+                                            ->multiple()
+                                            ->searchable()
+                                            ->getSearchResultsUsing(fn(string $search): array => self::buscarSetores($search, false))
+                                            ->getOptionLabelsUsing(fn(array $values): array => collect($values)
+                                                ->mapWithKeys(fn($id): array => [$id => self::rotuloSetor($id)])
+                                                ->all())
+                                            ->searchPrompt('Digite parte do nome')
+                                            ->native(false)
+                                            ->dehydrated(false),
+
+                                        Repeater::make('selecao_setores')
+                                            ->label('Setores específicos')
+                                            ->schema([
+                                                Select::make('setor_id')
+                                                    ->label('Setor')
+                                                    ->searchable()
+                                                    ->getSearchResultsUsing(fn(string $search): array => self::buscarSetores($search, true))
+                                                    ->getOptionLabelUsing(fn($value): ?string => self::rotuloSetor($value))
+                                                    ->searchPrompt('Digite parte do nome')
+                                                    ->native(false)
+                                                    ->required(),
+
+                                                Toggle::make('incluir_filhos')
+                                                    ->label('Incluir setores filhos')
+                                                    ->default(true)
+                                                    ->inline(false),
+                                            ])
+                                            ->columns([
+                                                'default' => 1,
+                                                'lg' => 2,
+                                            ])
+                                            ->defaultItems(0)
+                                            ->reorderable(false)
+                                            ->collapsible()
+                                            ->itemLabel(fn(array $state): string => self::rotuloSetor($state['setor_id'] ?? null) ?? 'Setor')
+                                            ->addActionLabel('Adicionar setor')
+                                            ->dehydrated(false),
                                     ]),
                             ]),
                     ])->columnSpanFull(),
@@ -426,11 +477,17 @@ class InventarioResource extends InventarioGestaoResource
 
     private static function buscarAbrangencia(Get $get, string $search): array
     {
+        return self::buscarSetores($search, $get('tipo_abrangencia') === 'setor');
+    }
+
+    /** Busca no servidor (máx. 50): setores específicos ou unidades inteiras. */
+    private static function buscarSetores(string $search, bool $setoresEspecificos): array
+    {
         $termo = '%'.trim($search).'%';
 
         return Setores::query()
             ->when(
-                $get('tipo_abrangencia') === 'setor',
+                $setoresEspecificos,
                 fn($query) => $query->setoresInventariaveis(),
                 fn($query) => $query->unidadesInventariaveis(),
             )
