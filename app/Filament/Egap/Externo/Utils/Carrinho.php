@@ -36,6 +36,8 @@ abstract class Carrinho extends Component implements HasForms, HasActions
     use InteractsWithActions;
     use InteractsWithForms;
 
+    public const AVISO_SEM_LOTACAO = 'Você não tem uma lotação válida para enviar pedidos. Procure a administração para regularizar sua lotação.';
+
     public array $carrinho = [];
 
     public ?array $data = [];
@@ -66,15 +68,19 @@ abstract class Carrinho extends Component implements HasForms, HasActions
      *
      * Solicitante nunca é escolhido: vem de {@see EgapSession} no momento da
      * gravação ({@see destinoDoPedido()}), server-side. Unidade e Setor vêm da
-     * lotação ativa (o seletor do topo), e só voltam a ser editáveis quando a
-     * lotação não resolve — usuário sem lotação, ou lotação cuja unidade não é
-     * inventariável (28 dos 886 setores).
+     * lotação ativa (o seletor do topo). Sem lotação utilizável — usuário sem
+     * lotação, ou lotação cuja unidade não é inventariável (28 dos 886
+     * setores) — o envio é bloqueado: só a administração define lotações.
      */
     protected function camposDestinoSchema(): array
     {
-        $rotulos = EgapSession::rotulosLotacaoAtual();
-
         return [
+            Placeholder::make('avisoSemLotacao')
+                ->hiddenLabel()
+                ->content(self::AVISO_SEM_LOTACAO)
+                ->visible(fn(): bool => ! $this->destinoVemDaLotacao())
+                ->columnSpanFull(),
+
             Select::make('ComplementoSetor')
                 ->label('Complemento do setor')
                 ->required()
@@ -120,6 +126,23 @@ abstract class Carrinho extends Component implements HasForms, HasActions
         return $this->destinoVemDaLotacao()
             ? EgapSession::setorAtual()
             : $get('Setor');
+    }
+
+    /**
+     * Barra o envio de quem não tem lotação utilizável como destino.
+     */
+    protected function envioBloqueadoSemLotacao(): bool
+    {
+        if ($this->destinoVemDaLotacao()) {
+            return false;
+        }
+
+        Notification::make()
+            ->title(self::AVISO_SEM_LOTACAO)
+            ->danger()
+            ->send();
+
+        return true;
     }
 
     protected function destinoDoPedido(array $data): array

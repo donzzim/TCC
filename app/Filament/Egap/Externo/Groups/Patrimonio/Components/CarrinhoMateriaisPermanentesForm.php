@@ -81,6 +81,10 @@ class CarrinhoMateriaisPermanentesForm extends Carrinho implements HasActions
             return;
         }
 
+        if ($this->envioBloqueadoSemLotacao()) {
+            return;
+        }
+
         $data = $this->form->getState();
 
         $destino = $this->destinoDoPedido($data);
