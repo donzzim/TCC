@@ -9,7 +9,9 @@ use App\Auth\HybridUserProvider;
 use App\Services\Auth\TjesLdapService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 use Illuminate\Support\Facades\URL;
@@ -42,6 +44,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('mobile-login', fn ($request) => Limit::perMinute(5)
+            ->by(strtolower(trim((string) $request->input('login'))) . '|' . $request->ip()));
+
         Auth::provider('hybrid', function ($app, array $config): HybridUserProvider {
             return new HybridUserProvider(
                 $app['hash'],

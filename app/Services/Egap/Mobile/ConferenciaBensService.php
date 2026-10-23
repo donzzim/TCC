@@ -133,6 +133,32 @@ class ConferenciaBensService
         return $this->resultadoLeitura('localizavel', 'Bem localizado no setor.', $bem, true, $inventario);
     }
 
+    public function registrarLeitura(array $scope, string $codigo): array
+    {
+        $resultado = $this->validarLeitura($scope, $this->limparCodigoLido($codigo));
+
+        if ($resultado['pode_localizar']) {
+            return $this->localizar($scope, ['bem_id' => $resultado['bem']['id']]);
+        }
+
+        $resultado['resumo'] = $this->resumo($this->inventarioAtual(), $scope);
+
+        return $resultado;
+    }
+
+    // leitor ou digitação podem trazer o patrimônio formatado ("104.552"); só
+    // códigos numéricos com separadores são reduzidos aos dígitos
+    private function limparCodigoLido(string $codigo): string
+    {
+        $codigo = trim($codigo);
+
+        if (preg_match('/^\d[\d.\s\-\/]*$/', $codigo) === 1) {
+            return preg_replace('/\D+/', '', $codigo);
+        }
+
+        return $codigo;
+    }
+
     public function localizar(array $scope, array $data): array
     {
         $inventario = $this->inventarioAtual();

@@ -16,6 +16,7 @@ return [
     */
 
     'paths' => [
+        'mobile-api/*',
         '/emes/*',
         '/emes/api/*',
         '/api/*',

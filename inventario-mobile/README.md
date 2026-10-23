@@ -1,48 +1,35 @@
-# Inventário Mobile
+# Inventário Mobile (E-Gap Mobile)
 
-Aplicativo Expo / React Native integrado à API Laravel do EGAP. O fluxo ativo oferece autenticação, consulta e conferência patrimonial e criação de pedidos de consumo ou de bens permanentes.
+App Expo / React Native para os servidores do TJES: bens do setor, conferência de inventário com leitura de plaqueta e pedidos de materiais. Consome a `mobile-api` do Laravel deste repositório.
 
-A descrição da arquitetura e dos endpoints está no [README principal](../README.md).
+A apresentação completa, com arquitetura, diagramas, endpoints e capturas, está no [README principal](../README.md).
 
-## Rotas Ativas
+## Rodar
 
-| Rota | Função |
-|---|---|
-| `/` | Login e restauração de sessão local |
-| `/patrimonio/principal` | Dashboard e consulta por código ou câmera |
-| `/patrimonio/bens` | Lista de bens do setor |
-| `/patrimonio/conferencia` | Conferência de inventário |
-| `/pedidos/consumo` | Carrinho de materiais de consumo |
-| `/pedidos/permanentes` | Carrinho de bens permanentes |
-| `/erro` | Falhas de rede ou respostas `5xx` |
+```bash
+# .env.local
+EXPO_PUBLIC_API_URL=http://127.0.0.1:8000/mobile-api
 
-## Configuração
-
-Crie `inventario-mobile/.env.local` com a URL da API:
-
-```text
-EXPO_PUBLIC_API_URL=https://seu-host/mobile-api
-```
-
-O arquivo `src/config/env.ts` também aceita `EXPO_PUBLIC_EGAP_API_URL` como fallback legado. A variável `EXPO_PUBLIC_USE_MOCK_API` é lida na configuração, mas o cliente HTTP atual não possui implementação mock.
-
-## Execução
-
-```powershell
 npm install
-npm run start
-
-# Alternativas
-npm run android
-npm run ios
-npm run web
+npx expo start          # ou: npx expo start --web
 ```
 
-No Windows, quando scripts PowerShell do npm estiverem bloqueados, use `npm.cmd run start` ou `npx.cmd expo start`.
+Usuário de teste (seeder `Database\Seeders\MobileApiTestUsersSeeder`): `mobile.teste` / `mobile123`.
 
-## Verificação
+## Verificar
 
-```powershell
-npm.cmd run lint
-npx.cmd tsc --noEmit
+```bash
+npx tsc --noEmit
+npx expo lint
 ```
+
+## Publicar o build web
+
+No Git Bash, nesta pasta (detalhes no README principal, seção "Como rodar"):
+
+```bash
+MSYS_NO_PATHCONV=1 EXPO_NO_DOTENV=1 EXPO_PUBLIC_API_URL=/emes/mobile-api \
+  npx expo export --platform web --clear --output-dir ../public/inventario
+```
+
+As capturas de tela ficam em [`docs/telas/`](docs/telas/).

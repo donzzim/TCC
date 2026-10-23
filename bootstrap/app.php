@@ -28,6 +28,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->prepend(\App\Http\Middleware\LogRequestTiming::class);
+        $middleware->alias([
+            'mobile.sessao' => \App\Http\Middleware\Egap\GarantirSessaoMobile::class,
+            'mobile.setor' => \App\Http\Middleware\Egap\GarantirSessaoMobile::class . ':setor',
+        ]);
         $middleware->web(append: [
             \App\Http\Middleware\ApplyActiveTemplate::class,
             // \App\Http\Middleware\AdminDebugbarMiddleware::class, // <-- Middleware para ativar o Debugbar apenas para admins

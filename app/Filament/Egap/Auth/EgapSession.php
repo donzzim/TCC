@@ -2,13 +2,10 @@
 
 namespace App\Filament\Egap\Auth;
 
-use App\Helper\CpfHelper;
-use App\Models\egap\Admin\InfoUser;
+use App\Filament\Egap\Auth\Concerns\ResolveLotacaoEgap;
 use App\Models\egap\Cadastro\Setores;
 use App\Models\egap\User;
-use App\Models\egap\UserEgap;
 use App\Models\egap\UserInfo;
-use App\Models\egap\UserLotacao;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -27,13 +24,15 @@ use Illuminate\Support\Collection;
  */
 class EgapSession
 {
+    use ResolveLotacaoEgap;
+
     public const SESSION_KEY = 'egap_session';
 
     public const SESSION_KEY_SETOR = 'setorprincipal';
 
     public static function resolverAtual(): ?int
     {
-        return static::lembrar('egap_id', fn (): ?int => static::consultarPorCpf(auth(User::GUARD)->user()?->cpf));
+        return static::lembrar('egap_id', fn (): ?int => static::egapIdPorCpf(auth(User::GUARD)->user()?->cpf));
     }
 
     public static function escopo(Builder $query, string $coluna): Builder
@@ -76,13 +75,7 @@ class EgapSession
             return collect();
         }
 
-        return UserLotacao::query()
-            ->doUsuario($userId)
-            ->with('setor')
-            ->get()
-            ->pluck('setor')
-            ->filter()
-            ->values();
+        return static::lotacoesDoUsuario($userId);
     }
 
     public static function lotacao(): ?array
@@ -99,7 +92,7 @@ class EgapSession
             return $bloco['lotacao'];
         }
 
-        $lotacao = static::consultarLotacao($escolhido);
+        $lotacao = static::escolherLotacao(static::lotacoes(), $escolhido);
 
         if ($lotacao !== null && $lotacao['setor'] !== $escolhido) {
             session([self::SESSION_KEY_SETOR => $lotacao['setor']]);
@@ -147,17 +140,6 @@ class EgapSession
         ];
     }
 
-    public static function formatosDeBusca(?string $cpf): array
-    {
-        $digitos = preg_replace('/\D/', '', (string) $cpf);
-
-        if (strlen($digitos) !== 11) {
-            return [];
-        }
-
-        return [CpfHelper::format($digitos), $digitos];
-    }
-
     protected static function bloco(): ?array
     {
         $usuarioAtual = auth(User::GUARD)->id();
@@ -194,40 +176,5 @@ class EgapSession
         session([self::SESSION_KEY . '.' . $chave => $valor]);
 
         return $valor;
-    }
-    protected static function consultarPorCpf(?string $cpf): ?int
-    {
-        $formatos = static::formatosDeBusca($cpf);
-
-        if ($formatos === []) {
-            return null;
-        }
-
-        $idEgap = InfoUser::query()
-            ->whereIn('cpf', $formatos)
-            ->whereIn('usuario_id', UserEgap::query()->select('id'))
-            ->orderBy('id')
-            ->value('usuario_id');
-
-        return blank($idEgap) ? null : (int) $idEgap;
-    }
-
-    /**
-     * @return array{setor: int, codigodauo: ?int}|null
-     */
-    protected static function consultarLotacao(?int $escolhido): ?array
-    {
-        $lotacoes = static::lotacoes();
-
-        if ($lotacoes->isEmpty()) {
-            return null;
-        }
-
-        $setor = $lotacoes->firstWhere('id', $escolhido) ?? $lotacoes->first();
-
-        return [
-            'setor' => (int) $setor->id,
-            'codigodauo' => filled($setor->codigodauo) ? (int) $setor->codigodauo : null,
-        ];
     }
 }

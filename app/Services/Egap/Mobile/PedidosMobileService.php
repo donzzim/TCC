@@ -10,7 +10,6 @@ use App\Models\egap\Cadastro\ComplementoSetor;
 use App\Models\egap\Cadastro\DescricaoDetalhada;
 use App\Models\egap\Cadastro\DescricaoResumida;
 use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
-use App\Models\egap\UserMobile;
 use App\Services\Egap\Almoxarifado\VisibilidadeMaterial;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,29 +25,6 @@ class PedidosMobileService
     private const SETOR_ALMOXARIFADO = 799;
 
     private const SETOR_PATRIMONIO = 1239;
-
-    /**
-     * @return array{user_id:int,id_egap:int,setor:int,unidade_judiciaria:int}
-     */
-    public function resolveScope(UserMobile $mobileUser): array
-    {
-        $idEgap = $this->filledInteger($mobileUser->idEgap());
-        $setor = $this->filledInteger($mobileUser->setor());
-        $unidadeJudiciaria = $this->filledInteger($mobileUser->unidadeJudiciaria());
-
-        if ($idEgap === null || $setor === null || $unidadeJudiciaria === null) {
-            throw ValidationException::withMessages([
-                'user' => 'Usuário sem vinculo EGAP, unidade judiciaria ou setor valido para criar pedidos.',
-            ]);
-        }
-
-        return [
-            'user_id' => $mobileUser->id(),
-            'id_egap' => $idEgap,
-            'setor' => $setor,
-            'unidade_judiciaria' => $unidadeJudiciaria,
-        ];
-    }
 
     /**
      * @param  array{setor:int}  $scope
@@ -190,6 +166,24 @@ class PedidosMobileService
             ->orderByDesc('id')
             ->paginate($perPage)
             ->through(fn (Pedidos $pedido): array => $this->pedidoToArray($pedido));
+    }
+
+    /**
+     * Pedidos do usuário no setor (mesmo filtro de pedidosDoUsuario) ainda em análise.
+     *
+     * @param  array{id_egap:int|null,setor:int}  $scope
+     */
+    public function contarAbertos(array $scope): int
+    {
+        if (empty($scope['id_egap'])) {
+            return 0;
+        }
+
+        return Pedidos::query()
+            ->where('Solicitante', $scope['id_egap'])
+            ->where('Setor', $scope['setor'])
+            ->where('idSituacao', self::STATUS_EM_ANALISE)
+            ->count();
     }
 
     /**

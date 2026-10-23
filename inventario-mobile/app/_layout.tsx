@@ -1,74 +1,68 @@
-import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { router, Stack, type Href } from 'expo-router';
+import { useFonts } from 'expo-font';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useRef } from 'react';
-import { StyleSheet } from 'react-native';
+import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import 'react-native-reanimated';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { subscribeAppError, type AppErrorEvent } from '@/src/errors/appErrorEvents';
-import { AppThemeProvider } from '@/src/theme/appTheme';
+import { CartProvider } from '@/src/cart/CartProvider';
+import { SessionProvider, useSessao } from '@/src/session/SessionProvider';
+import { fontes } from '@/src/theme/fonts';
+import { ThemeProvider } from '@/src/theme/ThemeProvider';
 
-function buildErrorHref(event: AppErrorEvent): Href {
-  const params = new URLSearchParams();
+SplashScreen.preventAutoHideAsync();
 
-  params.set('kind', event.kind);
-  params.set('title', event.title);
-  params.set('message', event.message);
+function Rotas() {
+    const { status } = useSessao();
+    const autenticado = status === 'autenticado';
 
-  if (event.status !== undefined) {
-    params.set('status', String(event.status));
-  }
-
-  return `/erro?${params.toString()}` as Href;
-}
-
-function RootNavigator() {
-  const lastErrorRef = useRef<{ signature: string; notifiedAt: number } | null>(null);
-
-  useEffect(() => {
-    return subscribeAppError((event) => {
-      const signature = `${event.kind}:${event.status ?? 'no-status'}:${event.message}`;
-      const now = Date.now();
-
-      if (
-        lastErrorRef.current?.signature === signature
-        && now - lastErrorRef.current.notifiedAt < 800
-      ) {
-        return;
-      }
-
-      lastErrorRef.current = { signature, notifiedAt: now };
-      router.push(buildErrorHref(event));
-    });
-  }, []);
-
-  return (
-    <ThemeProvider value={DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="erro" options={{ headerShown: false }} />
-        <Stack.Screen name="patrimonio" options={{ headerShown: false }} />
-        <Stack.Screen name="pedidos" options={{ headerShown: false }} />
-        <Stack.Screen name="configuracoes" options={{ headerShown: false }} />
-      </Stack>
-      <StatusBar style="dark" />
-    </ThemeProvider>
-  );
+    return (
+        <Stack screenOptions={{ headerShown: false }}>
+            {/* Login, carregando e erro de boot são resolvidos dentro de app/index.tsx. */}
+            <Stack.Screen name="index" />
+            <Stack.Screen name="erro" />
+            <Stack.Protected guard={autenticado}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="setor" />
+                <Stack.Screen name="perfil" />
+                <Stack.Screen name="tutorial" />
+                <Stack.Screen name="bem/[patrimonio]" />
+                <Stack.Screen name="pedidos/novo" />
+                <Stack.Screen name="pedidos/carrinho" />
+                <Stack.Screen name="leitura" options={{ presentation: 'fullScreenModal' }} />
+            </Stack.Protected>
+        </Stack>
+    );
 }
 
 export default function RootLayout() {
-  return (
-    <GestureHandlerRootView style={styles.root}>
-      <AppThemeProvider>
-        <RootNavigator />
-      </AppThemeProvider>
-    </GestureHandlerRootView>
-  );
-}
+    const [queryClient] = useState(
+        () => new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 30_000 } } }),
+    );
+    // Em caso de erro no carregamento, segue com a fonte do sistema em vez de travar na splash.
+    const [fontesProntas, erroFontes] = useFonts(fontes);
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-});
+    useEffect(() => {
+        if (fontesProntas || erroFontes) SplashScreen.hideAsync();
+    }, [fontesProntas, erroFontes]);
+
+    if (!fontesProntas && !erroFontes) return null;
+
+    return (
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <SafeAreaProvider>
+                <QueryClientProvider client={queryClient}>
+                    <SessionProvider>
+                        <CartProvider>
+                            <ThemeProvider>
+                                <StatusBar style="light" />
+                                <Rotas />
+                            </ThemeProvider>
+                        </CartProvider>
+                    </SessionProvider>
+                </QueryClientProvider>
+            </SafeAreaProvider>
+        </GestureHandlerRootView>
+    );
+}

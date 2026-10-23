@@ -57,3 +57,5 @@ yarn-error.log
 /storage/framework/lsp-*.php
 /storage/framework/*.sqlite
 /storage/api-docs
+
+/.superpowers

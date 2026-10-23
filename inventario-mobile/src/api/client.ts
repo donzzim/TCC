@@ -1,162 +1,94 @@
-import { ENV } from '../config/env';
-import { ApiError, NetworkError } from './errors';
-import { notifyAppError } from '@/src/errors/appErrorEvents';
-import { appStorage } from '@/src/storage/appStorage';
+import { ENV } from '@/src/config/env';
 
-// ---------------------------------------------------------------------------
-// Constantes
-// ---------------------------------------------------------------------------
-
-const TOKEN_KEY = 'auth_token';
-
-// Header obrigatório para o ngrok não retornar página HTML de aviso
-const NGROK_HEADER = { 'ngrok-skip-browser-warning': '1' };
-
-// ---------------------------------------------------------------------------
-// Gerenciamento de token
-// ---------------------------------------------------------------------------
-
-export const tokenStorage = {
-    async get(): Promise<string | null> {
-        return appStorage.getItem(TOKEN_KEY);
-    },
-
-    async set(token: string): Promise<void> {
-        await appStorage.setItem(TOKEN_KEY, token);
-    },
-
-    async remove(): Promise<void> {
-        await appStorage.deleteItem(TOKEN_KEY);
-    },
-};
-
-// ---------------------------------------------------------------------------
-// Tipos
-// ---------------------------------------------------------------------------
-
-type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-
-interface RequestOptions {
-    method?: HttpMethod;
-    body?: unknown;
-    /** Se false, não inclui o token Authorization (ex: rota de login) */
-    authenticated?: boolean;
-}
-
-interface ApiResponse<T = unknown> {
+export class ApiError extends Error {
     status: number;
-    data: T;
+    code?: string;
+    errors?: Record<string, string[]>;
+
+    constructor(status: number, message: string, code?: string, errors?: Record<string, string[]>) {
+        super(message);
+        this.name = 'ApiError';
+        this.status = status;
+        this.code = code;
+        this.errors = errors;
+    }
 }
 
-function getErrorMessage(data: unknown): string {
-    if (typeof data === 'object' && data !== null && 'message' in data) {
-        const message = data.message;
+let token: string | null = null;
+let unauthorizedHandler: (() => void) | null = null;
 
-        if (typeof message === 'string' && message.trim() !== '') {
-            return message;
+export function setAuthToken(value: string | null): void {
+    token = value;
+}
+
+export function onUnauthorized(handler: (() => void) | null): void {
+    unauthorizedHandler = handler;
+}
+
+export interface ApiInit {
+    method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    body?: unknown;
+    query?: Record<string, string | number | boolean | null | undefined>;
+}
+
+function buildUrl(path: string, query?: ApiInit['query']): string {
+    const params = new URLSearchParams();
+
+    for (const [key, value] of Object.entries(query ?? {})) {
+        if (value !== undefined && value !== null && value !== '') {
+            params.set(key, String(value));
         }
     }
 
-    return 'Erro na requisição.';
+    const qs = params.toString();
+    const base = ENV.API_URL.replace(/\/+$/, '');
+
+    return `${base}${path.startsWith('/') ? path : `/${path}`}${qs ? `?${qs}` : ''}`;
 }
 
-// ---------------------------------------------------------------------------
-// Função central de requisição
-// ---------------------------------------------------------------------------
+export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
+    const headers: Record<string, string> = { Accept: 'application/json' };
 
-export async function request<T = unknown>(
-    endpoint: string,
-    options: RequestOptions = {},
-): Promise<ApiResponse<T>> {
-    const { method = 'GET', body, authenticated = true } = options;
-
-    // Monta headers base
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'Accept':       'application/json',
-        ...NGROK_HEADER,
-    };
-
-    // Adiciona token Bearer se necessário
-    if (authenticated) {
-        const token = await tokenStorage.get();
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
+    if (token) {
+        headers.Authorization = `Bearer ${token}`;
+    }
+    if (init.body !== undefined) {
+        headers['Content-Type'] = 'application/json';
     }
 
-    const url = `${ENV.API_URL}${endpoint}`;
+    let response: Response;
 
     try {
-        const response = await fetch(url, {
-            method,
+        response = await fetch(buildUrl(path, init.query), {
+            method: init.method ?? 'GET',
             headers,
-            body: body !== undefined ? JSON.stringify(body) : undefined,
+            body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
         });
-
-        // Tenta converter o JSON mesmo em caso de erro HTTP
-        let data: T;
-        try {
-            data = await response.json();
-        } catch {
-            data = {} as T;
-        }
-
-        if (!response.ok) {
-            const message = getErrorMessage(data);
-
-            if (response.status >= 500) {
-                notifyAppError({
-                    kind: 'server',
-                    title: 'Falha no servidor',
-                    message,
-                    status: response.status,
-                });
-            }
-
-            throw new ApiError(response.status, message, data);
-        }
-
-        return { status: response.status, data };
-
-    } catch (err) {
-        if (err instanceof ApiError) throw err;
-
-        // Erro de rede (sem internet, servidor fora, ngrok expirado, etc.)
-        const networkError = new NetworkError('Não foi possível conectar ao servidor. Verifique sua conexão.');
-
-        notifyAppError({
-            kind: 'network',
-            title: 'Sem conexão com o servidor',
-            message: networkError.message,
-        });
-
-        throw networkError;
+    } catch {
+        throw new ApiError(0, 'Não foi possível conectar ao servidor.');
     }
+
+    const text = await response.text();
+    let payload: { message?: string; code?: string; errors?: Record<string, string[]> } | null = null;
+
+    try {
+        payload = text ? JSON.parse(text) : null;
+    } catch {
+        payload = null;
+    }
+
+    if (!response.ok) {
+        if (response.status === 401) {
+            unauthorizedHandler?.();
+        }
+
+        throw new ApiError(
+            response.status,
+            payload?.message ?? (response.status >= 500 ? 'Erro no servidor.' : 'Erro na requisição.'),
+            payload?.code,
+            payload?.errors,
+        );
+    }
+
+    return payload as T;
 }
-
-// ---------------------------------------------------------------------------
-// Atalhos semânticos
-// ---------------------------------------------------------------------------
-
-export const apiClient = {
-    get<T>(endpoint: string, authenticated = true) {
-        return request<T>(endpoint, { method: 'GET', authenticated });
-    },
-
-    post<T>(endpoint: string, body: unknown, authenticated = true) {
-        return request<T>(endpoint, { method: 'POST', body, authenticated });
-    },
-
-    put<T>(endpoint: string, body: unknown, authenticated = true) {
-        return request<T>(endpoint, { method: 'PUT', body, authenticated });
-    },
-
-    patch<T>(endpoint: string, body: unknown, authenticated = true) {
-        return request<T>(endpoint, { method: 'PATCH', body, authenticated });
-    },
-
-    delete<T>(endpoint: string, authenticated = true) {
-        return request<T>(endpoint, { method: 'DELETE', authenticated });
-    },
-};
