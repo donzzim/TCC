@@ -14,6 +14,7 @@ use App\Models\egap\Cadastro\Setores;
 use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
 use App\Models\egap\Patrimonio\BensMoveis\Inventario;
 use App\Models\egap\Patrimonio\BensMoveis\InventarioUnidade;
+use App\Services\Egap\Inventario\AbrangenciaInventario;
 use Carbon\Carbon;
 use Closure;
 use Filament\Actions\Action;
@@ -484,24 +485,14 @@ class InventarioResource extends InventarioGestaoResource
 
     private static function atualizarSituacaoBensInventario(Inventario $inventario): int
     {
-        [$unidades, $setores] = self::idsAbrangenciaInventario($inventario);
+        $setores = AbrangenciaInventario::setoresCobertos($inventario)->keys();
 
-        if ($unidades->isEmpty() && $setores->isEmpty()) {
+        if ($setores->isEmpty()) {
             return 0;
         }
 
         return BemMovel::query()
-            ->where(function ($query) use ($unidades, $setores): void {
-                if ($setores->isNotEmpty()) {
-                    $query->whereIn('Setor', $setores);
-                }
-
-                if ($unidades->isNotEmpty()) {
-                    $method = $setores->isNotEmpty() ? 'orWhereIn' : 'whereIn';
-
-                    $query->{$method}('UnidadeJudiciaria', $unidades);
-                }
-            })
+            ->whereIn('Setor', $setores)
             // só bens que entram na conferência (ativo, em trânsito, a inventariar)
             ->whereIn('SituacaoBem', [1, 7, 8])
             // rodar de novo não pode apagar o que já foi conferido neste inventário
@@ -512,38 +503,6 @@ class InventarioResource extends InventarioGestaoResource
                 'sit_inventario' => 'A INVENTARIAR',
                 'id_inventario' => $inventario->getKey(),
             ]);
-    }
-
-    private static function idsAbrangenciaInventario(Inventario $inventario): array
-    {
-        $selecionados = $inventario->unidadesInventariadas()
-            ->with('unidade')
-            ->get()
-            ->pluck('unidade')
-            ->filter();
-
-        $unidades = $selecionados
-            ->filter(fn(Setores $setor): bool => $setor->inventariaUnidadeInteira())
-            ->pluck('id')
-            ->unique()
-            ->values();
-
-        $setoresDiretos = $selecionados
-            ->reject(fn(Setores $setor): bool => $setor->inventariaUnidadeInteira())
-            ->pluck('id');
-
-        $setoresDasUnidades = Setores::query()
-            ->whereIn('codigopai', $unidades)
-            ->setoresInventariaveis()
-            ->pluck('id');
-
-        $setores = $setoresDiretos
-            ->merge($setoresDasUnidades)
-            ->merge($unidades)
-            ->unique()
-            ->values();
-
-        return [$unidades, $setores];
     }
 
     private static function calcularDiasInventario(Get $get, Set $set): void
