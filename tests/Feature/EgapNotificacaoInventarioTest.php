@@ -16,6 +16,7 @@ use App\Services\Egap\Inventario\NotificadorInventario;
 use Filament\Notifications\Notification;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -203,6 +204,24 @@ class EgapNotificacaoInventarioTest extends TestCase
         $this->novoInventario(['situacao' => Inventario::SITUACAO_EM_EXECUCAO]);
 
         Bus::assertDispatched(NotificarAberturaInventario::class);
+    }
+
+    public function test_grava_na_hora_mesmo_com_fila_assincrona(): void
+    {
+        // em produção QUEUE_CONNECTION=database e não há worker: nada pode depender da fila
+        config(['queue.default' => 'database']);
+        Queue::fake();
+
+        [$a] = $this->setores(1);
+        $inventario = $this->novoInventario();
+        $this->cobrir($inventario, $a, '2026-11-10 00:00:00');
+        $user = $this->usuarioFicticio([$a->id]);
+
+        $this->assertGreaterThanOrEqual(1, NotificadorInventario::notificarAbertura($inventario));
+
+        Queue::assertNothingPushed();
+        $this->assertCount(1, $this->notificacoesDe($user));
+        $this->assertSame(0, NotificadorInventario::notificarAbertura($inventario));
     }
 
     public function test_aparece_no_sino_do_painel(): void

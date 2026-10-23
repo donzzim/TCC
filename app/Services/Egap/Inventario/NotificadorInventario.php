@@ -8,9 +8,12 @@ use App\Models\egap\Patrimonio\BensMoveis\Inventario;
 use App\Models\egap\User;
 use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
+use Filament\Notifications\DatabaseNotification;
 use Filament\Notifications\Notification;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Avisos do inventário no sino do EGAP (e, pela mesma tabela, no app).
@@ -92,21 +95,22 @@ class NotificadorInventario
         $jaAvisados = array_flip(static::usuariosComChave($chave));
         $pendentes = $destinatarios->reject(fn (array $setores, int $userId): bool => isset($jaAvisados[$userId]));
         $url = BensNoSetor::getUrl(panel: 'egap');
+        $tipoNotificavel = (new User)->getMorphClass();
         $enviados = 0;
 
         foreach ($pendentes->chunk(self::LOTE, preserveKeys: true) as $lote) {
-            $usuarios = User::query()->whereIn('id', $lote->keys()->all())->get()->keyBy('id');
+            $existentes = array_flip(User::query()->whereIn('id', $lote->keys()->all())->pluck('id')->map(fn ($id): int => (int) $id)->all());
+            $agora = now();
+            $linhas = [];
 
             foreach ($lote as $userId => $setores) {
-                $user = $usuarios->get($userId);
-
-                if ($user === null) {
+                if (! isset($existentes[$userId])) {
                     continue;
                 }
 
                 $texto = $montar($setores);
 
-                Notification::make()
+                $dados = Notification::make()
                     ->title($texto['titulo'])
                     ->body($texto['corpo'])
                     ->icon(self::ICONE)
@@ -116,20 +120,40 @@ class NotificadorInventario
                             ->url($url),
                     ])
                     ->viewData(['chave' => $chave, 'tipo' => $tipo, 'rota_app' => $rotaApp])
-                    ->sendToDatabase($user);
+                    ->getDatabaseMessage();
 
-                $enviados++;
+                // mesma linha que o canal "database" do Laravel grava para o sendToDatabase() do Filament,
+                // mas gravada já: o sendToDatabase() enfileira (DatabaseNotification é ShouldQueue) e não há worker
+                $linhas[] = [
+                    'id' => (string) Str::uuid(),
+                    'type' => DatabaseNotification::class,
+                    'notifiable_type' => $tipoNotificavel,
+                    'notifiable_id' => $userId,
+                    'data' => json_encode($dados),
+                    'read_at' => null,
+                    'created_at' => $agora,
+                    'updated_at' => $agora,
+                ];
+            }
+
+            if ($linhas !== []) {
+                static::tabela()->insert($linhas);
+                $enviados += count($linhas);
             }
         }
 
         return $enviados;
     }
 
+    private static function tabela(): Builder
+    {
+        return DB::connection((new User)->getConnectionName())->table('notifications');
+    }
+
     /** @return array<int, int> */
     private static function usuariosComChave(string $chave): array
     {
-        return DB::connection((new User)->getConnectionName())
-            ->table('notifications')
+        return static::tabela()
             ->where('notifiable_type', (new User)->getMorphClass())
             ->where('data->viewData->chave', $chave)
             ->pluck('notifiable_id')
