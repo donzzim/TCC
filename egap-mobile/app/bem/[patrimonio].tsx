@@ -8,6 +8,7 @@ import { ApiError } from '@/src/api/client';
 import type { Bem } from '@/src/api/types';
 import { Card } from '@/src/components/Card';
 import { EmptyState } from '@/src/components/EmptyState';
+import { Foto } from '@/src/components/Foto';
 import { GradientHeader } from '@/src/components/GradientHeader';
 import { useBem } from '@/src/hooks/useBens';
 import { useErroRede } from '@/src/hooks/useErroRede';
@@ -58,6 +59,18 @@ function Detalhe({ bem }: { bem: Bem }): ReactNode {
 
     return (
         <>
+            {bem.imagem_url ? (
+                <Card style={{ padding: 8 }}>
+                    <Foto
+                        uri={bem.imagem_url}
+                        titulo={bem.descricao_resumida || bem.descricao}
+                        larga
+                        tamanho={220}
+                        arredondamento={12}
+                    />
+                    <Text style={[styles.legenda, { color: colors.textMuted }]}>Toque na foto para ampliar</Text>
+                </Card>
+            ) : null}
             {bem.pertence_ao_setor === false ? (
                 <View style={[styles.banner, { backgroundColor: `${colors.warning}1f`, borderColor: colors.warning }]}>
                     <Ionicons name="warning-outline" size={20} color={colors.warning} />
@@ -156,6 +169,7 @@ export default function BemDetalhe() {
 }
 
 const styles = StyleSheet.create({
+    legenda: { fontSize: 11, textAlign: 'center', marginTop: 6 },
     corpo: { padding: 14, gap: 12, paddingBottom: 32 },
     secao: { fontSize: 14, fontWeight: '800' },
     banner: { flexDirection: 'row', gap: 10, alignItems: 'center', padding: 12, borderRadius: 14, borderWidth: 1 },

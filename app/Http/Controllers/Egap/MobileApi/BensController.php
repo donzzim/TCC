@@ -70,6 +70,7 @@ class BensController extends Controller
                 'NumerodeSerie',
                 'Descricao',
                 'DescricaoResumidadoBem',
+                'id_descricaodetalhada',
                 'Marca',
                 'Modelo',
                 'TipodoBem',
@@ -93,7 +94,8 @@ class BensController extends Controller
                 'Observacao',
             ])
             ->with([
-                'descricaoResumidaBemRef:id,Descricao',
+                'descricaoResumidaBemRef:id,Descricao,imagem',
+                'descricaoDetalhadaRef:id,imagem',
                 'marcaRef:id,descricao',
                 'modeloRef:id,descricao',
                 'situacaoBemRef:id,descricao,situacao',

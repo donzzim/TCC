@@ -10,6 +10,7 @@ import { Card } from '@/src/components/Card';
 import { DivergenciaModal } from '@/src/components/DivergenciaModal';
 import { EmptyState } from '@/src/components/EmptyState';
 import { Folha } from '@/src/components/Folha';
+import { Foto } from '@/src/components/Foto';
 import { GradientHeader } from '@/src/components/GradientHeader';
 import { ProgressRing } from '@/src/components/ProgressRing';
 import { StatPill } from '@/src/components/StatPill';
@@ -224,6 +225,8 @@ export default function Conferencia() {
                 <ActivityIndicator color={colors.primary} style={{ marginTop: 24 }} />
             ) : (
                 <FlashList
+                    // recria a lista ao trocar o filtro: sem reaproveitar linhas e rolagem do filtro anterior
+                    key={filtro}
                     data={itens}
                     extraData={selecionados}
                     keyExtractor={(b) => String(b.id)}
@@ -427,6 +430,7 @@ function LinhaConferencia({
                     color={selecionado ? colors.primary : colors.textMuted}
                 />
             ) : null}
+            <Foto uri={bem.imagem_url} titulo={bem.descricao_resumida || bem.descricao} tamanho={44} />
             <View style={{ flex: 1 }}>
                 <Text style={[styles.titulo, { color: colors.text }]} numberOfLines={2}>
                     {bem.descricao_resumida || bem.descricao || 'Sem descrição'}

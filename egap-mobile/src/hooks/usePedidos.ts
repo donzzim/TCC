@@ -10,11 +10,12 @@ function useSetorId(): number | null {
     return sessao?.setor_atual?.id ?? null;
 }
 
-export function usePedidos() {
+export function usePedidos(enabled = true) {
     const setorId = useSetorId();
 
     return useInfiniteQuery({
         queryKey: ['pedidos', setorId, 'lista'],
+        enabled,
         queryFn: ({ pageParam }) => pedidosApi.listar(pageParam),
         initialPageParam: 1,
         getNextPageParam: (ultima) => (ultima.meta.has_more ? ultima.meta.current_page + 1 : undefined),

@@ -44,6 +44,37 @@ class PedidosTest extends TestCase
         $this->markTestSkipped('nenhum usuário com egap_access, lotação e egap_id neste banco');
     }
 
+    public function test_usuario_sem_cadastro_egap_recebe_aviso_claro(): void
+    {
+        $candidatos = User::query()
+            ->where('ativo', 1)
+            ->has('setores')
+            ->orderBy('id')
+            ->limit(300)
+            ->get();
+
+        foreach ($candidatos as $user) {
+            if (! $this->temAcessoEgap($user)) {
+                continue;
+            }
+
+            [$sessao, $plain] = $this->sessaoPara($user);
+
+            if ($sessao->escopo() === null || $sessao->escopo()['id_egap'] !== null) {
+                continue;
+            }
+
+            $this->withToken($plain)->getJson('/mobile-api/pedidos')
+                ->assertForbidden()
+                ->assertJsonPath('code', 'sem_vinculo_egap')
+                ->assertJsonPath('message', 'Seu usuário não tem cadastro no EGAP. Procure a administração para fazer pedidos.');
+
+            return;
+        }
+
+        $this->markTestSkipped('nenhum usuário com lotação e sem cadastro EGAP neste banco');
+    }
+
     public function test_exige_sessao(): void
     {
         $this->getJson('/mobile-api/pedidos')->assertUnauthorized();

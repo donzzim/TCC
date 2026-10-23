@@ -10,6 +10,7 @@ import { QUANTIDADE_MAX, useCarrinho } from '@/src/cart/CartProvider';
 import { Card } from '@/src/components/Card';
 import { EmptyState } from '@/src/components/EmptyState';
 import { Folha } from '@/src/components/Folha';
+import { Foto } from '@/src/components/Foto';
 import { GradientHeader } from '@/src/components/GradientHeader';
 import { useErroRede } from '@/src/hooks/useErroRede';
 import { useMateriais } from '@/src/hooks/usePedidos';
@@ -64,7 +65,12 @@ export default function NovoPedido() {
                 subtitle="Novo pedido"
                 overlap={28}
                 right={
-                    <Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={() => router.back()} hitSlop={10}>
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Voltar"
+                        onPress={() => router.back()}
+                        hitSlop={10}
+                    >
                         <Ionicons name="close" size={26} color="#ffffff" />
                     </Pressable>
                 }
@@ -96,22 +102,28 @@ export default function NovoPedido() {
 
                         return (
                             <Pressable accessibilityRole="button" onPress={() => abrir(item)}>
-                                <Card style={{ gap: 4 }}>
-                                    <Text style={{ color: colors.text, fontWeight: '700', fontSize: 14 }} numberOfLines={3}>
-                                        {item.descricao}
-                                    </Text>
-                                    <Text style={{ color: colors.textMuted, fontSize: 12 }}>
-                                        {item.unidade}
-                                        {item.preco_medio > 0 ? ` · ${moeda(item.preco_medio)}` : ''}
-                                        {item.quantidade_estoque !== null
-                                            ? ` · ${item.disponivel ? `${numero(item.quantidade_estoque)} em estoque` : 'Sem estoque'}`
-                                            : ''}
-                                    </Text>
-                                    {naCesta ? (
-                                        <Text style={{ color: colors.success, fontSize: 12, fontWeight: '700' }}>
-                                            No carrinho: {numero(naCesta)}
+                                <Card style={styles.material}>
+                                    <Foto uri={item.imagem_url} titulo={item.descricao} tamanho={56} />
+                                    <View style={{ flex: 1, gap: 4 }}>
+                                        <Text
+                                            style={{ color: colors.text, fontWeight: '700', fontSize: 14 }}
+                                            numberOfLines={3}
+                                        >
+                                            {item.descricao}
                                         </Text>
-                                    ) : null}
+                                        <Text style={{ color: colors.textMuted, fontSize: 12 }}>
+                                            {item.unidade}
+                                            {item.preco_medio > 0 ? ` · ${moeda(item.preco_medio)}` : ''}
+                                            {item.quantidade_estoque !== null
+                                                ? ` · ${item.disponivel ? `${numero(item.quantidade_estoque)} em estoque` : 'Sem estoque'}`
+                                                : ''}
+                                        </Text>
+                                        {naCesta ? (
+                                            <Text style={{ color: colors.success, fontSize: 12, fontWeight: '700' }}>
+                                                No carrinho: {numero(naCesta)}
+                                            </Text>
+                                        ) : null}
+                                    </View>
                                 </Card>
                             </Pressable>
                         );
@@ -166,7 +178,10 @@ export default function NovoPedido() {
             ) : null}
 
             <Folha visible={selecionado !== null} title="Adicionar ao carrinho" onClose={() => setSelecionado(null)}>
-                <Text style={{ color: colors.text }}>{selecionado?.descricao}</Text>
+                <View style={styles.selecionado}>
+                    <Foto uri={selecionado?.imagem_url} titulo={selecionado?.descricao} tamanho={64} />
+                    <Text style={{ color: colors.text, flex: 1 }}>{selecionado?.descricao}</Text>
+                </View>
                 <Text style={{ color: colors.textMuted, fontSize: 12 }}>Quantidade (1 a {numero(QUANTIDADE_MAX)})</Text>
                 <TextInput
                     value={quantidade}
@@ -174,7 +189,10 @@ export default function NovoPedido() {
                     keyboardType="number-pad"
                     autoFocus
                     onSubmitEditing={confirmar}
-                    style={[styles.campo, { color: colors.text, borderColor: qtdValida ? colors.border : colors.danger }]}
+                    style={[
+                        styles.campo,
+                        { color: colors.text, borderColor: qtdValida ? colors.border : colors.danger },
+                    ]}
                 />
                 {!qtdValida ? (
                     <Text style={{ color: colors.danger, fontSize: 12 }}>
@@ -197,6 +215,8 @@ export default function NovoPedido() {
 }
 
 const styles = StyleSheet.create({
+    material: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    selecionado: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     busca: {
         flexDirection: 'row',
         alignItems: 'center',

@@ -19,6 +19,7 @@ export interface ItemCarrinho {
     materialId: number;
     descricao: string;
     unidade: string;
+    imagemUrl: string | null;
     quantidade: number;
     /** Só permanente. */
     tipoAtendimento: 'adicao' | 'substituicao';
@@ -64,6 +65,7 @@ function normalizarTipo(bruto: unknown): CarrinhoTipo {
                   materialId: i.materialId,
                   descricao: String(i.descricao ?? ''),
                   unidade: String(i.unidade ?? 'Unidade'),
+                  imagemUrl: typeof i.imagemUrl === 'string' ? i.imagemUrl : null,
                   quantidade: Math.min(QUANTIDADE_MAX, Math.max(1, Math.trunc(i.quantidade))),
                   tipoAtendimento: i.tipoAtendimento === 'substituicao' ? ('substituicao' as const) : ('adicao' as const),
                   patrimonioSubstituido: String(i.patrimonioSubstituido ?? ''),
@@ -155,6 +157,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                                   materialId: material.id,
                                   descricao: material.descricao,
                                   unidade: material.unidade,
+                                  imagemUrl: material.imagem_url,
                                   quantidade: qtd,
                                   tipoAtendimento: 'adicao',
                                   patrimonioSubstituido: '',

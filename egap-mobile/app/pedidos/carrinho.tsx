@@ -10,6 +10,7 @@ import { QUANTIDADE_MAX, useCarrinho, type ItemCarrinho } from '@/src/cart/CartP
 import { Card } from '@/src/components/Card';
 import { EmptyState } from '@/src/components/EmptyState';
 import { Folha } from '@/src/components/Folha';
+import { Foto } from '@/src/components/Foto';
 import { GradientHeader } from '@/src/components/GradientHeader';
 import { useContextoPedido, useEnviarPedido } from '@/src/hooks/usePedidos';
 import { useTheme } from '@/src/theme/ThemeProvider';
@@ -243,6 +244,7 @@ export default function Carrinho() {
                 {itens.map((item, i) => (
                     <Card key={item.materialId} style={{ gap: 8 }}>
                         <View style={styles.linha}>
+                            <Foto uri={item.imagemUrl} titulo={item.descricao} tamanho={44} />
                             <Text style={{ color: colors.text, fontWeight: '700', flex: 1 }}>{item.descricao}</Text>
                             <Pressable
                                 accessibilityRole="button"
