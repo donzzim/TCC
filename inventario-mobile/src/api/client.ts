@@ -14,6 +14,8 @@ export class ApiError extends Error {
     }
 }
 
+const VIA_NGROK = /\.ngrok(-free)?\.(app|dev|io)\b/.test(ENV.API_URL);
+
 let token: string | null = null;
 let unauthorizedHandler: (() => void) | null = null;
 
@@ -54,6 +56,10 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
     }
     if (init.body !== undefined) {
         headers['Content-Type'] = 'application/json';
+    }
+    // O ngrok gratuito troca a resposta por uma página de aviso quando a chamada vem de navegador.
+    if (VIA_NGROK) {
+        headers['ngrok-skip-browser-warning'] = '1';
     }
 
     let response: Response;

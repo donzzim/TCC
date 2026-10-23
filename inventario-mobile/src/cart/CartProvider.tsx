@@ -95,13 +95,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const [estado, setEstado] = useState<Estado>(VAZIO);
     const [hidratado, setHidratado] = useState(false);
 
-    // Hidrata ao autenticar; ao sair (logout/401) zera a memória (o storage é limpo pelo SessionProvider).
-    useEffect(() => {
+    // Ao sair (logout/401) zera a memória; o storage é limpo pelo SessionProvider.
+    const [autenticadoAntes, setAutenticadoAntes] = useState(autenticado);
+    if (autenticado !== autenticadoAntes) {
+        setAutenticadoAntes(autenticado);
         if (!autenticado) {
             setHidratado(false);
             setEstado(VAZIO);
-            return;
         }
+    }
+
+    // Hidrata ao autenticar.
+    useEffect(() => {
+        if (!autenticado) return;
 
         let ativo = true;
 
@@ -118,11 +124,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }, [autenticado]);
 
     // Carrinho de outro setor não vale para o setor atual.
-    useEffect(() => {
-        if (!hidratado || setorAtual === null) return;
-
-        setEstado((atual) => (atual.setorId === setorAtual ? atual : { ...VAZIO, setorId: setorAtual }));
-    }, [hidratado, setorAtual]);
+    if (hidratado && setorAtual !== null && estado.setorId !== setorAtual) {
+        setEstado({ ...VAZIO, setorId: setorAtual });
+    }
 
     useEffect(() => {
         if (hidratado) {

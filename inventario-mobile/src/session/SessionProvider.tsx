@@ -55,9 +55,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         return () => onUnauthorized(null);
     }, [descartar]);
 
-    const iniciar = useCallback(async () => {
-        const salvo = await lerToken();
-
+    const iniciar = useCallback(async (salvo: string | null) => {
         if (!salvo) {
             setStatus('anonimo');
             return;
@@ -79,12 +77,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     }, []);
 
     useEffect(() => {
-        void iniciar();
+        void lerToken().then(iniciar);
     }, [iniciar]);
 
     const recarregar = useCallback(async () => {
         setStatus('carregando');
-        await iniciar();
+        await iniciar(await lerToken());
     }, [iniciar]);
 
     const entrar = useCallback(async (login: string, senha: string) => {

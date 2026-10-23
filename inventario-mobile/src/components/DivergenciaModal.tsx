@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { Text, TextInput } from '@/src/components/Text';
@@ -26,12 +26,15 @@ export function DivergenciaModal({ visible, onClose, bem = null, codigoInicial =
     const [observacao, setObservacao] = useState('');
     const [erro, setErro] = useState<string | null>(null);
 
-    useEffect(() => {
+    // Ao abrir, recomeça com o código recebido (ajuste na renderização, sem efeito).
+    const [abertoAntes, setAbertoAntes] = useState(visible);
+    if (visible !== abertoAntes) {
+        setAbertoAntes(visible);
         if (visible) {
             setCodigo(codigoInicial);
             setErro(null);
         }
-    }, [visible, codigoInicial]);
+    }
 
     const alternar = (campo: string) =>
         setCampos((atuais) => (atuais.includes(campo) ? atuais.filter((c) => c !== campo) : [...atuais, campo]));
