@@ -23,7 +23,7 @@ const ALTURA_BARRA = 58;
 const BOTAO = 56;
 const SALIENCIA = 24;
 
-function TabBar({ state, navigation }: BottomTabBarProps) {
+function TabBar({ state, emitter, navigateToTab }: BottomTabBarProps) {
     const { colors } = useTheme();
     const router = useRouter();
     const insets = useSafeAreaInsets();
@@ -48,10 +48,10 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
                 accessibilityState={{ selected: focada }}
                 accessibilityLabel={info.titulo}
                 onPress={() => {
-                    const evento = navigation.emit({ type: 'tabPress', target: rota.key, canPreventDefault: true });
+                    const evento = emitter.emit({ type: 'tabPress', target: rota.key, canPreventDefault: true });
 
                     if (!focada && !evento.defaultPrevented) {
-                        navigation.navigate(rota.name, rota.params);
+                        navigateToTab(rota.key);
                     }
                 }}
                 style={styles.aba}
