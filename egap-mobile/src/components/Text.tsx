@@ -1,9 +1,8 @@
-import { forwardRef } from 'react';
+import type { ComponentProps } from 'react';
 import {
     Text as RNText,
     TextInput as RNTextInput,
     StyleSheet,
-    type TextInputProps,
     type TextProps,
     type TextStyle,
 } from 'react-native';
@@ -21,7 +20,7 @@ export function Text({ style, ...props }: TextProps) {
 }
 
 /** `TextInput` do React Native com a fonte Inter no peso pedido em `fontWeight`. */
-export const TextInput = forwardRef<RNTextInput, TextInputProps>(function TextInput({ style, ...props }, ref) {
-    return <RNTextInput ref={ref} {...props} style={comFonte(style)} />;
-});
+export function TextInput({ style, ...props }: ComponentProps<typeof RNTextInput>) {
+    return <RNTextInput {...props} style={comFonte(style)} />;
+}
 
