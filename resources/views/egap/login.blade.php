@@ -263,11 +263,6 @@
     <div class="nf-shell lg-split">
 
         <section class="lg-form">
-            <a class="lg-form__brand" href="{{ filament()->getUrl() }}" aria-label="EGAP — ir para o início">
-                <img class="nf__logo nf__logo--dark" src="{{ asset('storage/egap/brand-dark.png') }}" alt="EGAP — Gestão Administrativa Pública">
-                <img class="nf__logo nf__logo--light" src="{{ asset('storage/egap/brand-light.png') }}" alt="EGAP — Gestão Administrativa Pública">
-            </a>
-
             <div class="lg-form__body">
                 <h1 class="lg-form__title">Bem-vindo de volta</h1>
                 <p class="lg-form__text">Acesse o painel do EGAP para acompanhar patrimônio, almoxarifado, pedidos e agendamentos.</p>
