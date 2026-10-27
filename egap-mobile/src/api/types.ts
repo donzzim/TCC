@@ -269,6 +269,23 @@ export interface Pedido {
     itens: PedidoItem[];
 }
 
+/** Uma fase do histórico do pedido (egap_ped_fases); vêm da mais recente à mais antiga. */
+export interface PedidoFase {
+    id: number;
+    data: string | null;
+    situacao: { id: number | string | null; descricao: string | null };
+    descricao: string | null;
+    usuario: string | null;
+    material: string | null;
+    quantidade: number | null;
+}
+
+/** Espelha PedidosMobileService::detalhe (GET /pedidos/{id}). */
+export interface PedidoDetalhe extends Pedido {
+    setor: string | null;
+    historico: PedidoFase[];
+}
+
 export interface Complemento {
     id: number;
     descricao: string;

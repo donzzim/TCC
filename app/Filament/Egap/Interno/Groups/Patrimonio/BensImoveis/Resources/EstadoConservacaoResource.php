@@ -3,10 +3,7 @@
 namespace App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources;
 
 use App\Filament\Egap\Interno\Clusters\PatrimonioCluster;
-use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\EstadoConservacaoResource\Pages\CreateEstadoConservacao;
-use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\EstadoConservacaoResource\Pages\EditEstadoConservacao;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\EstadoConservacaoResource\Pages\ListEstadoConservacaos;
-use App\Filament\Egap\Resources\Patrimonio\BensImoveis\EstadoConservacaoResource\Pages;
 use App\Filament\Egap\Support\TableColumns;
 use App\Filament\Egap\Support\TableDefaults;
 use App\Models\egap\Patrimonio\BensImoveis\EstadoConservacao;
@@ -37,14 +34,11 @@ class EstadoConservacaoResource extends PatrimonioResource
     {
         return $schema
             ->components([
-                Section::make()
-                    ->schema([
-                        TextInput::make('descEstadoConservacao')
-                            ->label('Estado de Conservação')
-                            ->required()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
-                    ])
+                TextInput::make('descEstadoConservacao')
+                    ->label('Estado de Conservação')
+                    ->required()
+                    ->maxLength(255)
+                    ->columnSpanFull(),
             ]);
     }
     public static function table(Table $table): Table
@@ -52,7 +46,8 @@ class EstadoConservacaoResource extends PatrimonioResource
         return TableDefaults::apply($table)
             ->columns([
                 TableColumns::text('Id', '#', isFirstColumn: true, isIdColumn: true),
-                TableColumns::text('descEstadoConservacao', 'Estado de Conservação'),
+                TableColumns::text('descEstadoConservacao', 'Estado de Conservação')
+                    ->alignLeft(),
             ]);
     }
 
@@ -60,8 +55,6 @@ class EstadoConservacaoResource extends PatrimonioResource
     {
         return [
             'index' => ListEstadoConservacaos::route('/'),
-            'create' => CreateEstadoConservacao::route('/create'),
-            'edit' => EditEstadoConservacao::route('/{record}/edit'),
         ];
     }
 }

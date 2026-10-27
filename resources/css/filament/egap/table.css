@@ -163,7 +163,12 @@
     .fi-ta-table
     > tbody
     > tr
-    > .fi-ta-cell:has(> .fi-ta-actions):focus-within,
+    > .fi-ta-cell:has(> .fi-ta-actions):focus-within {
+    z-index: 4;
+}
+
+/* Com o dropdown aberto a célula precisa ficar acima do header e da paginação (z-index 5),
+   senão eles cobrem o painel e interceptam os cliques. */
 .fi-ta[class*='egap-table']
     .fi-ta-table
     > tbody
@@ -172,7 +177,7 @@
         > .fi-ta-actions
             .fi-dropdown-panel:not([x-cloak]):not([style*='display: none'])
     ) {
-    z-index: 4;
+    z-index: 6;
 }
 
 .fi-ta[class*='egap-table'] .fi-ta-actions .fi-dropdown-panel {

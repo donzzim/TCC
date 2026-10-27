@@ -9,6 +9,7 @@ class Cidades extends Model
 {
     protected $connection = 'emes';
     protected $table = 'egap_imo_cidade';
+    public $timestamps = false;
     protected $fillable = [
         'id',
         'descricao',

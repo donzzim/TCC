@@ -3,10 +3,7 @@
 namespace App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources;
 
 use App\Filament\Egap\Interno\Clusters\PatrimonioCluster;
-use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\ResponsavelResource\Pages\CreateResponsavel;
-use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\ResponsavelResource\Pages\EditResponsavel;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\ResponsavelResource\Pages\ListResponsavels;
-use App\Filament\Egap\Resources\Patrimonio\BensImoveis\ResponsavelResource\Pages;
 use App\Filament\Egap\Support\TableColumns;
 use App\Filament\Egap\Support\TableDefaults;
 use App\Models\egap\Patrimonio\BensImoveis\Responsavel;
@@ -37,20 +34,17 @@ class ResponsavelResource extends PatrimonioResource
     {
         return $schema
             ->components([
-                Section::make()
-                    ->schema([
-                        TextInput::make('descricao')
-                            ->label('Descrição')
-                            ->required()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
+                TextInput::make('descricao')
+                    ->label('Descrição')
+                    ->required()
+                    ->maxLength(255)
+                    ->columnSpanFull(),
 
-                        TextInput::make('proprietario')
-                            ->label('Proprietário')
-                            ->required()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
-                    ])
+                TextInput::make('proprietario')
+                    ->label('Proprietário')
+                    ->required()
+                    ->maxLength(255)
+                    ->columnSpanFull(),
             ]);
     }
     public static function table(Table $table): Table
@@ -58,7 +52,8 @@ class ResponsavelResource extends PatrimonioResource
         return TableDefaults::apply($table)
             ->columns([
                 TableColumns::text('id', '#', isFirstColumn: true, isIdColumn: true),
-                TableColumns::text('descricao', 'Descrição'),
+                TableColumns::text('descricao', 'Descrição')
+                    ->alignLeft(),
                 TableColumns::text('proprietario', 'Proprietário'),
             ]);
     }
@@ -67,8 +62,6 @@ class ResponsavelResource extends PatrimonioResource
     {
         return [
             'index' => ListResponsavels::route('/'),
-            'create' => CreateResponsavel::route('/create'),
-            'edit' => EditResponsavel::route('/{record}/edit'),
         ];
     }
 }

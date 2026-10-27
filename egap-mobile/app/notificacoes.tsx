@@ -42,8 +42,9 @@ function ItemNotificacao({ notificacao, onPress }: { notificacao: Notificacao; o
                     </Text>
                     <Text style={{ color: colors.textMuted, fontSize: 11 }}>{tempoRelativo(notificacao.criada_em)}</Text>
                 </View>
-                <Text style={[styles.corpo, { color: colors.textMuted }]} numberOfLines={4}>
-                    {notificacao.corpo}
+                {/* na lista, sem a linha em branco entre parágrafos: cabe mais do aviso no resumo */}
+                <Text style={[styles.corpo, { color: colors.textMuted }]} numberOfLines={5}>
+                    {notificacao.corpo.replace(/\n{2,}/g, '\n')}
                 </Text>
             </View>
         </Pressable>
@@ -131,7 +132,10 @@ export default function Notificacoes() {
                                 onAction={() => void query.refetch()}
                             />
                         ) : (
-                            <EmptyState title="Nenhuma notificação" message="Avisos sobre o inventário aparecerão aqui." />
+                            <EmptyState
+                                title="Nenhuma notificação"
+                                message="Avisos sobre o inventário e os seus pedidos aparecerão aqui."
+                            />
                         )
                     }
                     ListFooterComponent={

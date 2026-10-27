@@ -6,12 +6,15 @@ use App\Models\egap\Cadastro\ComplementoSetor;
 use App\Models\egap\Cadastro\Setores;
 use App\Models\egap\Patrimonio\BensMoveis\Termo;
 use App\Models\egap\UserEgap;
+use App\Observers\Egap\PedidosObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use App\Filament\Egap\Auth\EgapSession;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+#[ObservedBy(PedidosObserver::class)]
 class Pedidos extends Model
 {
     protected $connection = 'emes';

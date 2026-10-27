@@ -3,10 +3,7 @@
 namespace App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources;
 
 use App\Filament\Egap\Interno\Clusters\PatrimonioCluster;
-use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\TipoImovelResource\Pages\CreateTipoImovel;
-use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\TipoImovelResource\Pages\EditTipoImovel;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\TipoImovelResource\Pages\ListTipoImovels;
-use App\Filament\Egap\Resources\Patrimonio\BensImoveis\TipoImovelResource\Pages;
 use App\Filament\Egap\Support\TableColumns;
 use App\Filament\Egap\Support\TableDefaults;
 use App\Models\egap\Patrimonio\BensImoveis\TipoImovel;
@@ -37,14 +34,11 @@ class TipoImovelResource extends PatrimonioResource
     {
         return $schema
             ->components([
-                Section::make()
-                    ->schema([
-                        TextInput::make('desc_tipo_imovel')
-                            ->label('Descrição')
-                            ->required()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
-                    ])
+                TextInput::make('desc_tipo_imovel')
+                    ->label('Descrição')
+                    ->required()
+                    ->maxLength(255)
+                    ->columnSpanFull(),
             ]);
     }
     public static function table(Table $table): Table
@@ -52,7 +46,8 @@ class TipoImovelResource extends PatrimonioResource
         return TableDefaults::apply($table)
             ->columns([
                 TableColumns::text('Id', '#', isFirstColumn: true, isIdColumn: true),
-                TableColumns::text('desc_tipo_imovel', 'Descrição'),
+                TableColumns::text('desc_tipo_imovel', 'Descrição')
+                    ->alignLeft(),
             ]);
     }
 
@@ -60,8 +55,6 @@ class TipoImovelResource extends PatrimonioResource
     {
         return [
             'index' => ListTipoImovels::route('/'),
-            'create' => CreateTipoImovel::route('/create'),
-            'edit' => EditTipoImovel::route('/{record}/edit'),
         ];
     }
 }

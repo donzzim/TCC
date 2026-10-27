@@ -46,6 +46,7 @@ Route::prefix('mobile-api')->group(function (): void {
                 Route::get('/contexto', [PedidosController::class, 'contexto'])->name('contexto');
                 Route::get('/materiais', [PedidosController::class, 'materiais'])->name('materiais');
                 Route::post('/', [PedidosController::class, 'store'])->name('store');
+                Route::get('/{pedido}', [PedidosController::class, 'show'])->whereNumber('pedido')->name('show');
             });
         });
     });

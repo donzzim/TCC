@@ -7,11 +7,17 @@ use App\Filament\Egap\Externo\Pages\Widgets\Almoxarifado\ExecucaoOrcamentariaAlm
 use App\Filament\Egap\Externo\Pages\Widgets\Almoxarifado\MateriaisConsumo;
 use App\Filament\Egap\Externo\Pages\Widgets\Almoxarifado\MateriaisConsumoAlmoxarifado;
 use App\Filament\Egap\Externo\Pages\Widgets\Almoxarifado\RequisicoesBensConsumoAtendidas;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Schemas\Schema;
 use Illuminate\View\View;
 use Livewire\Component;
 
-class AlmoxarifadoCharts extends Component
+class AlmoxarifadoCharts extends Component implements HasForms
 {
+    use InteractsWithForms;
+
     public string $selectedIndicator = 'materiais_fornecidos';
 
     public string $chartType = 'bar';
@@ -60,6 +66,39 @@ class AlmoxarifadoCharts extends Component
         $this->hasGenerated = true;
     }
 
+    public function indicatorForm(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Select::make('selectedIndicator')
+                    ->hiddenLabel()
+                    ->id('almoxarifado-indicator')
+                    ->prefixIcon('heroicon-o-presentation-chart-line')
+                    ->options($this->indicators)
+                    ->selectablePlaceholder(false)
+                    ->native(false),
+            ]);
+    }
+
+    public function chartTypeForm(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Select::make('chartType')
+                    ->hiddenLabel()
+                    ->prefixIcon('heroicon-o-adjustments-horizontal')
+                    ->options([
+                        'bar' => 'Barras',
+                        'line' => 'Linha',
+                        'bubble' => 'Bolhas',
+                        'doughnut' => 'Rosca',
+                        'pie' => 'Pizza',
+                        'polarArea' => 'Polar',
+                    ])
+                    ->selectablePlaceholder(false)
+                    ->native(false),
+            ]);
+    }
     public function render(): View
     {
         return view('egap.livewire.externo.portal-transparencia.almoxarifado-charts', [

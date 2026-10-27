@@ -3,10 +3,7 @@
 namespace App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources;
 
 use App\Filament\Egap\Interno\Clusters\PatrimonioCluster;
-use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\ObraResource\Pages\CreateObra;
-use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\ObraResource\Pages\EditObra;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\ObraResource\Pages\ListObras;
-use App\Filament\Egap\Resources\Patrimonio\BensImoveis\ObraResource\Pages;
 use App\Filament\Egap\Support\MoneyInput;
 use App\Filament\Egap\Support\TableColumns;
 use App\Filament\Egap\Support\TableDefaults;
@@ -40,27 +37,23 @@ class ObraResource extends PatrimonioResource
     {
         return $schema
             ->components([
-                Section::make()
-                    ->schema([
-                        Select::make('id_imovel')
-                            ->label('Imóveis')
-                            ->relationship('imovelRelacaoref', 'descricao')
-                            ->searchable()
-                            ->preload()
-                            ->columnSpanFull(),
+                Select::make('id_imovel')
+                    ->label('Imóveis')
+                    ->relationship('imovelRelacaoref', 'descricao')
+                    ->searchable()
+                    ->preload()
+                    ->columnSpanFull(),
 
-                        TextInput::make('descricao')
-                            ->label('Descrição')
-                            ->columnSpanFull(),
+                TextInput::make('descricao')
+                    ->label('Descrição')
+                    ->columnSpanFull(),
 
-                        DatePicker::make('data')
-                            ->label('Data')
-                            ->default(now())
-                            ->displayFormat('d/m/Y'),
+                DatePicker::make('data')
+                    ->label('Data')
+                    ->default(now())
+                    ->displayFormat('d/m/Y'),
 
-                        MoneyInput::make('valor')
-                    ])
-                    ->columns(2)
+                MoneyInput::make('valor')
             ]);
     }
 
@@ -82,8 +75,6 @@ class ObraResource extends PatrimonioResource
     {
         return [
             'index' => ListObras::route('/'),
-            'create' => CreateObra::route('/create'),
-            'edit' => EditObra::route('/{record}/edit'),
         ];
     }
 }

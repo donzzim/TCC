@@ -12,4 +12,6 @@ class TipoImovel extends Model
     protected $primaryKey = 'Id';
     protected $guarded = [];
     public $timestamps = false;
+
+
 }

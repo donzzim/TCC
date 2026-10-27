@@ -3,10 +3,7 @@
 namespace App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources;
 
 use App\Filament\Egap\Interno\Clusters\PatrimonioCluster;
-use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\TipoTributoResource\Pages\CreateTipoTributo;
-use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\TipoTributoResource\Pages\EditTipoTributo;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\TipoTributoResource\Pages\ListTipoTributos;
-use App\Filament\Egap\Resources\Patrimonio\BensImoveis\TipoTributoResource\Pages;
 use App\Filament\Egap\Support\TableColumns;
 use App\Filament\Egap\Support\TableDefaults;
 use App\Models\egap\Patrimonio\BensImoveis\TipoTributo;
@@ -37,14 +34,11 @@ class TipoTributoResource extends PatrimonioResource
     {
         return $schema
             ->components([
-                Section::make()
-                    ->schema([
-                        TextInput::make('descricao')
-                            ->label('Descrição')
-                            ->required()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
-                    ])
+                TextInput::make('descricao')
+                    ->label('Descrição')
+                    ->required()
+                    ->maxLength(255)
+                    ->columnSpanFull(),
             ]);
     }
     public static function table(Table $table): Table
@@ -52,7 +46,8 @@ class TipoTributoResource extends PatrimonioResource
         return TableDefaults::apply($table)
             ->columns([
                 TableColumns::text('id', '#', isFirstColumn: true, isIdColumn: true),
-                TableColumns::text('descricao', 'Descrição'),
+                TableColumns::text('descricao', 'Descrição')
+                    ->alignLeft(),
             ]);
     }
 
@@ -60,8 +55,6 @@ class TipoTributoResource extends PatrimonioResource
     {
         return [
             'index' => ListTipoTributos::route('/'),
-            'create' => CreateTipoTributo::route('/create'),
-            'edit' => EditTipoTributo::route('/{record}/edit'),
         ];
     }
 }

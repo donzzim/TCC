@@ -49,7 +49,8 @@ export function useMarcarTodas() {
 
 /** Rotas do app que uma notificação pode abrir; qualquer outra é ignorada. */
 const ROTAS_CONHECIDAS = new Set(['/tutorial', '/(tabs)/conferencia']);
+const ROTA_PEDIDO = /^\/pedidos\/\d+$/;
 
 export function rotaDaNotificacao(rota: string | null | undefined): Href | null {
-    return rota && ROTAS_CONHECIDAS.has(rota) ? (rota as Href) : null;
+    return rota && (ROTAS_CONHECIDAS.has(rota) || ROTA_PEDIDO.test(rota)) ? (rota as Href) : null;
 }
