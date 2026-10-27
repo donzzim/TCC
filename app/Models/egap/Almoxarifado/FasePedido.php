@@ -6,11 +6,14 @@ use App\Models\egap\Cadastro\DescricaoDetalhada;
 use App\Models\egap\Cadastro\DescricaoResumida;
 use App\Models\egap\Patrimonio\BensMoveis\Termo;
 use App\Models\egap\UserEgap;
+use App\Observers\Egap\FasePedidoObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use App\Filament\Egap\Auth\EgapSession;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Auth;
 
+#[ObservedBy(FasePedidoObserver::class)]
 class FasePedido extends Model
 {
     //

@@ -2,7 +2,7 @@
 
 namespace App\Filament\Egap\Externo\Groups\ServicosGerais\Pages;
 
-use App\Filament\Egap\Externo\Auth\ExternoPage;
+use App\Filament\Egap\Externo\Permissions\ExternoPage;
 use App\Filament\Egap\Externo\Clusters\ExternoCluster;
 use App\Filament\Egap\Externo\Groups\ServicosGerais\Components\FormulariosFiscalTable;
 use BackedEnum;

@@ -3,7 +3,7 @@
 namespace App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\TipoTributoResource\Pages;
 
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\TipoTributoResource;
-use Filament\Actions\CreateAction;
+use App\Filament\Egap\Support\CreateActionModal;
 use Filament\Resources\Pages\ListRecords;
 
 class ListTipoTributos extends ListRecords
@@ -13,8 +13,7 @@ class ListTipoTributos extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()
-                ->label('Novo'),
+            CreateActionModal::createAction()
         ];
     }
 }

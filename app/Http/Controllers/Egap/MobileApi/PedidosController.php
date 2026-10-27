@@ -62,6 +62,15 @@ class PedidosController extends Controller
         ]);
     }
 
+    public function show(MobileEgapSession $sessao, PedidosMobileService $pedidosService, int $pedido): JsonResponse
+    {
+        $detalhe = $pedidosService->detalhe($this->scope($sessao), $pedido);
+
+        abort_if($detalhe === null, 404, 'Pedido não encontrado.');
+
+        return response()->json(['pedido' => $detalhe]);
+    }
+
     public function store(
         CriarPedidoRequest $request,
         MobileEgapSession $sessao,

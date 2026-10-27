@@ -23,6 +23,16 @@ export function usePedidos(enabled = true) {
     });
 }
 
+/** Um pedido com o histórico; busca de novo a cada abertura (costuma vir de um aviso de atualização). */
+export function usePedido(id: string | undefined) {
+    return useQuery({
+        queryKey: ['pedidos', 'detalhe', id],
+        enabled: !!id,
+        queryFn: () => pedidosApi.detalhe(id ?? ''),
+        staleTime: 0,
+    });
+}
+
 export function useMateriais(tipo: PedidoTipo, search: string) {
     const setorId = useSetorId();
 

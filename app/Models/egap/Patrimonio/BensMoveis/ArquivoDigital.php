@@ -5,6 +5,7 @@ namespace App\Models\egap\Patrimonio\BensMoveis;
 use App\Filament\Egap\Support\LegacyFileUrl;
 use App\Models\egap\Almoxarifado\FasePedido;
 use App\Models\egap\UserEgap;
+use App\Services\Egap\Pedidos\NotificadorPedido;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use App\Filament\Egap\Auth\EgapSession;
@@ -186,6 +187,21 @@ class ArquivoDigital extends Model
                 'validado_por' => $userId,
             ])->save();
         });
+
+        // as fases foram para "Atendido" num update em massa (sem eventos); avisa o solicitante daqui
+        $termo = Termo::query()->find($this->termo);
+        $numero = $termo ? "{$termo->num_termo}/{$termo->ano_termo}" : (string) $this->termo;
+
+        FasePedido::query()
+            ->where('id_termo', $this->termo)
+            ->whereNotNull('id_pedido')
+            ->distinct()
+            ->pluck('id_pedido')
+            ->each(fn ($pedidoId) => NotificadorPedido::faseRegistrada(
+                (int) $pedidoId,
+                3,
+                "Termo nº {$numero} validado: os bens foram entregues no setor.",
+            ));
 
         return true;
     }

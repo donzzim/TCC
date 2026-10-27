@@ -169,6 +169,49 @@ class PedidosMobileService
     }
 
     /**
+     * Um pedido do usuário (de qualquer setor: o aviso de atualização pode chegar com outro setor escolhido)
+     * com o histórico de fases, do mais recente ao mais antigo.
+     *
+     * @param  array{id_egap:int}  $scope
+     */
+    public function detalhe(array $scope, int $pedidoId): ?array
+    {
+        $pedido = Pedidos::query()
+            ->with(['situacao', 'itens.situacaoRef', 'itens.materialRef', 'itens.descricaoDetalhadaRef', 'complementoSetor', 'setor_get'])
+            ->where('Solicitante', $scope['id_egap'])
+            ->find($pedidoId);
+
+        if ($pedido === null) {
+            return null;
+        }
+
+        $fases = FasePedido::query()
+            ->with(['situacaoRef', 'usuarioRef', 'itemPedidoRef.materialRef', 'itemPedidoRef.descricaoDetalhadaRef'])
+            ->where('id_pedido', $pedido->id)
+            ->orderByDesc('date_time')
+            ->orderByDesc('id')
+            ->limit(100)
+            ->get();
+
+        return [
+            ...$this->pedidoToArray($pedido),
+            'setor' => $pedido->setor_get?->setor,
+            'historico' => $fases->map(fn (FasePedido $fase): array => [
+                'id' => (int) $fase->id,
+                'data' => optional($fase->date_time)->toIso8601String(),
+                'situacao' => [
+                    'id' => $fase->idSituacao,
+                    'descricao' => $fase->situacaoRef?->Descricao,
+                ],
+                'descricao' => $fase->Descricao,
+                'usuario' => $fase->usuarioRef?->name,
+                'material' => $fase->itemPedidoRef?->material_nome,
+                'quantidade' => $fase->quantidade,
+            ])->values()->all(),
+        ];
+    }
+
+    /**
      * Pedidos do usuário no setor (mesmo filtro de pedidosDoUsuario) ainda em análise.
      *
      * @param  array{id_egap:int|null,setor:int}  $scope

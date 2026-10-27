@@ -42,6 +42,7 @@ class CidadesResource extends PatrimonioResource
             ->columns([
                 TableColumns::text('id', '#', isFirstColumn: true, isIdColumn: true),
                 TableColumns::text('descricao', 'Cidade')
+                    ->alignLeft()
             ]);
     }
 

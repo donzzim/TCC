@@ -11,6 +11,7 @@ class TipoTributo extends Model
     protected $connection = 'emes';
     protected $table = 'egap_imo_tipotributo';
     protected $guarded = [];
+    protected $primaryKey = 'id';
     public $timestamps = false;
 
     public function atualizadoPorRelacaoref()

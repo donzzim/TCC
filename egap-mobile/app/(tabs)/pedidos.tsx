@@ -16,42 +16,49 @@ import { useSessao } from '@/src/session/SessionProvider';
 import { useTheme } from '@/src/theme/ThemeProvider';
 import { radius } from '@/src/theme/tokens';
 import { dataHora, numero } from '@/src/utils/format';
+import { corDaSituacao } from '@/src/utils/situacaoPedido';
 
 const ROTULO_TIPO: Record<PedidoTipo, string> = { consumo: 'Consumo', permanente: 'Permanente' };
 
-function PedidoCard({ pedido }: { pedido: Pedido }) {
+function PedidoCard({ pedido, onPress }: { pedido: Pedido; onPress: () => void }) {
     const { colors } = useTheme();
     const visiveis = pedido.itens.slice(0, 3);
     const restantes = pedido.itens.length - visiveis.length;
+    const cor = corDaSituacao(pedido.situacao.id, colors);
 
     return (
-        <Card style={{ gap: 8 }}>
-            <View style={styles.linha}>
-                <Text style={[styles.numero, { color: colors.text }]}>Pedido #{pedido.id}</Text>
-                <View style={[styles.selo, { backgroundColor: `${colors.primary}1f` }]}>
-                    <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>
-                        {pedido.situacao.descricao ?? 'Em análise'}
-                    </Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Abrir pedido ${pedido.id}`} onPress={onPress}>
+            <Card style={{ gap: 8 }}>
+                <View style={styles.linha}>
+                    <Text style={[styles.numero, { color: colors.text }]}>Pedido #{pedido.id}</Text>
+                    <View style={styles.direita}>
+                        <View style={[styles.selo, { backgroundColor: `${cor}1f` }]}>
+                            <Text style={{ color: cor, fontSize: 11, fontWeight: '700' }}>
+                                {pedido.situacao.descricao ?? 'Em análise'}
+                            </Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                    </View>
                 </View>
-            </View>
-            <Text style={{ color: colors.textMuted, fontSize: 12 }}>
-                {ROTULO_TIPO[pedido.tipo]} · {dataHora(pedido.data)}
-                {pedido.complemento_setor.descricao ? ` · ${pedido.complemento_setor.descricao}` : ''}
-            </Text>
-            {visiveis.map((item) => (
-                <View key={item.id} style={styles.item}>
-                    <Foto uri={item.imagem_url} titulo={item.material} tamanho={32} arredondamento={8} />
-                    <Text style={{ color: colors.text, fontSize: 13, flex: 1 }} numberOfLines={1}>
-                        {numero(item.quantidade)}× {item.material ?? 'Material'}
-                    </Text>
-                </View>
-            ))}
-            {restantes > 0 ? (
                 <Text style={{ color: colors.textMuted, fontSize: 12 }}>
-                    + {restantes} {restantes === 1 ? 'item' : 'itens'}
+                    {ROTULO_TIPO[pedido.tipo]} · {dataHora(pedido.data)}
+                    {pedido.complemento_setor.descricao ? ` · ${pedido.complemento_setor.descricao}` : ''}
                 </Text>
-            ) : null}
-        </Card>
+                {visiveis.map((item) => (
+                    <View key={item.id} style={styles.item}>
+                        <Foto uri={item.imagem_url} titulo={item.material} tamanho={32} arredondamento={8} />
+                        <Text style={{ color: colors.text, fontSize: 13, flex: 1 }} numberOfLines={1}>
+                            {numero(item.quantidade)}× {item.material ?? 'Material'}
+                        </Text>
+                    </View>
+                ))}
+                {restantes > 0 ? (
+                    <Text style={{ color: colors.textMuted, fontSize: 12 }}>
+                        + {restantes} {restantes === 1 ? 'item' : 'itens'}
+                    </Text>
+                ) : null}
+            </Card>
+        </Pressable>
     );
 }
 
@@ -100,7 +107,12 @@ export default function Pedidos() {
                     keyExtractor={(p) => String(p.id)}
                     contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 24 }}
                     ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-                    renderItem={({ item }) => <PedidoCard pedido={item} />}
+                    renderItem={({ item }) => (
+                        <PedidoCard
+                            pedido={item}
+                            onPress={() => router.push({ pathname: '/pedidos/[id]', params: { id: item.id } })}
+                        />
+                    )}
                     onEndReachedThreshold={0.5}
                     onEndReached={() => {
                         if (query.hasNextPage && !query.isFetchingNextPage) {
@@ -150,6 +162,7 @@ const styles = StyleSheet.create({
         borderWidth: StyleSheet.hairlineWidth,
     },
     linha: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+    direita: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     item: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     numero: { fontSize: 15, fontWeight: '800' },
     selo: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.pill },

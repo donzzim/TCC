@@ -3,10 +3,7 @@
 namespace App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources;
 
 use App\Filament\Egap\Interno\Clusters\PatrimonioCluster;
-use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\SituacaoResource\Pages\CreateSituacao;
-use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\SituacaoResource\Pages\EditSituacao;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\SituacaoResource\Pages\ListSituacaos;
-use App\Filament\Egap\Resources\Patrimonio\BensImoveis\SituacaoResource\Pages;
 use App\Filament\Egap\Support\TableColumns;
 use App\Filament\Egap\Support\TableDefaults;
 use App\Models\egap\Patrimonio\BensImoveis\Situacao;
@@ -37,14 +34,11 @@ class SituacaoResource extends PatrimonioResource
     {
         return $schema
             ->components([
-                Section::make()
-                    ->schema([
-                        TextInput::make('Descricao')
-                            ->label('Descrição')
-                            ->required()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
-                    ])
+                TextInput::make('Descricao')
+                    ->label('Descrição')
+                    ->required()
+                    ->maxLength(255)
+                    ->columnSpanFull(),
             ]);
     }
     public static function table(Table $table): Table
@@ -52,7 +46,8 @@ class SituacaoResource extends PatrimonioResource
         return TableDefaults::apply($table)
             ->columns([
                 TableColumns::text('Id', '#', isFirstColumn: true, isIdColumn: true),
-                TableColumns::text('Descricao', 'Descrição'),
+                TableColumns::text('Descricao', 'Descrição')
+                    ->alignLeft(),
             ]);
     }
 
@@ -60,8 +55,6 @@ class SituacaoResource extends PatrimonioResource
     {
         return [
             'index' => ListSituacaos::route('/'),
-            'create' => CreateSituacao::route('/create'),
-            'edit' => EditSituacao::route('/{record}/edit'),
         ];
     }
 }

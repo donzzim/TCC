@@ -129,10 +129,9 @@ class BaixaResource extends PatrimonioResource
     {
         return TableDefaults::apply($table)
             ->columns([
-                TableColumns::text('NumeroProcesso', 'Processo Nº', isFirstColumn: true)
+                TableColumns::text('NumeroProcesso', 'Processo Nº', isFirstColumn: true, isIdColumn: true)
                     ->copyable()
-                    ->copyMessage('Processo copiado')
-                    ->weight('medium'),
+                    ->copyMessage('Processo copiado'),
                 TableColumns::date('DataBaixa', 'Data da Baixa'),
                 TableColumns::text('Requisitante', 'Requisitante')
                     ->wrap()
@@ -144,7 +143,7 @@ class BaixaResource extends PatrimonioResource
                     ->counts('itens')
                     ->searchable(false)
                     ->color('primary')
-                    ->weight('bold')
+                    ->weight('semibold')
                     ->extraAttributes([
                         'class' => 'cursor-pointer underline',
                     ])

@@ -3,10 +3,7 @@
 namespace App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources;
 
 use App\Filament\Egap\Interno\Clusters\PatrimonioCluster;
-use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\CondicaoUsoResource\Pages\CreateCondicaoUso;
-use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\CondicaoUsoResource\Pages\EditCondicaoUso;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\CondicaoUsoResource\Pages\ListCondicaoUsos;
-use App\Filament\Egap\Resources\Patrimonio\BensImoveis\CondicaoUsoResource\Pages;
 use App\Filament\Egap\Support\TableColumns;
 use App\Filament\Egap\Support\TableDefaults;
 use App\Models\egap\Patrimonio\BensImoveis\CondicaoUso;
@@ -36,14 +33,11 @@ class CondicaoUsoResource extends PatrimonioResource
     {
         return $schema
             ->components([
-                Section::make()
-                    ->schema([
-                        TextInput::make('descricao')
-                            ->label('Descrição')
-                            ->required()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
-                    ])
+                TextInput::make('descricao')
+                    ->label('Descrição')
+                    ->required()
+                    ->maxLength(255)
+                    ->columnSpanFull(),
             ]);
     }
     public static function table(Table $table): Table
@@ -51,7 +45,8 @@ class CondicaoUsoResource extends PatrimonioResource
         return TableDefaults::apply($table)
             ->columns([
                 TableColumns::text('id', '#', isFirstColumn: true, isIdColumn: true),
-                TableColumns::text('descricao', 'Descrição'),
+                TableColumns::text('descricao', 'Descrição')
+                    ->alignLeft(),
             ]);
     }
 
@@ -59,8 +54,6 @@ class CondicaoUsoResource extends PatrimonioResource
     {
         return [
             'index' => ListCondicaoUsos::route('/'),
-            'create' => CreateCondicaoUso::route('/create'),
-            'edit' => EditCondicaoUso::route('/{record}/edit'),
         ];
     }
 }

@@ -3,7 +3,7 @@
 namespace App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\CondicaoUsoResource\Pages;
 
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\CondicaoUsoResource;
-use Filament\Actions\CreateAction;
+use App\Filament\Egap\Support\CreateActionModal;
 use Filament\Resources\Pages\ListRecords;
 
 class ListCondicaoUsos extends ListRecords
@@ -13,11 +13,7 @@ class ListCondicaoUsos extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()
-                ->label('Novo')
-                ->modalHeading('Adicionar')
-                ->modalWidth('md')
-                ->createAnother(false),
+            CreateActionModal::createAction()
         ];
     }
 }

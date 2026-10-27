@@ -2,7 +2,7 @@
 
 namespace App\Filament\Egap\Externo\Pages;
 
-use App\Filament\Egap\Externo\Auth\ExternoPage;
+use App\Filament\Egap\Externo\Permissions\ExternoPage;
 use App\Filament\Egap\Externo\Clusters\ExternoCluster;
 use App\Filament\Egap\Externo\Groups\Agendamento\Pages\AgendamentoGerais;
 use App\Filament\Egap\Externo\Groups\Agendamento\Pages\AgendamentoUser;

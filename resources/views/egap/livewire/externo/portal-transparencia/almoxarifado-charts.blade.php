@@ -19,33 +19,13 @@
             </label>
 
             <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
-                <x-filament::input.wrapper
-                    prefix-icon="heroicon-o-presentation-chart-line"
-                    class="flex-1"
-                >
-                    <x-filament::input.select
-                        id="almoxarifado-indicator"
-                        wire:model.defer="selectedIndicator"
-                    >
-                        @foreach ($indicators as $key => $label)
-                            <option value="{{ $key }}">{{ $label }}</option>
-                        @endforeach
-                    </x-filament::input.select>
-                </x-filament::input.wrapper>
+                <div class="flex-1">
+                    {{ $this->indicatorForm }}
+                </div>
 
-                <x-filament::input.wrapper
-                    prefix-icon="heroicon-o-adjustments-horizontal"
-                    class="lg:w-56"
-                >
-                    <x-filament::input.select wire:model.defer="chartType">
-                        <option value="bar">Barras</option>
-                        <option value="line">Linha</option>
-                        <option value="bubble">Bolhas</option>
-                        <option value="doughnut">Rosca</option>
-                        <option value="pie">Pizza</option>
-                        <option value="polarArea">Polar</option>
-                    </x-filament::input.select>
-                </x-filament::input.wrapper>
+                <div class="lg:w-56">
+                    {{ $this->chartTypeForm }}
+                </div>
 
                 <x-filament::button
                     wire:click="generateChart"

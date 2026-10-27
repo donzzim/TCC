@@ -3,7 +3,7 @@
 namespace App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\SituacaoResource\Pages;
 
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\SituacaoResource;
-use Filament\Actions\CreateAction;
+use App\Filament\Egap\Support\CreateActionModal;
 use Filament\Resources\Pages\ListRecords;
 
 class ListSituacaos extends ListRecords
@@ -13,11 +13,7 @@ class ListSituacaos extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()
-                ->label('Novo')
-                ->modalHeading('Adicionar Situação')
-                ->modalWidth('md')
-                ->createAnother(false),
+            CreateActionModal::createAction()
         ];
     }
 }

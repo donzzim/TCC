@@ -2,7 +2,7 @@
 
 namespace App\Filament\Egap\Externo\Groups\Patrimonio\Pages;
 
-use App\Filament\Egap\Externo\Auth\ExternoPage;
+use App\Filament\Egap\Externo\Permissions\ExternoPage;
 use App\Filament\Egap\Externo\Clusters\ExternoCluster;
 use App\Models\egap\Patrimonio\BensMoveis\Inventario;
 use Filament\Pages\Enums\SubNavigationPosition;

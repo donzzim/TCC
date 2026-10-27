@@ -2,7 +2,7 @@
 
 namespace App\Filament\Egap\Externo\Groups\PlanoContratacao\Pages;
 
-use App\Filament\Egap\Externo\Auth\ExternoPage;
+use App\Filament\Egap\Externo\Permissions\ExternoPage;
 use App\Filament\Egap\Externo\Clusters\ExternoCluster;
 use App\Filament\Egap\Externo\Groups\PlanoContratacao\Components\AnaliseSolicitacoesTable;
 use App\Models\egap\PlanoContratacao\UsergroupMap;

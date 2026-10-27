@@ -5,11 +5,14 @@ namespace App\Models\egap\Almoxarifado;
 use App\Models\egap\Cadastro\DescricaoDetalhada;
 use App\Models\egap\Cadastro\DescricaoResumida;
 use App\Models\egap\UserEgap;
+use App\Observers\Egap\ItemPedidoObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use App\Filament\Egap\Auth\EgapSession;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[ObservedBy(ItemPedidoObserver::class)]
 class ItemPedido extends Model
 {
     protected $connection = 'emes';
@@ -72,6 +75,14 @@ class ItemPedido extends Model
     public function canceladoPorRef(): BelongsTo
     {
         return $this->belongsTo(UserEgap::class, 'cancelado_por', 'id');
+    }
+
+    /** Descrição detalhada (consumo) ou resumida (permanente) do material pedido. */
+    public function getMaterialNomeAttribute(): ?string
+    {
+        $nome = trim((string) ($this->descricaoDetalhadaRef?->descricao_detalhada ?: $this->materialRef?->Descricao));
+
+        return $nome === '' ? null : $nome;
     }
 
     public function getJustificativaFormatadaAttribute(): ?string

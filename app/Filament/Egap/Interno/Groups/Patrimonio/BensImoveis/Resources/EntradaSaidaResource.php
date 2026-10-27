@@ -3,10 +3,7 @@
 namespace App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources;
 
 use App\Filament\Egap\Interno\Clusters\PatrimonioCluster;
-use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\EntradaSaidaResource\Pages\CreateEntradaSaida;
-use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\EntradaSaidaResource\Pages\EditEntradaSaida;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Resources\EntradaSaidaResource\Pages\ListEntradaSaidas;
-use App\Filament\Egap\Resources\Patrimonio\BensImoveis\EntradaSaidaResource\Pages;
 use App\Filament\Egap\Support\TableColumns;
 use App\Filament\Egap\Support\TableDefaults;
 use App\Models\egap\Patrimonio\BensImoveis\EntradaSaida;
@@ -38,22 +35,20 @@ class EntradaSaidaResource extends PatrimonioResource
     {
         return $schema
             ->components([
-                Section::make()
-                    ->schema([
-                        TextInput::make('descricao')
-                            ->label('Descrição')
-                            ->required()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
+                TextInput::make('descricao')
+                    ->label('Descrição')
+                    ->required()
+                    ->maxLength(255)
+                    ->columnSpanFull(),
 
-                        Select::make('tipo')
-                            ->label('Tipo')
-                            ->required()
-                            ->columnSpanFull()
-                            ->options([
-                                'Entrada' => 'Entrada',
-                                'Saída' => 'Saída'
-                            ])
+                Select::make('tipo')
+                    ->label('Tipo')
+                    ->required()
+                    ->native(false)
+                    ->columnSpanFull()
+                    ->options([
+                        'Entrada' => 'Entrada',
+                        'Saída' => 'Saída'
                     ])
             ]);
     }
@@ -62,10 +57,9 @@ class EntradaSaidaResource extends PatrimonioResource
         return TableDefaults::apply($table)
             ->columns([
                 TableColumns::text('id', '#', isFirstColumn: true, isIdColumn: true),
-                TableColumns::dateTime('date_time', 'Data', 'd/m/Y'),
-                TableColumns::text('usuarioRef.name', 'Usuário'),
                 TableColumns::text('descricao', 'Descrição'),
                 TableColumns::text('tipo', 'Tipo'),
+                TableColumns::updatedBy('usuarioRef.name', 'Usuário', format: 'd/m/Y'),
             ]);
     }
 
@@ -73,8 +67,6 @@ class EntradaSaidaResource extends PatrimonioResource
     {
         return [
             'index' => ListEntradaSaidas::route('/'),
-            'create' => CreateEntradaSaida::route('/create'),
-            'edit' => EditEntradaSaida::route('/{record}/edit'),
         ];
     }
 }
