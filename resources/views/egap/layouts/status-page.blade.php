@@ -36,7 +36,7 @@
 
     <title>{{ $title }} · EGAP</title>
 
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/egap/favicon.png') }}">
 
     {{-- Mesma regra de tema do Filament: a escolha feita no painel vale aqui também --}}
     <script>
