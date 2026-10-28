@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, TextInput } from '@/src/components/Text';
 import { ApiError } from '@/src/api/client';
 import { EmptyState } from '@/src/components/EmptyState';
+import { LogoEgap } from '@/src/components/LogoEgap';
 import { useSessao } from '@/src/session/SessionProvider';
 import { useTheme } from '@/src/theme/ThemeProvider';
 import { gradient, radius } from '@/src/theme/tokens';
@@ -120,7 +121,7 @@ export default function Index() {
                     style={[styles.hero, { paddingTop: insets.top + 56 }]}
                 >
                     <View style={styles.logo}>
-                        <Ionicons name="cube-outline" size={34} color="#ffffff" />
+                        <LogoEgap size={50} />
                     </View>
                     <Text style={styles.heroTitulo}>E-Gap Mobile</Text>
                     <Text style={styles.heroSub}>Bens, conferência e pedidos do seu setor</Text>
@@ -222,7 +223,8 @@ const styles = StyleSheet.create({
         width: 64,
         height: 64,
         borderRadius: 20,
-        backgroundColor: 'rgba(255,255,255,0.2)',
+        // fundo branco: o degradê do hero não dá contraste para o azul da logo
+        backgroundColor: '#ffffff',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 16,
