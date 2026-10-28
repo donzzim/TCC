@@ -215,7 +215,7 @@ class ValidarPedidoResource extends PedidoResource
             ->defaultSort('date_time', 'DESC')
             ->columns([
                 TableColumns::text('idPedido', 'N° Pedido', isFirstColumn: true, isIdColumn: true)
-                    ->description(fn($record) => "Solicitante: {$record->idPedidoRef->solicitante_get->name}")
+                    ->description(fn($record) => 'Solicitante: ' . ($record->idPedidoRef?->solicitante_get?->name ?? 'não informado'))
                     ->color('primary'),
 
                 TableColumns::text('descricaoDetalhadaRef.descricao_detalhada', 'Material')
@@ -431,6 +431,7 @@ class ValidarPedidoResource extends PedidoResource
         return TableModalAction::make('materiais_no_setor')
             ->label('Materiais do Setor')
             ->icon(Heroicon::OutlinedCube)
+            ->visible(fn(ItemPedido $record): bool => $record->idPedidoRef?->setor_get !== null)
             ->modalHeading(fn(ItemPedido $record): string => "Materiais do Setor - {$record->idPedidoRef->setor_get->setor}")
             ->modalContent(fn(ItemPedido $record): HtmlString => new HtmlString(
                 Livewire::mount(
