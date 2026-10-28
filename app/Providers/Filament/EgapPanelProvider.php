@@ -48,6 +48,7 @@ class EgapPanelProvider extends PanelProvider
             ->brandLogo(fn () => Storage::url('egap/brand-dark.png'))
             ->darkModeBrandLogo(fn () => Storage::url('egap/brand-light.png'))
             ->brandLogoHeight('85px')
+            ->favicon(fn () => asset('images/egap/favicon.png'))
             ->passwordReset(RequestPasswordResetCustom::class, ResetPasswordEgap::class)
             ->maxContentWidth(Width::Full)
             ->simplePageMaxContentWidth(Width::Small)

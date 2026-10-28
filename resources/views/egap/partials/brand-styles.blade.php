@@ -82,7 +82,7 @@
 
 .nf__logo {
     display: block;
-    height: 40px;
+    height: 44px;
     width: auto;
 }
 
@@ -347,7 +347,7 @@
 
 @media (max-width: 480px) {
     .nf__logo {
-        height: 34px;
+        height: 36px;
     }
 
     .nf__btn {

@@ -68,7 +68,18 @@
 
         .lg-form__brand {
             display: inline-flex;
-            align-self: flex-start;
+            margin: 0 0 24px -7px; /* -7px: a margem transparente do PNG; assim o selo alinha com o título */
+            border-radius: 12px;
+        }
+
+        .lg-form__brand:focus-visible {
+            outline: 2px solid var(--nf-primary);
+            outline-offset: 4px;
+        }
+
+        /* o PNG tem margem transparente em volta; 56px deixa o "EGAP" com ~40px visíveis */
+        .lg-form__brand .nf__logo {
+            height: 56px;
         }
 
         .lg-form__body {
@@ -257,6 +268,14 @@
             .lg-form {
                 padding: 24px 20px 16px;
             }
+
+            .lg-form__body {
+                padding: 32px 0;
+            }
+
+            .lg-form__brand .nf__logo {
+                height: 48px;
+            }
         }
     </style>
 
@@ -264,6 +283,11 @@
 
         <section class="lg-form">
             <div class="lg-form__body">
+                <a class="lg-form__brand" href="{{ filament()->getUrl() }}" aria-label="EGAP — ir para o início">
+                    <img class="nf__logo nf__logo--dark" src="{{ asset('storage/egap/brand-dark.png') }}" alt="EGAP — Gestão Administrativa Pública">
+                    <img class="nf__logo nf__logo--light" src="{{ asset('storage/egap/brand-light.png') }}" alt="EGAP — Gestão Administrativa Pública">
+                </a>
+
                 <h1 class="lg-form__title">Bem-vindo de volta</h1>
                 <p class="lg-form__text">Acesse o painel do EGAP para acompanhar patrimônio, almoxarifado, pedidos e agendamentos.</p>
 
