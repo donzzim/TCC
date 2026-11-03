@@ -17,6 +17,8 @@ use App\Models\egap\Patrimonio\BensMoveis\ItemInventario;
 use App\Models\egap\Patrimonio\BensMoveis\TransferenciaBemMovel;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Actions\BulkAction;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -206,7 +208,7 @@ class ItemInventarioResource extends PatrimonioResource
                     ->badge()
                     ->color(fn(?string $state): string => match (strtoupper(trim((string) $state))) {
                         'LOCALIZADO' => 'success',
-                        'AJUSTES' => 'warning',
+                        'AJUSTES', 'DIVERGENTE' => 'warning',
                         'CONCILIADO' => 'info',
                         'NOVO' => 'primary',
                         'NÃO LOCALIZADO', 'NAO LOCALIZADO' => 'danger',
@@ -239,6 +241,31 @@ class ItemInventarioResource extends PatrimonioResource
                     ->getOptionLabelFromRecordUsing(fn(Setores $record): string => $record->rotuloInventario())
                     ->searchable()
                     ->preload(),
+                SelectFilter::make('situacao')
+                    ->label('Situação')
+                    ->options([
+                        'DIVERGENTE' => 'Divergente (app/web)',
+                        'LOCALIZADO' => 'Localizado',
+                        'NÃO LOCALIZADO' => 'Não localizado',
+                        'AJUSTES' => 'Ajustes',
+                        'CONCILIADO' => 'Conciliado',
+                        'NOVO' => 'Novo',
+                    ]),
+                SelectFilter::make('pendente_tratamento')
+                    ->label('Tratamento')
+                    ->options([
+                        'pendente' => 'Ainda não aplicado ao patrimônio',
+                        'aplicado' => 'Já aplicado',
+                    ])
+                    ->query(fn($query, array $data) => match ($data['value'] ?? null) {
+                        'pendente' => $query->where(fn($q) => $q->whereNull('transferido_em')->orWhere('transferido_em', '0000-00-00 00:00:00')),
+                        'aplicado' => $query->whereNotNull('transferido_em')->where('transferido_em', '<>', '0000-00-00 00:00:00'),
+                        default => $query,
+                    }),
+            ])
+            ->toolbarActions([
+                ...TableDefaults::bulkActions(),
+                self::finalizarLevantamentoBulkAction(),
             ])
             ->recordActions([
                 ...TableDefaults::actions(),
@@ -286,6 +313,41 @@ class ItemInventarioResource extends PatrimonioResource
                     : $notification->warning();
 
                 $notification->send();
+            });
+    }
+
+    /** Mesmo "Finalizar levantamento" da linha, para vários itens (ex.: todas as divergências de um setor). */
+    private static function finalizarLevantamentoBulkAction(): BulkAction
+    {
+        return BulkAction::make('finalizar_levantamento_lote')
+            ->label('Finalizar levantamento')
+            ->icon('heroicon-o-check-circle')
+            ->requiresConfirmation()
+            ->modalHeading('Finalizar levantamento dos itens selecionados')
+            ->modalDescription('As informações de cada item serão aplicadas ao patrimônio e a transferência será registrada. Itens sem cadastro ou já aplicados são pulados.')
+            ->deselectRecordsAfterCompletion()
+            ->action(function (EloquentCollection $records): void {
+                $aplicados = 0;
+                $pulados = [];
+
+                foreach ($records as $record) {
+                    try {
+                        $resultado = self::finalizarLevantamento($record);
+                    } catch (Throwable $exception) {
+                        report($exception);
+                        $resultado = ['finalizado' => false, 'mensagem' => $exception->getMessage()];
+                    }
+
+                    $resultado['finalizado']
+                        ? $aplicados++
+                        : $pulados[] = "#{$record->id}: {$resultado['mensagem']}";
+                }
+
+                Notification::make()
+                    ->title("{$aplicados} item(ns) aplicado(s) ao patrimônio.")
+                    ->body($pulados === [] ? null : count($pulados).' pulado(s). '.implode(' ', array_slice($pulados, 0, 5)))
+                    ->{$pulados === [] ? 'success' : 'warning'}()
+                    ->send();
             });
     }
 
@@ -361,6 +423,14 @@ class ItemInventarioResource extends PatrimonioResource
             ];
         }
 
+        // bem achado sem cadastro: não há como criar o patrimônio só com o código lido
+        if (self::normalizarStatus($item->situacao) === 'DIVERGENTE' && self::bemDoItem($item) === null) {
+            return [
+                'finalizado' => false,
+                'mensagem' => "Bem sem cadastro (patrimônio {$item->num_patrimonio}): cadastre o bem e use \"Localizar item\" para vincular antes de finalizar.",
+            ];
+        }
+
         $connectionName = $item->getConnectionName();
 
         $resultado = DB::connection($connectionName)->transaction(function () use ($item): array {
@@ -385,7 +455,8 @@ class ItemInventarioResource extends PatrimonioResource
             if ($status === 'NOVO') {
                 [$bem, $criado] = self::criarOuReaproveitarBemNovo($item);
                 $patrimoniosCriados = $criado ? 1 : 0;
-            } elseif (in_array($status, ['LOCALIZADO', 'AJUSTES', 'CONCILIADO'], true) && $bem) {
+            } elseif (in_array($status, ['LOCALIZADO', 'AJUSTES', 'CONCILIADO', 'DIVERGENTE'], true) && $bem) {
+                // DIVERGENTE (app/web) traz os valores encontrados nas colunas do item, como AJUSTES
                 $patrimoniosAtualizados = self::atualizarBemInventariado($bem, $item, $status) ? 1 : 0;
             }
 
@@ -518,12 +589,13 @@ class ItemInventarioResource extends PatrimonioResource
             $attributes['Descricao'] = $item->descricao_detalhada;
         }
 
-        if (trim((string) $item->marca) !== '') {
-            $attributes['Marca'] = self::marcaId($item);
+        // marca/modelo digitados que não existem no catálogo não apagam o que o bem já tem
+        if (($marcaId = self::marcaId($item)) !== null) {
+            $attributes['Marca'] = $marcaId;
         }
 
-        if (trim((string) $item->modelo) !== '') {
-            $attributes['Modelo'] = self::modeloId($item);
+        if (($modeloId = self::modeloId($item)) !== null) {
+            $attributes['Modelo'] = $modeloId;
         }
 
         $bem->forceFill($attributes);

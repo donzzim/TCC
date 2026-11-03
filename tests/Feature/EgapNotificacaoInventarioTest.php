@@ -18,6 +18,7 @@ use Carbon\CarbonImmutable;
 use Filament\Notifications\Notification;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Tests\Feature\Concerns\LimpaTabelasMyIsamDoInventario;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
@@ -29,6 +30,7 @@ use Tests\TestCase;
 class EgapNotificacaoInventarioTest extends TestCase
 {
     use DatabaseTransactions;
+    use LimpaTabelasMyIsamDoInventario;
 
     protected array $connectionsToTransact = ['emes', 'egap'];
 

@@ -3,6 +3,7 @@
 namespace App\Services\Egap\Inventario;
 
 use App\Models\egap\Cadastro\Setores;
+use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
 use App\Models\egap\Patrimonio\BensMoveis\Inventario;
 use App\Models\egap\Patrimonio\BensMoveis\InventarioUnidade;
 use Carbon\CarbonImmutable;
@@ -89,6 +90,48 @@ class AbrangenciaInventario
             'unidade_inventariada_id' => (int) $linha->getKey(),
         ];
     }
+
+    /**
+     * Marca como A INVENTARIAR os bens conferíveis dos setores cobertos. Rodar de novo não
+     * apaga o que já foi conferido neste inventário (localizado, não localizado, divergente,
+     * em transferência). Roda sozinho ao abrir o inventário e pelo botão "Atualizar situação".
+     *
+     * @return int quantos bens foram marcados
+     */
+    public static function marcarBensAInventariar(Inventario $inventario): int
+    {
+        $setores = static::setoresCobertos($inventario)->keys();
+
+        if ($setores->isEmpty()) {
+            return 0;
+        }
+
+        $id = (int) $inventario->getKey();
+        $total = 0;
+
+        foreach ($setores->chunk(1000) as $lote) {
+            $total += BemMovel::query()
+                ->whereIn('Setor', $lote->all())
+                // só bens que entram na conferência (ativo, em trânsito, a inventariar)
+                ->whereIn('SituacaoBem', [1, 7, 8])
+                // condição escrita "pelo lado positivo": com NOT (a AND b), as linhas com
+                // id_inventario e sit_inventario nulos davam NULL e ficavam de fora
+                ->where(fn ($query) => $query
+                    ->whereNull('id_inventario')
+                    ->orWhere('id_inventario', '<>', $id)
+                    ->orWhereNull('sit_inventario')
+                    ->orWhereNotIn('sit_inventario', self::SITUACOES_CONFERIDAS))
+                ->update([
+                    'sit_inventario' => 'A INVENTARIAR',
+                    'id_inventario' => $id,
+                ]);
+        }
+
+        return $total;
+    }
+
+    /** Valores de sit_inventario que "Atualizar situação" não pode sobrescrever no mesmo inventário. */
+    private const SITUACOES_CONFERIDAS = ['LOCALIZADO', 'NÃO LOCALIZADO', 'NAO LOCALIZADO', 'DIVERGENTE', 'EM TRANSFERENCIA', 'EM TRANSFERÊNCIA'];
 
     /**
      * @param  array<int, int>  $unidadeIds

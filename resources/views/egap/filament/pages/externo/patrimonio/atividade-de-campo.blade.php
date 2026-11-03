@@ -46,7 +46,7 @@
         @if ($secao === 'resumo')
             @livewire(\App\Filament\Egap\Externo\Groups\Patrimonio\Components\AtividadeDeCampoResumoTable::class, ['inventarioId' => $inventarioId])
         @elseif ($secao === 'nao-localizados')
-            @livewire(\App\Filament\Egap\Externo\Groups\Patrimonio\Components\AtividadeDeCampoNaoLocalizadosTable::class)
+            @livewire(\App\Filament\Egap\Externo\Groups\Patrimonio\Components\AtividadeDeCampoNaoLocalizadosTable::class, ['inventarioId' => $inventarioId])
         @elseif ($secao === 'em-transferencia')
             @livewire(\App\Filament\Egap\Externo\Groups\Patrimonio\Components\AtividadeDeCampoEmTransferenciaTable::class)
         @endif

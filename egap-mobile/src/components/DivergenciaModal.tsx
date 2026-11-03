@@ -9,6 +9,17 @@ import { radius } from '@/src/theme/tokens';
 
 const CAMPOS = ['Descrição', 'Marca', 'Modelo', 'Número de série', 'Estado de conservação', 'Localização'];
 
+/** Mesmos valores do cadastro do bem (o "Finalizar levantamento" grava o que vier). */
+const ESTADOS = ['ÓTIMO', 'BOM', 'REGULAR', 'RUIM'];
+
+const DICAS: Record<string, string> = {
+    Descrição: 'Descrição encontrada',
+    Marca: 'Marca encontrada',
+    Modelo: 'Modelo encontrado',
+    'Número de série': 'Número de série encontrado',
+    Localização: 'Onde o bem está (sala, andar...)',
+};
+
 interface Props {
     visible: boolean;
     onClose: () => void;
@@ -23,6 +34,8 @@ export function DivergenciaModal({ visible, onClose, bem = null, codigoInicial =
     const mutation = useDivergencia();
     const [codigo, setCodigo] = useState(codigoInicial);
     const [campos, setCampos] = useState<string[]>([]);
+    /** Valor encontrado por campo: vai para o item e é aplicado ao bem no "Finalizar levantamento". */
+    const [valores, setValores] = useState<Record<string, string>>({});
     const [observacao, setObservacao] = useState('');
     const [erro, setErro] = useState<string | null>(null);
 
@@ -41,15 +54,21 @@ export function DivergenciaModal({ visible, onClose, bem = null, codigoInicial =
 
     const enviar = async () => {
         setErro(null);
+        const preenchidos = Object.fromEntries(
+            campos.map((c) => [c, (valores[c] ?? '').trim()] as const).filter(([, v]) => v !== ''),
+        );
+
         try {
             const resposta = await mutation.mutateAsync({
                 ...(bem ? { bem_id: bem.id } : { codigo: codigo.trim() }),
                 ...(campos.length > 0 ? { campos } : {}),
+                ...(Object.keys(preenchidos).length > 0 ? { valores: preenchidos } : {}),
                 observacao: observacao.trim(),
             });
 
             setObservacao('');
             setCampos([]);
+            setValores({});
             onRegistrado?.(resposta.message ?? 'Divergência registrada.');
             onClose();
         } catch (e) {
@@ -98,12 +117,55 @@ export function DivergenciaModal({ visible, onClose, bem = null, codigoInicial =
                     );
                 })}
             </View>
+            {campos.map((campo) =>
+                campo === 'Estado de conservação' ? (
+                    <View key={campo} style={{ gap: 6 }}>
+                        <Text style={{ color: colors.textMuted, fontSize: 13 }}>Estado encontrado</Text>
+                        <View style={styles.chips}>
+                            {ESTADOS.map((estado) => {
+                                const ativo = valores[campo] === estado;
+
+                                return (
+                                    <Pressable
+                                        key={estado}
+                                        accessibilityRole="radio"
+                                        accessibilityState={{ checked: ativo }}
+                                        onPress={() => setValores((v) => ({ ...v, [campo]: estado }))}
+                                        style={[
+                                            styles.chip,
+                                            {
+                                                backgroundColor: ativo ? colors.primary : colors.card,
+                                                borderColor: ativo ? colors.primary : colors.border,
+                                            },
+                                        ]}
+                                    >
+                                        <Text style={{ color: ativo ? colors.onPrimary : colors.text, fontWeight: '600' }}>
+                                            {estado}
+                                        </Text>
+                                    </Pressable>
+                                );
+                            })}
+                        </View>
+                    </View>
+                ) : (
+                    <TextInput
+                        key={campo}
+                        value={valores[campo] ?? ''}
+                        onChangeText={(texto) => setValores((v) => ({ ...v, [campo]: texto }))}
+                        placeholder={`${DICAS[campo] ?? campo} (opcional)`}
+                        placeholderTextColor={colors.textMuted}
+                        maxLength={255}
+                        style={campoTexto}
+                    />
+                ),
+            )}
             <TextInput
                 value={observacao}
                 onChangeText={setObservacao}
                 placeholder="Observação (obrigatória)"
                 placeholderTextColor={colors.textMuted}
                 multiline
+                maxLength={255}
                 style={[campoTexto, { minHeight: 90, textAlignVertical: 'top' }]}
             />
             {erro ? (

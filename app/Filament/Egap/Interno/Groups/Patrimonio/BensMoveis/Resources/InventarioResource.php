@@ -11,7 +11,8 @@ use App\Filament\Egap\Support\TableColumns;
 use App\Filament\Egap\Support\TableDefaults;
 use App\Filament\Egap\Support\TableModalAction;
 use App\Models\egap\Cadastro\Setores;
-use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
+use App\Models\egap\Patrimonio\BensMoveis\AtividadeInventario;
+use App\Models\egap\Patrimonio\BensMoveis\ItemInventario;
 use App\Models\egap\Patrimonio\BensMoveis\Inventario;
 use App\Models\egap\Patrimonio\BensMoveis\InventarioUnidade;
 use App\Services\Egap\Inventario\AbrangenciaInventario;
@@ -117,10 +118,21 @@ class InventarioResource extends InventarioGestaoResource
 
                                             Select::make('situacao')
                                                 ->label('Situação')
-                                                ->options(Inventario::situacoes())
+                                                // concluir é pela ação "Concluir inventário" da lista, que mostra o que falta antes
+                                                ->options(fn(?Inventario $record): array => $record?->estaFinalizado()
+                                                    ? Inventario::situacoes()
+                                                    : array_diff_key(Inventario::situacoes(), [Inventario::SITUACAO_CONCLUIDO => true]))
+                                                ->helperText(fn(?Inventario $record): ?string => $record?->estaFinalizado()
+                                                    ? null
+                                                    : 'Para concluir, use a ação "Concluir inventário" na lista.')
                                                 ->native(false)
                                                 ->default(Inventario::SITUACAO_A_INVENTARIAR)
                                                 ->required()
+                                                ->rules([fn(?Inventario $record): Closure => function (string $attribute, mixed $value, Closure $fail) use ($record): void {
+                                                    if ($value === Inventario::SITUACAO_CONCLUIDO && ! $record?->estaFinalizado()) {
+                                                        $fail('Para concluir o inventário, use a ação "Concluir inventário" na lista.');
+                                                    }
+                                                }])
                                                 // a conferência (app e web) usa o inventário em execução
                                                 ->rules([fn(?Inventario $record): Closure => function (string $attribute, mixed $value, Closure $fail) use ($record): void {
                                                     $outro = Inventario::query()
@@ -436,7 +448,82 @@ class InventarioResource extends InventarioGestaoResource
                     default => $action,
                 }, TableDefaults::actions()),
                 self::atualizarSituacaoTableAction(),
+                self::concluirInventarioTableAction(),
             ]);
+    }
+
+    /**
+     * Fecha o inventário mostrando antes o que ainda está aberto: setores sem finalizar
+     * e divergências ainda não aplicadas ao patrimônio. Não bloqueia: a comissão decide.
+     */
+    private static function concluirInventarioTableAction(): Action
+    {
+        return Action::make('concluir_inventario')
+            ->icon('heroicon-o-lock-closed')
+            ->color('success')
+            ->hiddenLabel()
+            ->tooltip('Concluir inventário')
+            ->visible(fn(Inventario $record): bool => InventarioAccess::podeAbrir() && $record->estaAberto())
+            ->requiresConfirmation()
+            ->modalHeading(fn(Inventario $record): string => "Concluir o inventário {$record->num_inventario}/{$record->ano_inventario}")
+            ->modalDescription(fn(Inventario $record): HtmlString => self::resumoConclusao($record))
+            ->modalSubmitActionLabel('Concluir')
+            ->action(function (Inventario $record): void {
+                $record->update(['situacao' => Inventario::SITUACAO_CONCLUIDO]);
+
+                Notification::make()
+                    ->title("Inventário {$record->num_inventario}/{$record->ano_inventario} concluído.")
+                    ->body('A conferência pelo app e pela web foi encerrada.')
+                    ->success()
+                    ->send();
+            });
+    }
+
+    private static function resumoConclusao(Inventario $inventario): HtmlString
+    {
+        $resumo = self::pendenciasDoInventario($inventario);
+
+        $linhas = [
+            "Setores no inventário: {$resumo['setores']}",
+            "Setores finalizados: {$resumo['finalizados']}",
+            "Setores sem finalizar: {$resumo['sem_finalizar']}",
+            "Divergências ainda não aplicadas ao patrimônio: {$resumo['divergencias']}",
+        ];
+
+        $aviso = $resumo['sem_finalizar'] > 0 || $resumo['divergencias'] > 0
+            ? '<p><strong>Ainda há pendências.</strong> Depois de concluído, ninguém mais confere pelo app ou pela web.</p>'
+            : '<p>Tudo finalizado. Depois de concluído, ninguém mais confere pelo app ou pela web.</p>';
+
+        return new HtmlString('<p>'.implode('<br>', array_map('e', $linhas)).'</p>'.$aviso);
+    }
+
+    /** @return array{setores: int, finalizados: int, sem_finalizar: int, divergencias: int} */
+    public static function pendenciasDoInventario(Inventario $inventario): array
+    {
+        $setores = AbrangenciaInventario::setoresCobertos($inventario)->keys()->map(fn($id): int => (int) $id);
+
+        $finalizados = AtividadeInventario::query()
+            ->doInventario($inventario)
+            ->get(['setor', 'situacao'])
+            ->filter(fn(AtividadeInventario $a): bool => $a->estaFinalizada())
+            ->pluck('setor')
+            ->map(fn($id): int => (int) $id)
+            ->intersect($setores)
+            ->unique()
+            ->count();
+
+        $divergencias = ItemInventario::query()
+            ->doInventario($inventario)
+            ->where('situacao', 'DIVERGENTE')
+            ->where(fn($q) => $q->whereNull('transferido_em')->orWhere('transferido_em', '0000-00-00 00:00:00'))
+            ->count();
+
+        return [
+            'setores' => $setores->count(),
+            'finalizados' => $finalizados,
+            'sem_finalizar' => $setores->count() - $finalizados,
+            'divergencias' => $divergencias,
+        ];
     }
 
     private static function atualizarSituacaoTableAction(): Action
@@ -542,24 +629,7 @@ class InventarioResource extends InventarioGestaoResource
 
     private static function atualizarSituacaoBensInventario(Inventario $inventario): int
     {
-        $setores = AbrangenciaInventario::setoresCobertos($inventario)->keys();
-
-        if ($setores->isEmpty()) {
-            return 0;
-        }
-
-        return BemMovel::query()
-            ->whereIn('Setor', $setores)
-            // só bens que entram na conferência (ativo, em trânsito, a inventariar)
-            ->whereIn('SituacaoBem', [1, 7, 8])
-            // rodar de novo não pode apagar o que já foi conferido neste inventário
-            ->whereNot(fn($query) => $query
-                ->where('id_inventario', $inventario->getKey())
-                ->whereIn('sit_inventario', ['LOCALIZADO', 'NÃO LOCALIZADO', 'EM TRANSFERENCIA']))
-            ->update([
-                'sit_inventario' => 'A INVENTARIAR',
-                'id_inventario' => $inventario->getKey(),
-            ]);
+        return AbrangenciaInventario::marcarBensAInventariar($inventario);
     }
 
     private static function calcularDiasInventario(Get $get, Set $set): void

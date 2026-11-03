@@ -3,6 +3,7 @@
 namespace App\Jobs\Egap;
 
 use App\Models\egap\Patrimonio\BensMoveis\Inventario;
+use App\Services\Egap\Inventario\AbrangenciaInventario;
 use App\Services\Egap\Inventario\NotificadorInventario;
 use Illuminate\Foundation\Bus\Dispatchable;
 
@@ -26,6 +27,10 @@ class NotificarAberturaInventario
         if ($inventario === null || ! $inventario->estaAberto()) {
             return;
         }
+
+        // antes era só o botão "Atualizar situação", fácil de esquecer: sem ele os painéis
+        // da comissão não enxergam os bens ainda não conferidos do inventário
+        AbrangenciaInventario::marcarBensAInventariar($inventario);
 
         NotificadorInventario::notificarAbertura($inventario);
     }

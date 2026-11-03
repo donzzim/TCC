@@ -26,6 +26,7 @@ use App\Models\egap\User;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Tests\Feature\Concerns\LimpaTabelasMyIsamDoInventario;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -35,6 +36,7 @@ use Tests\TestCase;
 class EgapInventarioPainelTest extends TestCase
 {
     use DatabaseTransactions;
+    use LimpaTabelasMyIsamDoInventario;
 
     protected array $connectionsToTransact = ['emes', 'egap'];
 
@@ -276,7 +278,8 @@ class EgapInventarioPainelTest extends TestCase
 
     public function test_membro_antigo_inexistente_nao_impede_salvar(): void
     {
-        $comissao = InventarioComissao::query()->whereDoesntHave('membroRef')->latest('id')->firstOrFail();
+        // whereHas: há comissões órfãs (de inventários que não existem mais) na base
+        $comissao = InventarioComissao::query()->whereDoesntHave('membroRef')->whereHas('inventario')->latest('id')->firstOrFail();
 
         Livewire::test(EditInventario::class, ['record' => $comissao->id_inventario])
             ->call('save')

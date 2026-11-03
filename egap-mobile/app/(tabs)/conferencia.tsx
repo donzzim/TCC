@@ -290,6 +290,7 @@ export default function Conferencia() {
                     placeholder="Justificativa (obrigatória)"
                     placeholderTextColor={colors.textMuted}
                     multiline
+                    maxLength={255}
                     style={[styles.input, { color: colors.text, backgroundColor: colors.card, borderColor: colors.border }]}
                 />
                 {erroJustificativa ? (
