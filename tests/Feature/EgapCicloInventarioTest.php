@@ -10,6 +10,7 @@ use App\Models\egap\Cadastro\Setores;
 use App\Models\egap\Patrimonio\BensMoveis\AtividadeInventario;
 use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
 use App\Models\egap\Patrimonio\BensMoveis\Inventario;
+use App\Models\egap\Patrimonio\BensMoveis\ItemInventario;
 use App\Models\egap\User;
 use App\Models\egap\UserEgap;
 use App\Models\egap\UserLotacao;
@@ -187,7 +188,12 @@ class EgapCicloInventarioTest extends TestCase
             ->assertJsonPath('inventario.id', $inventario->id)
             ->assertJsonPath('resumo.total', 3)
             ->assertJsonPath('resumo.pendentes', 3)
+            ->assertJsonPath('atividade.pode_editar', false)
+            ->assertJsonPath('atividade.bloqueio.code', 'inventario_nao_aberto')
             ->assertJsonPath('atividade.pode_finalizar', false);
+
+        // antes de abrir não grava nada
+        $this->api()->postJson('/mobile-api/conferencia/leituras', ['codigo' => (string) $this->bens[0]->NumPatrimonio])->assertForbidden();
 
         // 2. passou para "Em execução": dispara o aviso de abertura
         $inventario->update(['situacao' => Inventario::SITUACAO_EM_EXECUCAO]);
@@ -254,6 +260,100 @@ class EgapCicloInventarioTest extends TestCase
         // 9. lê os avisos no app
         $this->api()->postJson('/mobile-api/notificacoes/lidas')->assertNoContent();
         $this->api()->getJson('/mobile-api/notificacoes')->assertOk()->assertJsonPath('meta.nao_lidas', 0);
+    }
+
+    public function test_inventario_novo_a_inventariar_nao_tira_o_lugar_do_em_execucao(): void
+    {
+        Bus::fake([NotificarAberturaInventario::class]);
+        $prazo = CarbonImmutable::today()->addDays(5);
+        $emExecucao = $this->novoInventario(Inventario::SITUACAO_EM_EXECUCAO, $prazo);
+        $this->novoInventario(Inventario::SITUACAO_A_INVENTARIAR, null);
+
+        $this->api()->getJson('/mobile-api/conferencia')
+            ->assertOk()
+            ->assertJsonPath('inventario.id', $emExecucao->id)
+            ->assertJsonPath('atividade.pode_editar', true)
+            ->assertJsonPath('atividade.bloqueio', null)
+            ->assertJsonPath('atividade.prazo', $prazo->toDateString())
+            ->assertJsonPath('atividade.prazo_vencido', false);
+    }
+
+    public function test_setor_fora_da_abrangencia_nao_confere(): void
+    {
+        Bus::fake([NotificarAberturaInventario::class]);
+        $inventario = Inventario::query()->create([
+            'num_inventario' => 98,
+            'ano_inventario' => 2026,
+            'situacao' => Inventario::SITUACAO_EM_EXECUCAO,
+        ]);
+        $outro = Setores::query()->setoresInventariaveis()->whereKeyNot($this->setor->id)
+            ->whereNotIn('id', Setores::ancestraisIds((int) $this->setor->id))->firstOrFail();
+        $inventario->unidadesInventariadas()->create(['unidades' => $outro->id, 'situacao' => Inventario::SITUACAO_A_INVENTARIAR]);
+
+        $this->api()->getJson('/mobile-api/conferencia')
+            ->assertOk()
+            ->assertJsonPath('inventario.id', $inventario->id)
+            ->assertJsonPath('atividade.pode_editar', false)
+            ->assertJsonPath('atividade.bloqueio.code', 'fora_do_inventario');
+
+        $this->api()->postJson('/mobile-api/conferencia/leituras', ['codigo' => (string) $this->bens[0]->NumPatrimonio])->assertForbidden();
+        $this->api()->postJson('/mobile-api/conferencia/finalizar')->assertForbidden();
+    }
+
+    public function test_nao_localizado_reencontrado_vira_localizado(): void
+    {
+        Bus::fake([NotificarAberturaInventario::class]);
+        $this->novoInventario(Inventario::SITUACAO_EM_EXECUCAO, null);
+        $bem = $this->bens[0];
+
+        $this->api()->postJson('/mobile-api/conferencia/nao-localizados', [
+            'bem_ids' => [$bem->id],
+            'justificativa' => 'Não estava na sala.',
+        ])->assertSuccessful();
+
+        $this->api()->postJson('/mobile-api/conferencia/leituras', ['codigo' => (string) $bem->NumPatrimonio])
+            ->assertOk()
+            ->assertJsonPath('status', 'relocalizado')
+            ->assertJsonPath('bem.conferencia.status', 'localizado')
+            ->assertJsonPath('resumo.localizados', 1)
+            ->assertJsonPath('resumo.nao_localizados', 0);
+
+        $item = ItemInventario::query()->where('id_bem', $bem->id)->sole();
+        $this->assertSame('LOCALIZADO', $item->situacao);
+        $this->assertStringContainsString('Não estava na sala.', (string) $item->observacao);
+        $this->assertSame('LOCALIZADO', $bem->fresh()->sit_inventario);
+
+        // terceira leitura só informa
+        $this->api()->postJson('/mobile-api/conferencia/leituras', ['codigo' => (string) $bem->NumPatrimonio])
+            ->assertOk()
+            ->assertJsonPath('status', 'ja_conferido');
+    }
+
+    public function test_nao_localizados_ignora_bens_ja_conferidos(): void
+    {
+        Bus::fake([NotificarAberturaInventario::class]);
+        $this->novoInventario(Inventario::SITUACAO_EM_EXECUCAO, null);
+        [$a, $b] = $this->bens;
+
+        $this->api()->postJson('/mobile-api/conferencia/leituras', ['codigo' => (string) $a->NumPatrimonio])
+            ->assertJsonPath('status', 'localizado');
+
+        $this->api()->postJson('/mobile-api/conferencia/nao-localizados', [
+            'bem_ids' => [$a->id, $b->id],
+            'justificativa' => 'Seleção em massa.',
+        ])
+            ->assertSuccessful()
+            ->assertJsonPath('registrados', 1)
+            ->assertJsonPath('ignorados', 1);
+
+        $this->assertSame('LOCALIZADO', ItemInventario::query()->where('id_bem', $a->id)->sole()->situacao);
+        $this->assertSame('NÃO LOCALIZADO', ItemInventario::query()->where('id_bem', $b->id)->sole()->situacao);
+
+        // só bens já conferidos: nada a registrar
+        $this->api()->postJson('/mobile-api/conferencia/nao-localizados', [
+            'bem_ids' => [$a->id],
+            'justificativa' => 'De novo.',
+        ])->assertNotFound();
     }
 
     public function test_setor_sem_finalizar_recebe_o_lembrete_da_vespera(): void

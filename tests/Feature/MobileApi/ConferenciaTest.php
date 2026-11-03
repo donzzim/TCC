@@ -2,12 +2,14 @@
 
 namespace Tests\Feature\MobileApi;
 
+use App\Jobs\Egap\NotificarAberturaInventario;
 use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
 use App\Models\egap\Patrimonio\BensMoveis\Inventario;
 use App\Models\egap\Patrimonio\BensMoveis\ItemInventario;
 use App\Models\egap\User;
 use App\Services\Egap\Mobile\ConferenciaBensService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Tests\Feature\MobileApi\Concerns\UsaSessaoMobile;
 use Tests\TestCase;
@@ -32,6 +34,15 @@ class ConferenciaTest extends TestCase
             ->limit(300)
             ->get();
 
+        // inventário em execução próprio do teste (desfeito com a transação): não depende
+        // de haver um aberto no banco, e cada candidato tem o setor incluído na abrangência
+        Bus::fake([NotificarAberturaInventario::class]);
+        $aberto = Inventario::query()->create([
+            'num_inventario' => 97,
+            'ano_inventario' => 2026,
+            'situacao' => Inventario::SITUACAO_EM_EXECUCAO,
+        ]);
+
         foreach ($candidatos as $user) {
             if (! $this->temAcessoEgap($user)) {
                 continue;
@@ -43,6 +54,11 @@ class ConferenciaTest extends TestCase
             if ($escopo === null) {
                 continue;
             }
+
+            $aberto->unidadesInventariadas()->firstOrCreate(
+                ['unidades' => $escopo['setor']],
+                ['situacao' => Inventario::SITUACAO_A_INVENTARIAR],
+            );
 
             $dados = app(ConferenciaBensService::class)->bens($escopo, 'pendente', 1);
             $inventario = Inventario::query()->find($dados['inventario']['id']);

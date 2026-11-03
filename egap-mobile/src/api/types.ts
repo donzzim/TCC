@@ -164,10 +164,20 @@ export interface ConferenciaAtual {
         situacao: string;
         pode_editar: boolean;
         pode_finalizar: boolean;
+        /** Por que não dá para gravar agora (null = pode). */
+        bloqueio?: ConferenciaBloqueio | null;
+        /** Prazo do setor (AAAA-MM-DD); só avisa, não bloqueia. */
+        prazo?: string | null;
+        prazo_vencido?: boolean;
         inicio?: string | null;
         termino?: string | null;
     };
     resumo: ConferenciaResumo;
+}
+
+export interface ConferenciaBloqueio {
+    code: 'inventario_concluido' | 'inventario_nao_aberto' | 'fora_do_inventario' | 'setor_finalizado';
+    message: string;
 }
 
 export interface Dashboard {
@@ -193,9 +203,12 @@ export interface LeituraResultado {
     bem: BemConferencia | null;
 }
 
-/** Leitura que localizou (ou achou já conferido) o bem: resultado de `localizar`, sem `pode_localizar`. */
+/**
+ * Leitura que localizou (ou achou já conferido) o bem: resultado de `localizar`, sem `pode_localizar`.
+ * `relocalizado` = estava como não localizado e foi encontrado.
+ */
 export interface LeituraLocalizada {
-    status: 'localizado' | 'ja_conferido';
+    status: 'localizado' | 'relocalizado' | 'ja_conferido';
     message: string;
     bem: BemConferencia;
     resumo: ConferenciaResumo;

@@ -57,6 +57,40 @@ class AbrangenciaInventario
     }
 
     /**
+     * Cobertura de um único setor, com as mesmas regras de {@see setoresCobertos()}, sem
+     * expandir a árvore inteira (que custa centenas de ms num inventário grande):
+     * a linha de setor específico vale só para ele e vence; senão vale uma linha de
+     * unidade inteira no próprio setor ou num ancestral (a de maior id, como lá).
+     *
+     * @return array{prazo: ?CarbonImmutable, unidade_inventariada_id: int}|null  null = fora do inventário
+     */
+    public static function coberturaDoSetor(Inventario $inventario, int $setorId): ?array
+    {
+        $candidatos = [$setorId, ...Setores::ancestraisIds($setorId)];
+
+        $linhas = $inventario->unidadesInventariadas()
+            ->whereIn('unidades', $candidatos)
+            ->with('unidade')
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (InventarioUnidade $linha): bool => $linha->unidade !== null);
+
+        $linha = $linhas->first(fn (InventarioUnidade $l): bool => ! $l->inventariaUnidadeInteira() && (int) $l->unidades === $setorId)
+            ?? $linhas->filter(fn (InventarioUnidade $l): bool => $l->inventariaUnidadeInteira())->last();
+
+        if ($linha === null) {
+            return null;
+        }
+
+        $prazo = $linha->data_termino ?? $inventario->termino_inventario;
+
+        return [
+            'prazo' => $prazo === null ? null : CarbonImmutable::instance($prazo),
+            'unidade_inventariada_id' => (int) $linha->getKey(),
+        ];
+    }
+
+    /**
      * @param  array<int, int>  $unidadeIds
      * @param  array<int, array{setor_id: int, incluir_filhos: bool}>  $setores
      * @return int quantas linhas foram criadas

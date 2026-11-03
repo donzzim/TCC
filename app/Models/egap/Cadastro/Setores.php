@@ -90,6 +90,31 @@ class Setores extends Model
             ->join(' - ') ?: "Setor {$this->id}";
     }
 
+    /**
+     * Pai, avô... até a unidade raiz (que aponta para si mesma), sem o próprio setor.
+     *
+     * @return array<int, int>
+     */
+    public static function ancestraisIds(int $setorId): array
+    {
+        $sql = <<<'SQL'
+        WITH RECURSIVE ancestrais AS (
+            SELECT codigopai AS id, 1 AS nivel FROM setores
+            WHERE id = ? AND codigopai IS NOT NULL AND id <> codigopai
+            UNION ALL
+            SELECT s.codigopai, a.nivel + 1 FROM setores s
+            JOIN ancestrais a ON s.id = a.id
+            WHERE s.codigopai IS NOT NULL AND s.id <> s.codigopai AND a.nivel < 20
+        )
+        SELECT id FROM ancestrais
+        SQL;
+
+        return array_map('intval', array_column(
+            DB::connection((new static)->getConnectionName())->select($sql, [$setorId]),
+            'id'
+        ));
+    }
+
     public static function descendentesIds(int $setorId): array
     {
         $sql = <<<'SQL'

@@ -130,7 +130,14 @@ export default function Conferencia() {
 
             {atual.data && !editavel ? (
                 <Text style={[styles.aviso, { color: colors.warning }]}>
-                    A conferência deste setor não pode ser editada ({atividade?.situacao ?? 'encerrada'}).
+                    {atividade?.bloqueio?.message ??
+                        `A conferência deste setor não pode ser editada (${atividade?.situacao ?? 'encerrada'}).`}
+                </Text>
+            ) : null}
+            {editavel && atividade?.prazo ? (
+                <Text style={[styles.aviso, { color: atividade.prazo_vencido ? colors.danger : colors.textMuted }]}>
+                    {atividade.prazo_vencido ? 'Prazo vencido em ' : 'Prazo do setor: '}
+                    {atividade.prazo.split('-').reverse().join('/')}
                 </Text>
             ) : null}
             {aviso ? (

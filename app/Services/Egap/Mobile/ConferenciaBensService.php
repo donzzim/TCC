@@ -8,6 +8,7 @@ use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
 use App\Models\egap\Patrimonio\BensMoveis\Inventario;
 use App\Models\egap\Patrimonio\BensMoveis\ItemInventario;
 use App\Models\egap\Patrimonio\BensMoveis\TransferenciaBemMovel;
+use App\Services\Egap\Inventario\AbrangenciaInventario;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -119,6 +120,11 @@ class ConferenciaBensService
         $item = $this->itemExistente($inventario, $scope, $bem);
 
         if ($item) {
+            // marcado como não localizado e achado depois: a leitura corrige para localizado
+            if ($this->itemNaoLocalizado($item) && $this->motivoBloqueio($inventario, $scope) === null) {
+                return $this->resultadoLeitura('reencontrado', 'Bem marcado como não localizado foi reencontrado.', $bem, true, $inventario, $item);
+            }
+
             return $this->resultadoLeitura('ja_conferido', 'Bem já conferido neste inventário.', $bem, false, $inventario, $item);
         }
 
@@ -177,33 +183,43 @@ class ConferenciaBensService
 
         $itemExistente = $this->itemExistente($inventario, $scope, $bem);
 
-        if ($itemExistente) {
-            return [
-                'status' => 'ja_conferido',
-                'message' => 'Bem já conferido neste inventário.',
-                'bem' => $this->bemToArray($bem, $inventario, $itemExistente),
-                'resumo' => $this->resumo($inventario, $scope),
-            ];
+        if ($itemExistente && ! $this->itemNaoLocalizado($itemExistente)) {
+            return $this->jaConferido($inventario, $scope, $bem, $itemExistente);
         }
 
-        $item = DB::connection('egap')->transaction(function () use ($inventario, $scope, $bem): ItemInventario {
+        // o lock no bem serializa leituras simultâneas do mesmo patrimônio (app e web, dois celulares)
+        [$item, $status] = DB::connection($this->conexao())->transaction(function () use ($inventario, $scope, $bem): array {
             $bemTravado = BemMovel::query()
                 ->whereKey($bem->getKey())
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $itemExistente = $this->itemExistente($inventario, $scope, $bemTravado);
+            $item = $this->itemExistente($inventario, $scope, $bemTravado);
 
-            if ($itemExistente) {
-                return $itemExistente;
+            if ($item && ! $this->itemNaoLocalizado($item)) {
+                return [$item, 'ja_conferido'];
             }
 
-            $item = $this->criarItemInventario($this->dadosItemInventario(
-                $inventario,
-                $scope,
-                $bemTravado,
-                self::STATUS_LOCALIZADO,
-            ));
+            if ($item) {
+                $anterior = trim((string) $item->observacao);
+
+                $this->atualizarItemInventario($item, [
+                    'situacao' => self::STATUS_LOCALIZADO,
+                    'observacao' => 'Reencontrado em '.now()->format('d/m/Y H:i').'.'
+                        .($anterior !== '' ? " Justificativa anterior (não localizado): {$anterior}" : ''),
+                    'atualizado_por' => $scope['id_egap'],
+                    'date_time' => now(),
+                ]);
+                $status = 'relocalizado';
+            } else {
+                $item = $this->criarItemInventario($this->dadosItemInventario(
+                    $inventario,
+                    $scope,
+                    $bemTravado,
+                    self::STATUS_LOCALIZADO,
+                ));
+                $status = 'localizado';
+            }
 
             BemMovel::query()
                 ->whereKey($bemTravado->getKey())
@@ -216,15 +232,42 @@ class ConferenciaBensService
 
             $this->atualizarQuantidadeInventariada($inventario, $scope);
 
-            return $item;
+            return [$item, $status];
         });
 
+        if ($status === 'ja_conferido') {
+            return $this->jaConferido($inventario, $scope, $bem, $item);
+        }
+
         return [
-            'status' => 'localizado',
-            'message' => 'Bem localizado no setor.',
+            'status' => $status,
+            'message' => $status === 'relocalizado'
+                ? 'Bem reencontrado: não localizado corrigido para localizado.'
+                : 'Bem localizado no setor.',
             'bem' => $this->bemToArray($bem->fresh(), $inventario, $item),
             'resumo' => $this->resumo($inventario, $scope),
         ];
+    }
+
+    private function jaConferido(Inventario $inventario, array $scope, BemMovel $bem, ItemInventario $item): array
+    {
+        return [
+            'status' => 'ja_conferido',
+            'message' => 'Bem já conferido neste inventário.',
+            'bem' => $this->bemToArray($bem, $inventario, $item),
+            'resumo' => $this->resumo($inventario, $scope),
+        ];
+    }
+
+    private function itemNaoLocalizado(ItemInventario $item): bool
+    {
+        return $this->situacaoItemKey($item->situacao) === self::STATUS_NAO_LOCALIZADO_SEM_ACENTO;
+    }
+
+    /** As tabelas do inventário estão todas na conexão dos modelos (`emes`), não na `egap`. */
+    private function conexao(): ?string
+    {
+        return (new ItemInventario)->getConnectionName();
     }
 
     public function naoLocalizados(array $scope, array $bemIds, string $justificativa): array
@@ -238,7 +281,10 @@ class ConferenciaBensService
         $inventario = $this->inventarioAtual();
         $this->atividadeEditavel($inventario, $scope);
 
-        $bens = $this->bensEsperadosQuery($scope)
+        $bemIds = array_values(array_unique(array_map('intval', $bemIds)));
+
+        // só bens ainda pendentes: localizado ou divergente não vira "não localizado" por seleção em massa
+        $bens = $this->wherePendente($this->bensEsperadosQuery($scope), $inventario, $scope)
             ->whereIn('id', $bemIds)
             ->get();
 
@@ -246,21 +292,20 @@ class ConferenciaBensService
             throw new NotFoundHttpException('Nenhum bem pendente encontrado para registrar.');
         }
 
-        DB::connection('egap')->transaction(function () use ($inventario, $scope, $bens, $justificativa): void {
-            foreach ($bens as $bem) {
-                $item = $this->itemExistente($inventario, $scope, $bem);
-                $dados = $this->dadosItemInventario($inventario, $scope, $bem, self::STATUS_NAO_LOCALIZADO, $justificativa);
+        $registrados = DB::connection($this->conexao())->transaction(function () use ($inventario, $scope, $bens, $justificativa): Collection {
+            BemMovel::query()->whereKey($bens->modelKeys())->lockForUpdate()->get(['id']);
+            $registrados = collect();
 
-                if ($item) {
-                    $this->atualizarItemInventario($item, [
-                        'situacao' => self::STATUS_NAO_LOCALIZADO,
-                        'observacao' => $justificativa,
-                        'atualizado_por' => $scope['id_egap'],
-                        'date_time' => now(),
-                    ]);
-                } else {
-                    $this->criarItemInventario($dados);
+            foreach ($bens as $bem) {
+                // conferido por outra leitura entre a consulta e o lock
+                if ($this->itemExistente($inventario, $scope, $bem)) {
+                    continue;
                 }
+
+                $this->criarItemInventario(
+                    $this->dadosItemInventario($inventario, $scope, $bem, self::STATUS_NAO_LOCALIZADO, $justificativa),
+                );
+                $registrados->push($bem);
 
                 BemMovel::query()
                     ->whereKey($bem->getKey())
@@ -273,11 +318,19 @@ class ConferenciaBensService
             }
 
             $this->atualizarQuantidadeInventariada($inventario, $scope);
+
+            return $registrados;
         });
 
+        $ignorados = count($bemIds) - $registrados->count();
+
         return [
-            'message' => 'Bem não localizado registrado.',
-            'bens' => $bens
+            'message' => $ignorados > 0
+                ? "{$registrados->count()} bem(ns) marcado(s) como não localizado(s); {$ignorados} ignorado(s) por já estarem conferidos ou fora da conferência."
+                : 'Bem não localizado registrado.',
+            'registrados' => $registrados->count(),
+            'ignorados' => $ignorados,
+            'bens' => $registrados
                 ->map(fn(BemMovel $bem): array => $this->bemToArray(
                     $bem->fresh(),
                     $inventario,
@@ -326,7 +379,7 @@ class ConferenciaBensService
         $atualizarBem = (int) $bem->Setor === (int) $scope['setor']
             && (int) $bem->UnidadeJudiciaria === (int) $scope['unidade_judiciaria'];
 
-        $item = DB::connection('egap')->transaction(function () use ($inventario, $scope, $bem, $observacaoCompleta, $atualizarBem): ItemInventario {
+        $item = DB::connection($this->conexao())->transaction(function () use ($inventario, $scope, $bem, $observacaoCompleta, $atualizarBem): ItemInventario {
             $item = $this->itemExistente($inventario, $scope, $bem);
 
             if ($item) {
@@ -378,7 +431,7 @@ class ConferenciaBensService
     ): array {
         $codigo = $this->normalizarCodigo($codigo);
 
-        DB::connection('egap')->transaction(function () use ($inventario, $scope, $codigo, $observacao): void {
+        DB::connection($this->conexao())->transaction(function () use ($inventario, $scope, $codigo, $observacao): void {
             $item = $this->itemSemCadastroExistente($inventario, $scope, $codigo);
 
             if ($item) {
@@ -437,22 +490,61 @@ class ConferenciaBensService
         ];
     }
 
+    /**
+     * O inventário em execução; sem nenhum aberto, o próximo a abrir e depois o último
+     * concluído, só para consulta ({@see motivoBloqueio()} impede gravar neles).
+     * Um "A inventariar" mais novo não pode tirar o lugar do que está em execução.
+     */
     private function inventarioAtual(): Inventario
     {
-        $inventario = Inventario::query()
-            ->orderByDesc('id')
-            ->get()
-            ->sort(function (Inventario $a, Inventario $b): int {
-                return [$this->prioridadeInventario($a), - ((int) $a->id)]
-                    <=> [$this->prioridadeInventario($b), - ((int) $b->id)];
-            })
-            ->first();
+        $inventario = Inventario::query()->emExecucao()->orderByDesc('id')->first()
+            ?? Inventario::query()
+                ->where(fn (Builder $query): Builder => $query
+                    ->whereIn('situacao', [Inventario::SITUACAO_A_INVENTARIAR, 'A inventariar', ''])
+                    ->orWhereNull('situacao'))
+                ->orderByDesc('id')
+                ->first()
+            ?? Inventario::query()->finalizados()->orderByDesc('id')->first();
 
         if (! $inventario) {
             throw new NotFoundHttpException('Inventário atual não encontrado.');
         }
 
         return $inventario;
+    }
+
+    /**
+     * Por que o setor não pode gravar na conferência agora (null = pode).
+     *
+     * @return array{code: string, message: string}|null
+     */
+    private function motivoBloqueio(Inventario $inventario, array $scope, ?AtividadeInventario $atividade = null, bool $atividadeCarregada = false): ?array
+    {
+        if ($inventario->estaFinalizado()) {
+            return ['code' => 'inventario_concluido', 'message' => 'Inventário concluído.'];
+        }
+
+        if (! $inventario->estaAberto()) {
+            return ['code' => 'inventario_nao_aberto', 'message' => 'O inventário ainda não foi aberto pela Seção de Patrimônio.'];
+        }
+
+        if ($this->cobertura($inventario, $scope) === null) {
+            return ['code' => 'fora_do_inventario', 'message' => 'Este setor não faz parte do inventário em andamento.'];
+        }
+
+        $atividade = $atividadeCarregada ? $atividade : $this->atividadeDoSetor($inventario, $scope);
+
+        if (! $this->atividadePodeEditar($atividade)) {
+            return ['code' => 'setor_finalizado', 'message' => 'Inventário do setor finalizado.'];
+        }
+
+        return null;
+    }
+
+    /** @return array{prazo: ?\Carbon\CarbonImmutable, unidade_inventariada_id: int}|null */
+    private function cobertura(Inventario $inventario, array $scope): ?array
+    {
+        return AbrangenciaInventario::coberturaDoSetor($inventario, (int) $scope['setor']);
     }
 
     private function atividadeDoSetor(Inventario $inventario, array $scope): ?AtividadeInventario
@@ -467,14 +559,11 @@ class ConferenciaBensService
 
     private function atividadeEditavel(Inventario $inventario, array $scope): AtividadeInventario
     {
-        if ($inventario->estaFinalizado()) {
-            throw new HttpException(403, 'Inventário concluído.');
-        }
-
         $atividade = $this->atividadeDoSetor($inventario, $scope);
+        $bloqueio = $this->motivoBloqueio($inventario, $scope, $atividade, true);
 
-        if ($atividade && ! $this->atividadePodeEditar($atividade)) {
-            throw new HttpException(403, 'Inventário do setor finalizado.');
+        if ($bloqueio !== null) {
+            throw new HttpException(403, $bloqueio['message']);
         }
 
         if ($atividade) {
@@ -793,19 +882,6 @@ class ConferenciaBensService
             ->map(fn($id): int => (int) $id)
             ->unique()
             ->values();
-    }
-
-    private function prioridadeInventario(Inventario $inventario): int
-    {
-        if ($inventario->estaAtivo()) {
-            return 0;
-        }
-
-        if ($inventario->estaFinalizado()) {
-            return 2;
-        }
-
-        return 1;
     }
 
     private function normalizarCodigo(string $codigo): string
@@ -1148,14 +1224,20 @@ class ConferenciaBensService
 
     private function atividadeToArray(Inventario $inventario, ?AtividadeInventario $atividade, array $scope, array $resumo): array
     {
-        $podeEditar = ! $inventario->estaFinalizado() && $this->atividadePodeEditar($atividade);
+        $bloqueio = $this->motivoBloqueio($inventario, $scope, $atividade, true);
+        $podeEditar = $bloqueio === null;
+        $prazo = $inventario->estaFinalizado() ? null : ($this->cobertura($inventario, $scope)['prazo'] ?? null);
 
         return [
             'id' => $atividade?->id,
             'unidade_judiciaria' => $atividade?->id_unidade ?? $scope['unidade_judiciaria'],
             'setor' => $atividade?->setor ?? $scope['setor'],
-            'situacao' => $atividade?->situacao ?: 'Aberto',
+            'situacao' => $atividade?->situacao ?: 'Não iniciada',
             'pode_editar' => $podeEditar,
+            // o prazo só avisa: a conferência continua aceita depois dele
+            'bloqueio' => $bloqueio,
+            'prazo' => $prazo?->toDateString(),
+            'prazo_vencido' => $prazo !== null && $prazo->endOfDay()->isPast(),
             'pode_finalizar' => $podeEditar && (bool) ($resumo['pode_finalizar'] ?? false),
             'qtde_inventariada' => $atividade?->qtde_inventariada,
             'inicio' => $this->dateValue($atividade?->inicio),
