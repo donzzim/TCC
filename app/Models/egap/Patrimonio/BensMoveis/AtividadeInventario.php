@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use App\Filament\Egap\Auth\EgapSession;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AtividadeInventario extends Model
 {
@@ -60,10 +59,6 @@ class AtividadeInventario extends Model
         return $this->belongsTo(ComplementoSetor::class, 'complemento', 'id');
     }
 
-    public function equipes(): HasMany
-    {
-        return $this->hasMany(InventarioEquipe::class, 'unidade', 'id');
-    }
 
     public function scopeDoInventario(Builder $query, Inventario|int $inventario): Builder
     {

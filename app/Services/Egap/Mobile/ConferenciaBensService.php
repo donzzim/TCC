@@ -29,8 +29,6 @@ class ConferenciaBensService
 
     private const STATUS_DIVERGENTE = 'DIVERGENTE';
 
-    private const STATUS_A_INVENTARIAR = 'A INVENTARIAR';
-
     /**
      * Uma requisição chama a consulta de transferências mais de uma vez
      * (lista de pendentes e resumo); o resultado é o mesmo para o setor.
@@ -521,6 +519,20 @@ class ConferenciaBensService
         return Str::limit(trim($texto), 255, '');
     }
 
+    /**
+     * Resumo da conferência de um setor num inventário, fora de uma sessão (lembretes, painéis).
+     *
+     * @return array<string, int|bool>
+     */
+    public function resumoDoSetor(Inventario $inventario, int $setor, int $unidadeJudiciaria): array
+    {
+        return $this->resumo($inventario, [
+            'setor' => $setor,
+            'unidade_judiciaria' => $unidadeJudiciaria,
+            'id_egap' => null,
+        ]);
+    }
+
     /** O inventário que a conferência usa agora (null quando não há nenhum). */
     public function inventarioVigente(): ?Inventario
     {
@@ -643,6 +655,15 @@ class ConferenciaBensService
 
         if (! $this->atividadePodeEditar($atividade)) {
             return ['code' => 'setor_finalizado', 'message' => 'Inventário do setor finalizado.'];
+        }
+
+        // conferir continua livre para qualquer lotado, mas todo item precisa de autor
+        // (atualizado_por/Usuario vêm do cadastro do EGAP legado, achado pelo CPF)
+        if (blank($scope['id_egap'] ?? null)) {
+            return [
+                'code' => 'sem_vinculo_egap',
+                'message' => 'Seu usuário não tem cadastro no EGAP com o mesmo CPF. Procure a Seção de Patrimônio para conferir.',
+            ];
         }
 
         return null;
@@ -776,9 +797,12 @@ class ConferenciaBensService
         });
     }
 
-    private function wherePendente(Builder $query, Inventario $inventario, array $scope): Builder
+    /**
+     * @param  array{0: Collection<int, int>, 1: Collection<int, string>}|null  $filtro  listas já lidas (evita reconsultar os itens)
+     */
+    private function wherePendente(Builder $query, Inventario $inventario, array $scope, ?array $filtro = null): Builder
     {
-        [$bemIds, $patrimonios] = $this->itensInventarioFiltro($inventario, $scope);
+        [$bemIds, $patrimonios] = $filtro ?? $this->itensInventarioFiltro($inventario, $scope);
         $bensComTransferenciaValidada = $this->bensComTransferenciaValidadaIds($scope);
 
         return $query
@@ -936,6 +960,17 @@ class ConferenciaBensService
             )
             ->get(['id_bem', 'num_patrimonio']);
 
+        return $this->listasDosItens($items);
+    }
+
+    /**
+     * Ids dos bens e números de patrimônio dos itens (o item sem cadastro só tem o número).
+     *
+     * @param  Collection<int, ItemInventario>  $items
+     * @return array{0: Collection<int, int>, 1: Collection<int, string>}
+     */
+    private function listasDosItens(Collection $items): array
+    {
         return [
             $items
                 ->pluck('id_bem')
@@ -1090,31 +1125,43 @@ class ConferenciaBensService
 
     private function resumo(Inventario $inventario, array $scope): array
     {
-        $total = (clone $this->bensEsperadosQuery($scope))->count();
-        $localizados = $this->countItens($inventario, $scope, self::STATUS_LOCALIZADO);
-        $naoLocalizados = $this->countItens($inventario, $scope, $this->statusNaoLocalizado());
-        $divergentes = $this->countItens($inventario, $scope, self::STATUS_DIVERGENTE);
+        // roda a cada leitura: os itens do setor são lidos uma vez só (contagens por situação e as
+        // listas de bens já conferidos), e os totais dos bens saem de uma consulta agregada
+        $itens = ItemInventario::query()
+            ->where('id_inventario', $inventario->id)
+            ->where('setor', $scope['setor'])
+            ->get(['id_bem', 'num_patrimonio', 'situacao']);
+
+        $porSituacao = $itens->countBy(fn(ItemInventario $item): string => $this->situacaoItemKey($item->situacao));
+        $localizados = $porSituacao->get(self::STATUS_LOCALIZADO, 0);
+        $naoLocalizados = $porSituacao->get(self::STATUS_NAO_LOCALIZADO_SEM_ACENTO, 0);
+        $divergentes = $porSituacao->get(self::STATUS_DIVERGENTE, 0);
+
+        $filtro = $this->listasDosItens($itens);
+        [$bemIds, $patrimonios] = $filtro;
+
+        $totais = (clone $this->bensEsperadosQuery($scope))
+            ->setEagerLoads([])
+            ->select([
+                DB::raw('COUNT(*) AS total'),
+                DB::raw("COALESCE(SUM(CASE WHEN SituacaoBem = 7 OR sit_inventario LIKE 'EM TRANSF%' THEN 1 ELSE 0 END), 0) AS em_transferencia"),
+                DB::raw('COALESCE(SUM(CASE WHEN SituacaoBem = 8 THEN 1 ELSE 0 END), 0) AS cadastrados'),
+            ])
+            ->toBase()
+            ->first();
+
+        $total = (int) ($totais->total ?? 0);
+        $emTransferencia = (int) ($totais->em_transferencia ?? 0);
+        $cadastradosManualmente = (int) ($totais->cadastrados ?? 0);
 
         $pendentes = $this->wherePendente(
             clone $this->bensEsperadosQuery($scope),
             $inventario,
             $scope,
+            $filtro,
         )->count();
 
-        $emTransferencia = (clone $this->bensEsperadosQuery($scope))
-            ->where(function (Builder $query): void {
-                $query
-                    ->where('SituacaoBem', 7)
-                    ->orWhere('sit_inventario', 'like', 'EM TRANSF%');
-            })
-            ->count();
-
-        $cadastradosManualmente = (clone $this->bensEsperadosQuery($scope))
-            ->where('SituacaoBem', 8)
-            ->count();
-
         // bens do setor que já têm item neste inventário (qualquer situação)
-        [$bemIds, $patrimonios] = $this->itensInventarioFiltro($inventario, $scope);
         $conferidos = $bemIds->isEmpty() && $patrimonios->isEmpty()
             ? 0
             : (clone $this->bensEsperadosQuery($scope))
@@ -1139,21 +1186,6 @@ class ConferenciaBensService
         ];
     }
 
-    /**
-     * @param  string|array<int, string>  $situacao
-     */
-    private function countItens(Inventario $inventario, array $scope, string|array $situacao): int
-    {
-        return ItemInventario::query()
-            ->where('id_inventario', $inventario->id)
-            ->where('setor', $scope['setor'])
-            ->when(
-                is_array($situacao),
-                fn(Builder $query): Builder => $query->whereIn('situacao', $situacao),
-                fn(Builder $query): Builder => $query->where('situacao', $situacao),
-            )
-            ->count();
-    }
 
     private function atualizarQuantidadeInventariada(Inventario $inventario, array $scope): void
     {

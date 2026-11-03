@@ -19,6 +19,8 @@ use App\Services\Egap\Inventario\AbrangenciaInventario;
 use Carbon\Carbon;
 use Closure;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
@@ -449,7 +451,35 @@ class InventarioResource extends InventarioGestaoResource
                 }, TableDefaults::actions()),
                 self::atualizarSituacaoTableAction(),
                 self::concluirInventarioTableAction(),
+            ])
+            ->toolbarActions([
+                self::excluirEmLoteBulkAction(),
             ]);
+    }
+
+    /**
+     * O DeleteBulkAction padrão estourava erro 500 ao chegar num inventário com conferência
+     * (o model recusa a exclusão): aqui esses são pulados e contados na mensagem.
+     */
+    private static function excluirEmLoteBulkAction(): BulkAction
+    {
+        return BulkAction::make('excluir_inventarios')
+            ->label('Excluir')
+            ->icon('heroicon-o-trash')
+            ->color('danger')
+            ->requiresConfirmation()
+            ->visible(fn(): bool => self::canDeleteAny())
+            ->deselectRecordsAfterCompletion()
+            ->action(function (EloquentCollection $records): void {
+                [$comConferencia, $livres] = $records->partition(fn(Inventario $inventario): bool => $inventario->temConferencia());
+                $livres->each(fn(Inventario $inventario) => $inventario->delete());
+
+                Notification::make()
+                    ->title("{$livres->count()} inventário(s) excluído(s).")
+                    ->body($comConferencia->isEmpty() ? null : "{$comConferencia->count()} não excluído(s): já têm conferência registrada.")
+                    ->{$comConferencia->isEmpty() ? 'success' : 'warning'}()
+                    ->send();
+            });
     }
 
     /**

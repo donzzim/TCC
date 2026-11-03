@@ -178,7 +178,7 @@ export interface ConferenciaAtual {
 }
 
 export interface ConferenciaBloqueio {
-    code: 'inventario_concluido' | 'inventario_nao_aberto' | 'fora_do_inventario' | 'setor_finalizado';
+    code: 'inventario_concluido' | 'inventario_nao_aberto' | 'fora_do_inventario' | 'setor_finalizado' | 'sem_vinculo_egap';
     message: string;
 }
 

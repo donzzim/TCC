@@ -28,8 +28,8 @@ class AtividadeDeCampo extends ExternoPage
     protected static ?string $cluster = ExternoCluster::class;
     protected static ?string $slug = 'patrimonio/atividade-de-campo';
     protected static string | \UnitEnum | null $navigationGroup = 'Patrimônio';
-    protected static ?string $navigationLabel = 'Ativididade de Campo';
-    protected static ?string $title = 'Ativididade de Campo';
+    protected static ?string $navigationLabel = 'Atividade de Campo';
+    protected static ?string $title = 'Atividade de Campo';
     protected static ?int $navigationSort = 6;
     protected string $view = 'egap.filament.pages.externo.patrimonio.atividade-de-campo';
 

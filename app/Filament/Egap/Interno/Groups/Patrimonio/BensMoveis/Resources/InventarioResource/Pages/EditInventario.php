@@ -13,7 +13,8 @@ class EditInventario extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            DeleteAction::make(),
+            // com conferência registrada o model recusa a exclusão: nem mostra o botão
+            DeleteAction::make()->visible(fn(): bool => InventarioResource::canDelete($this->getRecord())),
         ];
     }
 }

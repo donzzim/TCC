@@ -194,6 +194,10 @@ class Inventario extends Model
             if ($model->wasChanged('situacao')) {
                 $model->avisarSeAbriu();
             }
+
+            if ($model->wasChanged(['inicio_inventario', 'termino_inventario'])) {
+                $model->propagarDatasParaUnidades();
+            }
         });
 
         // apagar um inventário com conferência deixaria itens e atividades órfãos
@@ -204,9 +208,42 @@ class Inventario extends Model
         });
     }
 
+    /**
+     * As unidades recebem as datas do inventário ao serem criadas. Quando o inventário muda de
+     * data, só as unidades que ainda estavam com a data antiga acompanham; quem tem prazo
+     * próprio (editado na unidade) fica como está.
+     */
+    private function propagarDatasParaUnidades(): void
+    {
+        foreach (['inicio_inventario' => 'data_inicio', 'termino_inventario' => 'data_termino'] as $doInventario => $daUnidade) {
+            if (! $this->wasChanged($doInventario)) {
+                continue;
+            }
+
+            $anterior = $this->getOriginal($doInventario);
+            $novo = $this->getAttribute($doInventario);
+
+            $this->unidadesInventariadas()
+                ->when(
+                    $anterior === null,
+                    fn (Builder $query): Builder => $query->whereNull($daUnidade),
+                    fn (Builder $query): Builder => $query->where($daUnidade, $anterior),
+                )
+                ->get()
+                ->each(function (InventarioUnidade $unidade) use ($daUnidade, $novo): void {
+                    $unidade->{$daUnidade} = $novo;
+                    $unidade->dias = $unidade->data_inicio && $unidade->data_termino
+                        ? max(0, (int) $unidade->data_inicio->diffInDays($unidade->data_termino, false))
+                        : $unidade->dias;
+                    $unidade->save();
+                });
+        }
+    }
+
     private function avisarSeAbriu(): void
     {
-        if ((string) $this->situacao === self::SITUACAO_EM_EXECUCAO) {
+        // estaAberto() também reconhece os valores antigos ("Em execução", "Em andamento")
+        if ($this->estaAberto()) {
             NotificarAberturaInventario::dispatch((int) $this->getKey())->afterResponse();
         }
     }

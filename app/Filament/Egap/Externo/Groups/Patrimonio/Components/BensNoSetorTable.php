@@ -20,6 +20,7 @@ use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -178,6 +179,7 @@ class BensNoSetorTable extends Component implements HasActions, HasForms, HasTab
             ])
             ->recordActions([
                 $this->editarAction(),
+                $this->divergenciaAction(),
             ])
             ->toolbarActions([
                 $this->transferirBulkAction(),
@@ -639,14 +641,177 @@ class BensNoSetorTable extends Component implements HasActions, HasForms, HasTab
             ->send();
     }
 
+    /** Mesma leitura do app: localiza pelo número (ou corrige um não localizado reencontrado). */
+    public function lerPatrimonioAction(): Action
+    {
+        return Action::make('lerPatrimonio')
+            ->label('Ler / buscar patrimônio')
+            ->icon('heroicon-o-qr-code')
+            ->color('success')
+            ->modalHeading('Ler ou digitar o patrimônio')
+            ->modalDescription('O leitor de código de barras funciona como teclado: posicione o cursor no campo e leia a plaqueta.')
+            ->modalSubmitActionLabel('Registrar')
+            ->visible(fn(): bool => $this->inventarioAtivoParaSetor())
+            ->schema([
+                TextInput::make('codigo')
+                    ->label('Nº do patrimônio')
+                    ->required()
+                    ->autofocus()
+                    ->maxLength(50),
+            ])
+            ->action(function (array $data): void {
+                $scope = $this->scope();
+
+                if ($scope === null) {
+                    Notification::make()->title('Não foi possível identificar o setor do usuário atual.')->danger()->send();
+
+                    return;
+                }
+
+                try {
+                    $resultado = app(ConferenciaBensService::class)->registrarLeitura($scope, (string) $data['codigo']);
+                } catch (HttpException | NotFoundHttpException $exception) {
+                    Notification::make()->title('Leitura não registrada.')->body($exception->getMessage())->danger()->send();
+
+                    return;
+                }
+
+                $this->resetConferencia();
+                $this->resetTable();
+
+                $bem = $resultado['bem'] ?? null;
+                $notificacao = Notification::make()
+                    ->title($resultado['message'] ?? 'Leitura registrada.')
+                    ->body($bem ? trim(($bem['descricao_resumida'] ?: $bem['descricao'] ?: 'Bem').' · Nº '.($bem['patrimonio'] ?? '-')) : null);
+
+                in_array($resultado['status'] ?? null, ['localizado', 'relocalizado'], true)
+                    ? $notificacao->success()
+                    : $notificacao->warning();
+
+                $notificacao->send();
+            });
+    }
+
+    /** Mesma divergência do app: campos com o valor encontrado, aplicados depois pelo Patrimônio. */
+    private function divergenciaAction(): Action
+    {
+        // chave simples no formulário (o Livewire não lida bem com espaço/acento no caminho) => rótulo do app
+        $campos = [
+            'descricao' => 'Descrição',
+            'marca' => 'Marca',
+            'modelo' => 'Modelo',
+            'serie' => 'Número de série',
+            'estado' => 'Estado de conservação',
+            'localizacao' => 'Localização',
+        ];
+
+        return Action::make('divergencia')
+            ->label('Divergência')
+            ->icon('heroicon-o-exclamation-triangle')
+            ->color('warning')
+            ->visible(fn(): bool => $this->inventarioAtivoParaSetor())
+            ->disabled(fn(BemMovel $record): bool => (int) $record->SituacaoBem === self::SITUACAO_EM_TRANSFERENCIA)
+            ->modalHeading(fn(BemMovel $record): string => "Registrar divergência - Patrimônio {$record->NumPatrimonio}")
+            ->schema([
+                CheckboxList::make('campos')
+                    ->label('Campos divergentes')
+                    ->options($campos)
+                    ->columns(3)
+                    ->live(),
+                TextInput::make('valores.descricao')->label('Descrição encontrada')->maxLength(255)
+                    ->visible(fn($get): bool => in_array('descricao', $get('campos') ?? [], true)),
+                TextInput::make('valores.marca')->label('Marca encontrada')->maxLength(255)
+                    ->visible(fn($get): bool => in_array('marca', $get('campos') ?? [], true)),
+                TextInput::make('valores.modelo')->label('Modelo encontrado')->maxLength(255)
+                    ->visible(fn($get): bool => in_array('modelo', $get('campos') ?? [], true)),
+                TextInput::make('valores.serie')->label('Número de série encontrado')->maxLength(255)
+                    ->visible(fn($get): bool => in_array('serie', $get('campos') ?? [], true)),
+                Select::make('valores.estado')
+                    ->label('Estado encontrado')
+                    ->native(false)
+                    ->options(['ÓTIMO' => 'ÓTIMO', 'BOM' => 'BOM', 'REGULAR' => 'REGULAR', 'RUIM' => 'RUIM'])
+                    ->visible(fn($get): bool => in_array('estado', $get('campos') ?? [], true)),
+                TextInput::make('valores.localizacao')->label('Onde o bem está (sala, andar...)')->maxLength(255)
+                    ->visible(fn($get): bool => in_array('localizacao', $get('campos') ?? [], true)),
+                Textarea::make('observacao')
+                    ->label('Observação')
+                    ->required()
+                    ->rows(3)
+                    // vai para a observação do item, que é varchar(255)
+                    ->maxLength(255),
+            ])
+            ->action(function (BemMovel $record, array $data) use ($campos): void {
+                $scope = $this->scope();
+
+                if ($scope === null) {
+                    Notification::make()->title('Não foi possível identificar o setor do usuário atual.')->danger()->send();
+
+                    return;
+                }
+
+                $marcados = array_values(array_intersect_key($campos, array_flip($data['campos'] ?? [])));
+                $valores = [];
+
+                foreach ($data['campos'] ?? [] as $chave) {
+                    if (isset($campos[$chave]) && filled($data['valores'][$chave] ?? null)) {
+                        $valores[$campos[$chave]] = $data['valores'][$chave];
+                    }
+                }
+
+                try {
+                    app(ConferenciaBensService::class)->registrarDivergencia($scope, [
+                        'bem_id' => $record->getKey(),
+                        'campos' => $marcados,
+                        'valores' => $valores,
+                        'observacao' => $data['observacao'],
+                    ]);
+                } catch (HttpException | NotFoundHttpException $exception) {
+                    Notification::make()->title('Divergência não registrada.')->body($exception->getMessage())->danger()->send();
+
+                    return;
+                }
+
+                $this->resetConferencia();
+                $this->resetTable();
+
+                Notification::make()->title('Divergência registrada.')->success()->send();
+            });
+    }
+
+    /**
+     * Contagens e prazo para o cabeçalho da tela (as mesmas do app).
+     *
+     * @return array{pendentes: int, localizados: int, nao_localizados: int, divergentes: int, prazo: ?string, prazo_vencido: bool}|null
+     */
+    public function resumoConferencia(): ?array
+    {
+        $conferencia = $this->conferencia();
+
+        if ($conferencia === null || ! $this->inventarioAtivoParaSetor()) {
+            return null;
+        }
+
+        $resumo = $conferencia['resumo'];
+        $prazo = $conferencia['atividade']['prazo'] ?? null;
+
+        return [
+            'pendentes' => (int) $resumo['pendentes'],
+            'localizados' => (int) $resumo['localizados'],
+            'nao_localizados' => (int) $resumo['nao_localizados'],
+            'divergentes' => (int) $resumo['divergentes'],
+            'prazo' => $prazo ? implode('/', array_reverse(explode('-', $prazo))) : null,
+            'prazo_vencido' => (bool) ($conferencia['atividade']['prazo_vencido'] ?? false),
+        ];
+    }
+
     public function finalizarInventarioAction(): Action
     {
         return Action::make('finalizarInventario')
-            ->label('Finalizar Inventário')
+            ->label('Finalizar setor')
             ->icon('heroicon-o-check-circle')
             ->color('primary')
-            ->modalHeading('Finalizar Inventário')
-            ->modalDescription('Todos os bens foram inventariados. Finalize o inventário de seu setor clicando em "Finalizar"!')
+            ->modalHeading('Finalizar setor')
+            ->modalDescription('Todos os bens foram conferidos. Depois de finalizar, a conferência do setor não pode mais ser editada.')
             ->modalSubmitActionLabel('Finalizar')
             ->visible(fn(): bool => $this->podeFinalizarInventario())
             ->action(function (): void {
@@ -665,7 +830,7 @@ class BensNoSetorTable extends Component implements HasActions, HasForms, HasTab
                     app(ConferenciaBensService::class)->finalizar($scope);
                 } catch (HttpException $exception) {
                     Notification::make()
-                        ->title('Não foi possível finalizar o inventário.')
+                        ->title('Não foi possível finalizar o setor.')
                         ->body($exception->getMessage())
                         ->danger()
                         ->send();
@@ -677,7 +842,7 @@ class BensNoSetorTable extends Component implements HasActions, HasForms, HasTab
                 $this->resetTable();
 
                 Notification::make()
-                    ->title('Inventário finalizado com sucesso!')
+                    ->title('Setor finalizado com sucesso!')
                     ->success()
                     ->send();
             });
