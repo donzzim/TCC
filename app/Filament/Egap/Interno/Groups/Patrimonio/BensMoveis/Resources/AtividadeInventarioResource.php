@@ -12,6 +12,12 @@ use App\Models\egap\Cadastro\Setores;
 use App\Models\egap\Patrimonio\BensMoveis\AtividadeInventario;
 use App\Models\egap\Patrimonio\BensMoveis\Inventario;
 use App\Models\egap\UserEgap;
+use App\Filament\Egap\Interno\Permissions\Patrimonio\InventarioAccess;
+use App\Services\Egap\Inventario\NotificadorInventario;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
@@ -330,8 +336,61 @@ class AtividadeInventarioResource extends PatrimonioResource
                     ->badge()
                     ->color('gray'),
             ])
+            ->recordActions([
+                ...TableDefaults::actions(),
+                self::reabrirSetorTableAction(),
+            ])
             ->defaultSort('id', 'desc')
             ->recordTitleAttribute('dupla');
+    }
+
+    /**
+     * Devolve o setor para "Em andamento" (o app e a web voltam a aceitar conferência).
+     * A justificativa vai para o log e para o aviso aos lotados do setor: a tabela de
+     * atividades não tem coluna para ela, e a estrutura do banco não é alterada.
+     */
+    private static function reabrirSetorTableAction(): Action
+    {
+        return Action::make('reabrir_setor')
+            ->icon('heroicon-o-lock-open')
+            ->color('warning')
+            ->hiddenLabel()
+            ->tooltip('Reabrir setor')
+            ->visible(fn(AtividadeInventario $record): bool => InventarioAccess::podeAbrir()
+                && $record->estaFinalizada()
+                && (bool) $record->inventario?->estaAberto())
+            ->modalHeading('Reabrir a conferência do setor')
+            ->modalDescription('O setor volta para "Em andamento" e os lotados podem conferir de novo pelo app ou pela web. Eles recebem um aviso com a justificativa.')
+            ->schema([
+                Textarea::make('justificativa')
+                    ->label('Justificativa')
+                    ->required()
+                    ->rows(3)
+                    ->maxLength(255),
+            ])
+            ->modalSubmitActionLabel('Reabrir')
+            ->action(function (AtividadeInventario $record, array $data): void {
+                $situacaoAnterior = $record->situacao;
+
+                $record->update(['situacao' => 'Em andamento', 'termino' => null]);
+
+                Log::info('Inventário: setor reaberto', [
+                    'atividade' => $record->getKey(),
+                    'inventario' => $record->id_inventario,
+                    'setor' => $record->setor,
+                    'situacao_anterior' => $situacaoAnterior,
+                    'por' => auth()->id(),
+                    'justificativa' => $data['justificativa'],
+                ]);
+
+                $avisados = NotificadorInventario::notificarReabertura($record, (string) $data['justificativa']);
+
+                Notification::make()
+                    ->title('Setor reaberto.')
+                    ->body("{$avisados} lotado(s) avisado(s).")
+                    ->success()
+                    ->send();
+            });
     }
 
     public static function getPages(): array

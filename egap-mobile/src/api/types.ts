@@ -241,6 +241,8 @@ export interface DivergenciaPayload {
     bem_id?: number;
     codigo?: string;
     campos?: string[];
+    /** Valor encontrado por campo (chave = rótulo do campo, ex.: "Marca"). */
+    valores?: Record<string, string>;
     observacao: string;
 }
 

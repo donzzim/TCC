@@ -11,6 +11,7 @@ use App\Services\Egap\Inventario\AbrangenciaInventario;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Tests\Feature\Concerns\LimpaTabelasMyIsamDoInventario;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -20,6 +21,7 @@ use Tests\TestCase;
 class EgapAbrangenciaInventarioTest extends TestCase
 {
     use DatabaseTransactions;
+    use LimpaTabelasMyIsamDoInventario;
 
     protected array $connectionsToTransact = ['emes', 'egap'];
 

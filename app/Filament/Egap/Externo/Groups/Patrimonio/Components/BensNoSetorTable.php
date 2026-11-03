@@ -88,6 +88,9 @@ class BensNoSetorTable extends Component implements HasActions, HasForms, HasTab
 
     private bool $conferenciaCarregada = false;
 
+    /** @var array<int, array{status: string, label: string}>|null */
+    private ?array $statusPorBem = null;
+
     public function mount(): void
     {
         $this->setorAtual = SetorSelecionado::resolverAtual();
@@ -135,13 +138,16 @@ class BensNoSetorTable extends Component implements HasActions, HasForms, HasTab
                     ->badge()
                     ->color('gray'),
 
-                TableColumns::text('sit_inventario', 'Situação Inventário')
-                    ->formatStateUsing(fn(?string $state): string => strtoupper(trim((string) $state)) ?: 'A INVENTARIAR')
+                // lido dos itens do inventário atual (o mesmo que o app mostra); sit_inventario
+                // guarda o valor de inventários anteriores e não tem "divergente"
+                TextColumn::make('situacao_conferencia')
+                    ->label('Situação Inventário')
+                    ->getStateUsing(fn(BemMovel $record): string => $this->statusConferencia($record)['label'])
                     ->badge()
-                    ->color(fn(?string $state): string => match (strtoupper(trim((string) $state))) {
-                        'LOCALIZADO' => 'success',
-                        'NÃO LOCALIZADO', 'NAO LOCALIZADO' => 'danger',
-                        'EM TRANSFERENCIA', 'EM TRANSFERÊNCIA' => 'warning',
+                    ->color(fn(BemMovel $record): string => match ($this->statusConferencia($record)['status']) {
+                        'localizado' => 'success',
+                        'nao_localizado' => 'danger',
+                        'divergente', 'em_transferencia', 'cadastrado_manualmente' => 'warning',
                         default => 'gray',
                     })
                     ->visible(fn(): bool => $this->inventarioAtivoParaSetor()),
@@ -484,7 +490,8 @@ class BensNoSetorTable extends Component implements HasActions, HasForms, HasTab
                     ->placeholder('Ex: Bem(ns) não localizado(s) no setor')
                     ->required()
                     ->rows(4)
-                    ->maxLength(500),
+                    // vai para a observação do item inventariado, que é varchar(255)
+                    ->maxLength(255),
             ])
             ->deselectRecordsAfterCompletion()
             ->action(fn(EloquentCollection $records, array $data) => $this->registrarNaoLocalizados($records, $data['justificativa']));
@@ -738,6 +745,29 @@ class BensNoSetorTable extends Component implements HasActions, HasForms, HasTab
     {
         $this->conferencia = null;
         $this->conferenciaCarregada = false;
+        $this->statusPorBem = null;
+    }
+
+    /** @return array{status: string, label: string} */
+    private function statusConferencia(BemMovel $record): array
+    {
+        if ($this->statusPorBem === null) {
+            $service = app(ConferenciaBensService::class);
+            $inventario = $service->inventarioVigente();
+
+            // todos os bens do setor de uma vez (uma consulta de itens), não um por linha
+            $this->statusPorBem = $inventario === null || blank($this->setorAtual)
+                ? []
+                : $service->statusDosBens(
+                    $inventario,
+                    (int) $this->setorAtual,
+                    self::queryDoSetor($this->setorAtual)
+                        ->setEagerLoads([])
+                        ->get(['id', 'NumPatrimonio', 'SituacaoBem', 'sit_inventario']),
+                );
+        }
+
+        return $this->statusPorBem[(int) $record->getKey()] ?? ['status' => 'pendente', 'label' => 'Pendente'];
     }
 
     /**

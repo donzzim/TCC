@@ -5,6 +5,7 @@ namespace App\Filament\Egap\Externo\Groups\Patrimonio\Components;
 use App\Filament\Egap\Support\TableColumns;
 use App\Filament\Egap\Support\TableDefaults;
 use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
+use App\Models\egap\Patrimonio\BensMoveis\ItemInventario;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -15,6 +16,7 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -30,6 +32,20 @@ class AtividadeDeCampoNaoLocalizadosTable extends Component implements HasForms,
     use InteractsWithActions;
     use InteractsWithForms;
     use InteractsWithTable;
+
+    public ?int $inventarioId = null;
+
+    public function mount(?int $inventarioId = null): void
+    {
+        $this->inventarioId = $inventarioId;
+    }
+
+    #[On('inventario-selecionado')]
+    public function atualizarInventarioSelecionado(?int $inventario): void
+    {
+        $this->inventarioId = $inventario;
+        $this->resetTable();
+    }
 
     public function table(Table $table): Table
     {
@@ -177,7 +193,17 @@ class AtividadeDeCampoNaoLocalizadosTable extends Component implements HasForms,
     private function getQuery(): Builder
     {
         return BemMovel::query()
-            ->where('acuracia', 'NaoLocalizado')
+            ->when(
+                filled($this->inventarioId),
+                // inventário escolhido: o que a conferência (app ou web) marcou como não localizado nele
+                fn(Builder $query): Builder => $query->whereIn('id', ItemInventario::query()
+                    ->doInventario((int) $this->inventarioId)
+                    ->whereIn('situacao', ['NÃO LOCALIZADO', 'NAO LOCALIZADO'])
+                    ->whereNotNull('id_bem')
+                    ->select('id_bem')),
+                // sem inventário escolhido: marcação legada da comissão
+                fn(Builder $query): Builder => $query->where('acuracia', 'NaoLocalizado'),
+            )
             ->where('SituacaoBem', 1)
             ->with([
                 'marcaRef',

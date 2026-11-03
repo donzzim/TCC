@@ -9,6 +9,7 @@ use App\Models\egap\Patrimonio\BensMoveis\ItemInventario;
 use App\Models\egap\User;
 use App\Services\Egap\Mobile\ConferenciaBensService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Tests\Feature\Concerns\LimpaTabelasMyIsamDoInventario;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Tests\Feature\MobileApi\Concerns\UsaSessaoMobile;
@@ -17,6 +18,7 @@ use Tests\TestCase;
 class ConferenciaTest extends TestCase
 {
     use DatabaseTransactions;
+    use LimpaTabelasMyIsamDoInventario;
     use UsaSessaoMobile;
 
     protected array $connectionsToTransact = ['emes', 'egap'];

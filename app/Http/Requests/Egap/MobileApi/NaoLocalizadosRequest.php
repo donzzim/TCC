@@ -16,7 +16,8 @@ class NaoLocalizadosRequest extends FormRequest
         return [
             'bem_ids' => ['required', 'array', 'min:1'],
             'bem_ids.*' => ['integer'],
-            'justificativa' => ['required', 'string'],
+            // vai para a observação do item, que é varchar(255)
+            'justificativa' => ['required', 'string', 'max:255'],
         ];
     }
 }

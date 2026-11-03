@@ -147,6 +147,38 @@ class NotificadorInventario
         return $total;
     }
 
+    /**
+     * Avisa os lotados de um setor que a conferência dele foi reaberta, com a justificativa.
+     *
+     * @return int quantos usuários foram notificados
+     */
+    public static function notificarReabertura(AtividadeInventario $atividade, string $justificativa): int
+    {
+        $setorId = (int) $atividade->setor;
+        $destinatarios = DestinatariosInventario::porSetor(collect([$setorId]))
+            ->map(fn (array $setores): array => [$setorId]);
+
+        if ($destinatarios->isEmpty()) {
+            return 0;
+        }
+
+        $inventario = $atividade->inventario;
+        $numero = $inventario ? "{$inventario->num_inventario}/{$inventario->ano_inventario}" : (string) $atividade->id_inventario;
+        $nome = (string) (Setores::query()->whereKey($setorId)->value('setor') ?? "Setor {$setorId}");
+
+        return static::enviar(
+            // cada reabertura é um aviso novo (o setor pode ser reaberto mais de uma vez)
+            chave: "inventario_reaberto:{$atividade->getKey()}:".now()->format('YmdHis'),
+            tipo: 'inventario_reaberto',
+            rotaApp: '/(tabs)/conferencia',
+            destinatarios: $destinatarios,
+            montar: fn (array $ids): array => [
+                'titulo' => "Inventário {$numero}: conferência do setor reaberta",
+                'corpo' => '<p>A conferência do setor '.e($nome).' foi reaberta pela Seção de Patrimônio.</p><p>Motivo: '.e($justificativa).'</p>',
+            ],
+        );
+    }
+
     private static function textoPrazo(?CarbonImmutable $prazo): string
     {
         return $prazo === null ? 'sem prazo definido' : 'até '.$prazo->format('d/m/Y');

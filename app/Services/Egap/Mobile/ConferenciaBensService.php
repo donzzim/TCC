@@ -205,8 +205,8 @@ class ConferenciaBensService
 
                 $this->atualizarItemInventario($item, [
                     'situacao' => self::STATUS_LOCALIZADO,
-                    'observacao' => 'Reencontrado em '.now()->format('d/m/Y H:i').'.'
-                        .($anterior !== '' ? " Justificativa anterior (não localizado): {$anterior}" : ''),
+                    'observacao' => $this->limitarObservacao('Reencontrado em '.now()->format('d/m/Y H:i').'.'
+                        .($anterior !== '' ? " Justificativa anterior (não localizado): {$anterior}" : '')),
                     'atualizado_por' => $scope['id_egap'],
                     'date_time' => now(),
                 ]);
@@ -272,7 +272,7 @@ class ConferenciaBensService
 
     public function naoLocalizados(array $scope, array $bemIds, string $justificativa): array
     {
-        $justificativa = trim($justificativa);
+        $justificativa = $this->limitarObservacao($justificativa);
 
         if ($justificativa === '') {
             throw new HttpException(422, 'Justificativa obrigatória.');
@@ -357,9 +357,12 @@ class ConferenciaBensService
             ->values()
             ->implode(', ');
 
-        $observacaoCompleta = $campos !== ''
+        $observacaoCompleta = $this->limitarObservacao($campos !== ''
             ? "Campos divergentes: {$campos}. {$observacao}"
-            : $observacao;
+            : $observacao);
+
+        // valores encontrados vão para as colunas do item; as *_egap guardam o cadastro
+        $valores = $this->valoresDivergentes($data);
 
         try {
             $bem = $this->resolverBem($data);
@@ -373,13 +376,14 @@ class ConferenciaBensService
                 $scope,
                 (string) $data['codigo'],
                 $observacaoCompleta,
+                $valores,
             );
         }
 
         $atualizarBem = (int) $bem->Setor === (int) $scope['setor']
             && (int) $bem->UnidadeJudiciaria === (int) $scope['unidade_judiciaria'];
 
-        $item = DB::connection($this->conexao())->transaction(function () use ($inventario, $scope, $bem, $observacaoCompleta, $atualizarBem): ItemInventario {
+        $item = DB::connection($this->conexao())->transaction(function () use ($inventario, $scope, $bem, $observacaoCompleta, $atualizarBem, $valores): ItemInventario {
             $item = $this->itemExistente($inventario, $scope, $bem);
 
             if ($item) {
@@ -388,15 +392,19 @@ class ConferenciaBensService
                     'observacao' => $observacaoCompleta,
                     'atualizado_por' => $scope['id_egap'],
                     'date_time' => now(),
+                    ...$valores,
                 ]);
             } else {
-                $item = $this->criarItemInventario($this->dadosItemInventario(
-                    $inventario,
-                    $scope,
-                    $bem,
-                    self::STATUS_DIVERGENTE,
-                    $observacaoCompleta,
-                ));
+                $item = $this->criarItemInventario([
+                    ...$this->dadosItemInventario(
+                        $inventario,
+                        $scope,
+                        $bem,
+                        self::STATUS_DIVERGENTE,
+                        $observacaoCompleta,
+                    ),
+                    ...$valores,
+                ]);
             }
 
             if ($atualizarBem) {
@@ -428,10 +436,11 @@ class ConferenciaBensService
         array $scope,
         string $codigo,
         string $observacao,
+        array $valores = [],
     ): array {
         $codigo = $this->normalizarCodigo($codigo);
 
-        DB::connection($this->conexao())->transaction(function () use ($inventario, $scope, $codigo, $observacao): void {
+        DB::connection($this->conexao())->transaction(function () use ($inventario, $scope, $codigo, $observacao, $valores): void {
             $item = $this->itemSemCadastroExistente($inventario, $scope, $codigo);
 
             if ($item) {
@@ -440,6 +449,7 @@ class ConferenciaBensService
                     'observacao' => $observacao,
                     'atualizado_por' => $scope['id_egap'],
                     'date_time' => now(),
+                    ...$valores,
                 ]);
             } else {
                 $this->criarItemInventario([
@@ -453,6 +463,7 @@ class ConferenciaBensService
                     'observacao' => $observacao,
                     'situacao' => self::STATUS_DIVERGENTE,
                     'atualizado_por' => $scope['id_egap'],
+                    ...$valores,
                 ]);
             }
 
@@ -465,6 +476,98 @@ class ConferenciaBensService
             'bem' => null,
             'resumo' => $this->resumo($inventario, $scope),
         ];
+    }
+
+    /**
+     * Campo da divergência (rótulo do app) => coluna do item que guarda o valor encontrado.
+     */
+    private const COLUNAS_DIVERGENCIA = [
+        'Descrição' => 'descricao_detalhada',
+        'Marca' => 'marca',
+        'Modelo' => 'modelo',
+        'Número de série' => 'num_serie',
+        'Estado de conservação' => 'estado_conservacao',
+        'Localização' => 'complemento_localizado',
+    ];
+
+    /**
+     * @return array<string, string>
+     */
+    private function valoresDivergentes(array $data): array
+    {
+        $valores = [];
+
+        foreach ((array) ($data['valores'] ?? []) as $campo => $valor) {
+            $coluna = self::COLUNAS_DIVERGENCIA[$campo] ?? null;
+            $valor = trim((string) $valor);
+
+            if ($coluna !== null && $valor !== '') {
+                $valores[$coluna] = $coluna === 'estado_conservacao'
+                    ? Str::upper($valor)
+                    : Str::limit($valor, 255, '');
+            }
+        }
+
+        return $valores;
+    }
+
+    /** `observacao` dos itens é varchar(255). */
+    private function limitarObservacao(string $texto): string
+    {
+        return Str::limit(trim($texto), 255, '');
+    }
+
+    /** O inventário que a conferência usa agora (null quando não há nenhum). */
+    public function inventarioVigente(): ?Inventario
+    {
+        try {
+            return $this->inventarioAtual();
+        } catch (NotFoundHttpException) {
+            return null;
+        }
+    }
+
+    /**
+     * Status da conferência por bem, lido dos itens do inventário (a fonte de verdade;
+     * `BemMovel.sit_inventario` é só uma cópia e guarda valores de inventários anteriores).
+     *
+     * @param  iterable<BemMovel>  $bens
+     * @return array<int, array{status: string, label: string}>  chave = id do bem
+     */
+    public function statusDosBens(Inventario $inventario, int $setor, iterable $bens): array
+    {
+        $bens = collect($bens);
+        $itens = $this->itensDosBens($inventario, ['setor' => $setor], $bens);
+        $resultado = [];
+
+        foreach ($bens as $bem) {
+            $status = $this->statusConferencia($bem, $this->itemDoBem($itens, $bem));
+            $resultado[(int) $bem->id] = ['status' => $status, 'label' => $this->statusLabel($status)];
+        }
+
+        return $resultado;
+    }
+
+    /**
+     * Situação de cada bem conferido no inventário (todos os setores), para os painéis da comissão.
+     *
+     * @return Collection<int, string>  id do bem => localizado | nao_localizado | divergente | registrado
+     */
+    public function situacoesDoInventario(Inventario|int $inventario): Collection
+    {
+        return ItemInventario::query()
+            ->doInventario($inventario)
+            ->whereNotNull('id_bem')
+            ->where('id_bem', '<>', '')
+            ->get(['id_bem', 'situacao'])
+            ->mapWithKeys(fn(ItemInventario $item): array => [
+                (int) $item->id_bem => match ($this->situacaoItemKey($item->situacao)) {
+                    self::STATUS_LOCALIZADO => 'localizado',
+                    self::STATUS_NAO_LOCALIZADO_SEM_ACENTO => 'nao_localizado',
+                    self::STATUS_DIVERGENTE => 'divergente',
+                    default => 'registrado',
+                },
+            ]);
     }
 
     public function finalizar(array $scope): array

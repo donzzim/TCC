@@ -17,6 +17,7 @@ use Database\Seeders\Spatie\EgapRolesPermissionsSeeder;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Tests\Feature\Concerns\LimpaTabelasMyIsamDoInventario;
 use Livewire\Livewire;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
@@ -29,6 +30,7 @@ use Tests\TestCase;
 class EgapInventarioPermissaoTest extends TestCase
 {
     use DatabaseTransactions;
+    use LimpaTabelasMyIsamDoInventario;
 
     protected array $connectionsToTransact = ['emes', 'egap'];
 

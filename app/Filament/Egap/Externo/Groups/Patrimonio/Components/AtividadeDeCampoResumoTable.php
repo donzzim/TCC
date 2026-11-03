@@ -5,6 +5,7 @@ namespace App\Filament\Egap\Externo\Groups\Patrimonio\Components;
 use App\Filament\Egap\Support\TableDefaults;
 use App\Models\egap\Patrimonio\BensMoveis\AtividadeInventario;
 use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
+use App\Services\Egap\Mobile\ConferenciaBensService;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -84,6 +85,13 @@ class AtividadeDeCampoResumoTable extends Component implements HasForms, HasTabl
                     ->alignCenter()
                     ->numeric()
                     ->summarize($this->totalizadorResumo('nao_localizado')),
+
+                TextColumn::make('divergente')
+                    ->label('Divergente')
+                    ->getStateUsing(fn(BemMovel $record): int => $this->resumoDoGrupo($record)['divergente'])
+                    ->alignCenter()
+                    ->numeric()
+                    ->summarize($this->totalizadorResumo('divergente')),
 
                 TextColumn::make('em_transferencia')
                     ->label('Em Transferencia')
@@ -174,6 +182,7 @@ class AtividadeDeCampoResumoTable extends Component implements HasForms, HasTabl
             'a_inventariar' => 0,
             'localizado' => 0,
             'nao_localizado' => 0,
+            'divergente' => 0,
             'em_transferencia' => 0,
             'inventariado' => 0,
             'total' => 0,
@@ -190,25 +199,48 @@ class AtividadeDeCampoResumoTable extends Component implements HasForms, HasTabl
             return $this->resumosPorGrupo = collect();
         }
 
+        // a situação vem dos itens do inventário (mesma fonte do app e de Bens no Setor);
+        // sit_inventario só decide "em transferência" para quem ainda não foi conferido
+        $situacoes = app(ConferenciaBensService::class)->situacoesDoInventario($this->inventarioId);
+
         return $this->resumosPorGrupo = BemMovel::query()
             ->where('id_inventario', $this->inventarioId)
             ->whereIn('SituacaoBem', self::SITUACOES_ATIVAS)
             ->get(['id', 'Setor', 'ComplementoSetor', 'sit_inventario', 'SituacaoBem'])
             ->groupBy(fn(BemMovel $bem): string => $this->grupoKey((int) $bem->Setor, $bem->ComplementoSetor))
-            ->map(function (Collection $bens): array {
+            ->map(function (Collection $bens) use ($situacoes): array {
                 /** @var BemMovel $representante */
                 $representante = $bens->first();
+                $porSituacao = $bens->countBy(fn(BemMovel $bem): string => $this->situacaoDoBem($bem, $situacoes));
 
                 return [
                     'id' => (int) $representante->id,
-                    'a_inventariar' => $bens->filter(fn(BemMovel $bem): bool => in_array($this->normalizarSituacaoInventario($bem->sit_inventario), ['', 'A INVENTARIAR'], true))->count(),
-                    'localizado' => $bens->filter(fn(BemMovel $bem): bool => $this->normalizarSituacaoInventario($bem->sit_inventario) === 'LOCALIZADO')->count(),
-                    'nao_localizado' => $bens->filter(fn(BemMovel $bem): bool => in_array($this->normalizarSituacaoInventario($bem->sit_inventario), ['NAO LOCALIZADO', 'NÃO LOCALIZADO'], true))->count(),
-                    'em_transferencia' => $bens->filter(fn(BemMovel $bem): bool => str_starts_with($this->normalizarSituacaoInventario($bem->sit_inventario), 'EM TRANSF'))->count(),
-                    'inventariado' => $bens->filter(fn(BemMovel $bem): bool => in_array($this->normalizarSituacaoInventario($bem->sit_inventario), ['LOCALIZADO', 'EM TRANSFERENCIA', 'EM TRANSFERÊNCIA'], true))->count(),
+                    'a_inventariar' => $porSituacao->get('a_inventariar', 0),
+                    'localizado' => $porSituacao->get('localizado', 0),
+                    'nao_localizado' => $porSituacao->get('nao_localizado', 0),
+                    'divergente' => $porSituacao->get('divergente', 0),
+                    'em_transferencia' => $porSituacao->get('em_transferencia', 0),
+                    // encontrados fisicamente: localizados, divergentes e os em transferência
+                    'inventariado' => $porSituacao->get('localizado', 0) + $porSituacao->get('divergente', 0) + $porSituacao->get('em_transferencia', 0),
                     'total' => $bens->count(),
                 ];
             });
+    }
+
+    /** @param  Collection<int, string>  $situacoes  id do bem => situação do item no inventário */
+    private function situacaoDoBem(BemMovel $bem, Collection $situacoes): string
+    {
+        $situacao = $situacoes->get((int) $bem->id);
+
+        if ($situacao !== null) {
+            return $situacao === 'registrado' ? 'localizado' : $situacao;
+        }
+
+        if ((int) $bem->SituacaoBem === 7 || str_starts_with($this->normalizarSituacaoInventario($bem->sit_inventario), 'EM TRANSF')) {
+            return 'em_transferencia';
+        }
+
+        return 'a_inventariar';
     }
 
     private function normalizarSituacaoInventario(mixed $situacao): string

@@ -2,7 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Egap\Externo\Groups\Patrimonio\Components\AtividadeDeCampoNaoLocalizadosTable;
 use App\Filament\Egap\Externo\Groups\Patrimonio\Components\BensNoSetorTable;
+use App\Filament\Egap\Externo\Groups\Patrimonio\Components\LevantamentoComissaoTable;
+use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\AtividadeInventarioResource\Pages\ListAtividadeInventarios;
+use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\InventarioResource;
+use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\InventarioResource\Pages\EditInventario;
+use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\InventarioResource\Pages\ListInventarios;
+use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\ItemInventarioResource\Pages\ListItemInventarios;
+use App\Models\egap\Patrimonio\BensMoveis\InventarioComissao;
+use App\Services\Egap\Inventario\AbrangenciaInventario;
+use App\Services\Egap\Mobile\ConferenciaBensService;
+use Filament\Actions\Testing\TestAction;
 use App\Helper\CpfHelper;
 use App\Jobs\Egap\NotificarAberturaInventario;
 use App\Models\egap\Admin\InfoUser;
@@ -19,6 +30,7 @@ use Carbon\CarbonImmutable;
 use Database\Seeders\Spatie\EgapRolesPermissionsSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Tests\Feature\Concerns\LimpaTabelasMyIsamDoInventario;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -36,6 +48,7 @@ use Tests\TestCase;
 class EgapCicloInventarioTest extends TestCase
 {
     use DatabaseTransactions;
+    use LimpaTabelasMyIsamDoInventario;
     use UsaSessaoMobile;
 
     protected array $connectionsToTransact = ['emes', 'egap'];
@@ -164,6 +177,231 @@ class EgapCicloInventarioTest extends TestCase
     private function api(): static
     {
         return $this->withToken($this->token);
+    }
+
+    /** O usuário fictício entra no painel com as roles pedidas. */
+    private function noPainelCom(array $roles): void
+    {
+        $this->user->syncRoles([User::ROLE_USER, ...$roles]);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $this->actingAs($this->user->fresh(), User::GUARD);
+        Filament::setCurrentPanel('egap');
+    }
+
+    private function inventarioAberto(): Inventario
+    {
+        Bus::fake([NotificarAberturaInventario::class]);
+
+        return $this->novoInventario(Inventario::SITUACAO_EM_EXECUCAO, CarbonImmutable::today()->addDays(10));
+    }
+
+    // ---- etapa 2 da revisão do inventário ----
+
+    public function test_divergencia_grava_os_valores_encontrados_e_o_levantamento_aplica_no_bem(): void
+    {
+        $this->inventarioAberto();
+        $bem = $this->bens[0];
+        $bem->forceFill(['NumerodeSerie' => 'ANTIGO-1', 'EstadodeConservacao' => 'BOM'])->saveQuietly();
+
+        $this->api()->postJson('/mobile-api/conferencia/divergencias', [
+            'bem_id' => $bem->id,
+            'campos' => ['Número de série', 'Estado de conservação', 'Marca'],
+            'valores' => ['Número de série' => 'NOVO-2', 'Estado de conservação' => 'regular', 'Marca' => 'MARCA QUE NAO EXISTE XYZ'],
+            'observacao' => 'Plaqueta trocada.',
+        ])->assertCreated()->assertJsonPath('status', 'divergente');
+
+        $item = ItemInventario::query()->where('id_bem', $bem->id)->sole();
+        $this->assertSame('DIVERGENTE', $item->situacao);
+        $this->assertSame('NOVO-2', $item->num_serie);
+        $this->assertSame('ANTIGO-1', $item->num_serie_egap);
+        $this->assertSame('REGULAR', $item->estado_conservacao);
+
+        $this->noPainelCom(['egap_patrimonio']);
+        Livewire::test(ListItemInventarios::class)
+            ->callAction(TestAction::make('finalizar_levantamento')->table($item))
+            ->assertNotified('Levantamento finalizado com sucesso.');
+
+        $bem->refresh();
+        $this->assertSame('NOVO-2', $bem->NumerodeSerie);
+        $this->assertSame('REGULAR', $bem->EstadodeConservacao);
+        // marca digitada fora do catálogo não apaga a do bem
+        $this->assertNull($bem->Marca);
+        $this->assertNotNull($item->fresh()->transferido_em);
+    }
+
+    public function test_divergencia_de_bem_sem_cadastro_nao_finaliza_levantamento(): void
+    {
+        $this->inventarioAberto();
+
+        $this->api()->postJson('/mobile-api/conferencia/divergencias', [
+            'codigo' => '987654321012',
+            'observacao' => 'Achado sem plaqueta no sistema.',
+        ])->assertCreated();
+
+        $item = ItemInventario::query()->where('num_patrimonio', '987654321012')->whereNull('id_bem')->sole();
+
+        $this->noPainelCom(['egap_patrimonio']);
+        Livewire::test(ListItemInventarios::class)
+            ->callAction(TestAction::make('finalizar_levantamento')->table($item))
+            ->assertNotified('Levantamento não finalizado.');
+
+        $this->assertNull($item->fresh()->getRawOriginal('transferido_em'));
+    }
+
+    public function test_observacao_e_justificativa_respeitam_255_caracteres(): void
+    {
+        $this->inventarioAberto();
+
+        $this->api()->postJson('/mobile-api/conferencia/nao-localizados', [
+            'bem_ids' => [$this->bens[0]->id],
+            'justificativa' => str_repeat('a', 256),
+        ])->assertUnprocessable();
+
+        $this->api()->postJson('/mobile-api/conferencia/divergencias', [
+            'bem_id' => $this->bens[0]->id,
+            'observacao' => str_repeat('a', 256),
+        ])->assertUnprocessable();
+
+        // 255 de justificativa + o texto de "reencontrado" continua cabendo na coluna
+        $this->api()->postJson('/mobile-api/conferencia/nao-localizados', [
+            'bem_ids' => [$this->bens[0]->id],
+            'justificativa' => str_repeat('b', 255),
+        ])->assertSuccessful();
+        $this->api()->postJson('/mobile-api/conferencia/leituras', ['codigo' => (string) $this->bens[0]->NumPatrimonio])
+            ->assertJsonPath('status', 'relocalizado');
+
+        $this->assertLessThanOrEqual(255, mb_strlen((string) ItemInventario::query()->where('id_bem', $this->bens[0]->id)->sole()->observacao));
+    }
+
+    public function test_telas_web_mostram_a_situacao_dos_itens_do_inventario(): void
+    {
+        $inventario = $this->inventarioAberto();
+        [$a, $b, $c] = $this->bens;
+        // valor de um inventário antigo: não pode aparecer como localizado agora
+        $c->forceFill(['sit_inventario' => 'LOCALIZADO', 'id_inventario' => $inventario->id])->saveQuietly();
+
+        $this->api()->postJson('/mobile-api/conferencia/leituras', ['codigo' => (string) $a->NumPatrimonio]);
+        $this->api()->postJson('/mobile-api/conferencia/divergencias', ['bem_id' => $b->id, 'observacao' => 'Sem etiqueta.']);
+        $a->forceFill(['id_inventario' => $inventario->id])->saveQuietly();
+        $b->forceFill(['id_inventario' => $inventario->id])->saveQuietly();
+
+        $this->actingAs($this->user, User::GUARD);
+        Filament::setCurrentPanel('egap');
+
+        Livewire::test(BensNoSetorTable::class)
+            ->assertTableColumnFormattedStateSet('situacao_conferencia', 'Localizado', $a)
+            ->assertTableColumnFormattedStateSet('situacao_conferencia', 'Divergente', $b)
+            ->assertTableColumnFormattedStateSet('situacao_conferencia', 'Pendente', $c);
+
+        $this->api()->postJson('/mobile-api/conferencia/nao-localizados', ['bem_ids' => [$c->id], 'justificativa' => 'Sumiu.']);
+
+        Livewire::test(AtividadeDeCampoNaoLocalizadosTable::class, ['inventarioId' => $inventario->id])
+            ->assertCanSeeTableRecords([$c->fresh()])
+            ->assertCanNotSeeTableRecords([$a->fresh(), $b->fresh()]);
+
+        $situacoes = app(ConferenciaBensService::class)->situacoesDoInventario($inventario);
+        $this->assertSame(['localizado', 'divergente', 'nao_localizado'], [$situacoes[$a->id], $situacoes[$b->id], $situacoes[$c->id]]);
+    }
+
+    public function test_marcar_a_inventariar_inclui_bens_nunca_inventariados_e_preserva_divergentes(): void
+    {
+        $inventario = $this->inventarioAberto();
+        [$a, $b] = $this->bens;
+        $a->forceFill(['id_inventario' => null, 'sit_inventario' => null])->saveQuietly();
+        $b->forceFill(['id_inventario' => $inventario->id, 'sit_inventario' => 'DIVERGENTE'])->saveQuietly();
+
+        AbrangenciaInventario::marcarBensAInventariar($inventario);
+
+        $this->assertSame('A INVENTARIAR', $a->fresh()->sit_inventario);
+        $this->assertSame((int) $inventario->id, (int) $a->fresh()->id_inventario);
+        $this->assertSame('DIVERGENTE', $b->fresh()->sit_inventario);
+    }
+
+    public function test_abrir_o_inventario_marca_os_bens_a_inventariar(): void
+    {
+        $inventario = $this->inventarioAberto();
+        $this->bens[0]->forceFill(['id_inventario' => null, 'sit_inventario' => null])->saveQuietly();
+
+        (new NotificarAberturaInventario($inventario->id))->handle();
+
+        $this->assertSame('A INVENTARIAR', $this->bens[0]->fresh()->sit_inventario);
+    }
+
+    public function test_assinar_termos_e_da_comissao_e_so_do_inventario_atual(): void
+    {
+        $inventario = $this->inventarioAberto();
+        [$a, $b] = $this->bens;
+        $this->api()->postJson('/mobile-api/conferencia/leituras', ['codigo' => (string) $a->NumPatrimonio]);
+        $this->api()->postJson('/mobile-api/conferencia/nao-localizados', ['bem_ids' => [$b->id], 'justificativa' => 'Sumiu.']);
+        ItemInventario::query()->doInventario($inventario)->update(['id_complementosetor' => 1]);
+
+        $this->noPainelCom([]);
+
+        // lotado comum não assina
+        Livewire::test(LevantamentoComissaoTable::class)->assertActionHidden(TestAction::make('assinar_termos')->table());
+
+        $egap = UserEgap::currentAuthenticated();
+        InventarioComissao::query()->create(['id_inventario' => $inventario->id, 'comissao' => 'Permanente', 'funcao' => 'Membro', 'nome' => $egap->getKey()]);
+
+        Livewire::test(LevantamentoComissaoTable::class)
+            ->assertActionVisible(TestAction::make('assinar_termos')->table())
+            ->callAction(TestAction::make('assinar_termos')->table(), ['complementos' => [1]]);
+
+        // só o localizado entra no termo
+        $this->assertNotNull(ItemInventario::query()->where('id_bem', $a->id)->sole()->termo);
+        $this->assertNull(ItemInventario::query()->where('id_bem', $b->id)->sole()->termo);
+    }
+
+    public function test_concluir_inventario_mostra_pendencias_e_encerra(): void
+    {
+        $inventario = $this->inventarioAberto();
+        $this->api()->postJson('/mobile-api/conferencia/divergencias', ['bem_id' => $this->bens[0]->id, 'observacao' => 'Sem etiqueta.']);
+
+        $this->assertSame(
+            ['setores' => 1, 'finalizados' => 0, 'sem_finalizar' => 1, 'divergencias' => 1],
+            InventarioResource::pendenciasDoInventario($inventario),
+        );
+
+        $this->noPainelCom(['egap_inventario']);
+
+        Livewire::test(ListInventarios::class)
+            ->assertActionVisible(TestAction::make('concluir_inventario')->table($inventario))
+            ->callAction(TestAction::make('concluir_inventario')->table($inventario));
+
+        $this->assertTrue($inventario->fresh()->estaFinalizado());
+        $this->api()->postJson('/mobile-api/conferencia/leituras', ['codigo' => (string) $this->bens[1]->NumPatrimonio])->assertForbidden();
+    }
+
+    public function test_formulario_nao_conclui_direto(): void
+    {
+        $inventario = $this->inventarioAberto();
+        $this->noPainelCom(['egap_inventario']);
+
+        Livewire::test(EditInventario::class, ['record' => $inventario->getRouteKey()])
+            ->fillForm(['situacao' => Inventario::SITUACAO_CONCLUIDO])
+            ->call('save')
+            ->assertHasFormErrors(['situacao']);
+
+        $this->assertTrue($inventario->fresh()->estaAberto());
+    }
+
+    public function test_reabrir_setor_finalizado_avisa_os_lotados(): void
+    {
+        $inventario = $this->inventarioAberto();
+        $this->conferirTudo();
+        $this->api()->postJson('/mobile-api/conferencia/finalizar')->assertOk();
+        $atividade = AtividadeInventario::query()->doInventario($inventario)->where('setor', $this->setor->id)->sole();
+
+        $this->noPainelCom(['egap_patrimonio', 'egap_inventario']);
+
+        Livewire::test(ListAtividadeInventarios::class)
+            ->callAction(TestAction::make('reabrir_setor')->table($atividade), ['justificativa' => 'Faltou a sala 2.']);
+
+        $this->assertSame('Em andamento', $atividade->fresh()->situacao);
+        $this->assertCount(1, $this->notificacoes('inventario_reaberto'));
+        $this->assertStringContainsString('Faltou a sala 2.', $this->notificacoes('inventario_reaberto')->first()->data['body']);
+
+        $this->api()->getJson('/mobile-api/conferencia')->assertJsonPath('atividade.pode_editar', true);
     }
 
     private function notificacoes(string $tipo)

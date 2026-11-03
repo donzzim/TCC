@@ -5,9 +5,13 @@ namespace App\Filament\Egap\Externo\Groups\Patrimonio\Components;
 use App\Filament\Egap\Support\SetorSelecionado;
 use App\Filament\Egap\Support\TableColumns;
 use App\Filament\Egap\Support\TableDefaults;
+use App\Filament\Egap\Interno\Permissions\Patrimonio\InventarioAccess;
 use App\Models\egap\Patrimonio\BensMoveis\ArquivoDigital;
+use App\Models\egap\Patrimonio\BensMoveis\Inventario;
+use App\Models\egap\Patrimonio\BensMoveis\InventarioComissao;
 use App\Models\egap\Patrimonio\BensMoveis\ItemInventario;
 use App\Models\egap\Patrimonio\BensMoveis\Termo;
+use App\Models\egap\UserEgap;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -48,6 +52,10 @@ class LevantamentoComissaoTable extends Component implements HasForms, HasTable,
     private const SITUACAO_A_INVENTARIAR = 'A INVENTARIAR';
 
     public ?int $setorAtual = null;
+
+    private ?Inventario $inventario = null;
+
+    private bool $inventarioCarregado = false;
 
     public function mount(): void
     {
@@ -150,7 +158,9 @@ class LevantamentoComissaoTable extends Component implements HasForms, HasTable,
             ->modalHeading('Assinar Termos de Responsabilidade')
             ->modalDescription('Será gerado um Termo de Responsabilidade para cada complemento selecionado, reunindo os bens já conferidos e ainda sem termo. A assinatura eletrônica é efetivada imediatamente, em nome do usuário autenticado.')
             ->modalSubmitActionLabel('Assinar')
-            ->disabled(fn(): bool => blank($this->setorAtual))
+            ->disabled(fn(): bool => blank($this->setorAtual) || $this->inventario() === null)
+            // assinar é da comissão do inventário (ou de quem abre inventário), não de qualquer lotado
+            ->visible(fn(): bool => $this->podeAssinar())
             ->schema([
                 Select::make('complementos')
                     ->label('Complemento(s) do Setor')
@@ -166,14 +176,20 @@ class LevantamentoComissaoTable extends Component implements HasForms, HasTable,
 
     private function assinarTermos(array $complementoIds): void
     {
+        if (! $this->podeAssinar() || $this->inventario() === null) {
+            Notification::make()
+                ->title('Somente membros da comissão do inventário podem assinar os termos.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
         $termosGerados = collect();
 
         foreach ($complementoIds as $complementoId) {
-            $itens = ItemInventario::query()
-                ->where('setor', $this->setorAtual)
+            $itens = $this->itensAssinaveis()
                 ->where('id_complementosetor', $complementoId)
-                ->where('situacao', '<>', self::SITUACAO_A_INVENTARIAR)
-                ->whereNull('termo')
                 ->get();
 
             if ($itens->isEmpty()) {
@@ -237,12 +253,47 @@ class LevantamentoComissaoTable extends Component implements HasForms, HasTable,
 
     private function complementosPendentesOptions(): array
     {
-        return $this->complementosBase(
-            ItemInventario::query()
-                ->where('setor', $this->setorAtual)
-                ->where('situacao', '<>', self::SITUACAO_A_INVENTARIAR)
-                ->whereNull('termo')
-        );
+        return $this->complementosBase($this->itensAssinaveis());
+    }
+
+    /**
+     * Itens que entram no Termo de Responsabilidade: localizados no inventário atual, ainda sem termo.
+     * Antes juntava itens de todos os inventários do setor e incluía não localizados.
+     */
+    private function itensAssinaveis(): Builder
+    {
+        return ItemInventario::query()
+            ->where('setor', $this->setorAtual)
+            ->where('id_inventario', $this->inventario()?->getKey() ?? -1)
+            ->where('situacao', 'LOCALIZADO')
+            ->whereNull('termo');
+    }
+
+    /** Em execução; depois de concluído, o último concluído (a comissão assina no fim). */
+    private function inventario(): ?Inventario
+    {
+        if (! $this->inventarioCarregado) {
+            $this->inventarioCarregado = true;
+            $this->inventario = Inventario::query()->emExecucao()->orderByDesc('id')->first()
+                ?? Inventario::query()->finalizados()->orderByDesc('id')->first();
+        }
+
+        return $this->inventario;
+    }
+
+    private function podeAssinar(): bool
+    {
+        if (InventarioAccess::podeAbrir()) {
+            return true;
+        }
+
+        $egapId = UserEgap::currentAuthenticated()?->getKey();
+        $inventario = $this->inventario();
+
+        return $egapId !== null && $inventario !== null && InventarioComissao::query()
+            ->where('id_inventario', $inventario->getKey())
+            ->where('nome', $egapId)
+            ->exists();
     }
 
     private function complementosBase(Builder $query): array
@@ -296,6 +347,8 @@ class LevantamentoComissaoTable extends Component implements HasForms, HasTable,
                 fn(Builder $query) => $query->whereKey(-1),
                 fn(Builder $query) => $query->where('setor', $this->setorAtual)
             )
+            // só o inventário atual; os anteriores ficam no Histórico de Inventário Online
+            ->where('id_inventario', $this->inventario()?->getKey() ?? -1)
             ->where('situacao', '<>', self::SITUACAO_A_INVENTARIAR)
             ->with([
                 'complementoSetorRef',

@@ -19,7 +19,11 @@ class DivergenciaRequest extends FormRequest
             'codigo' => ['nullable', 'string'],
             'campos' => ['nullable', 'array'],
             'campos.*' => ['string'],
-            'observacao' => ['required', 'string'],
+            // valor encontrado por campo: {"Marca": "Dell", "Número de série": "ABC123"}
+            'valores' => ['nullable', 'array'],
+            'valores.*' => ['nullable', 'string', 'max:255'],
+            // a observação do item é varchar(255)
+            'observacao' => ['required', 'string', 'max:255'],
         ];
     }
 
