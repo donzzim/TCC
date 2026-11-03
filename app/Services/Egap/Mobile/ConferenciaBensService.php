@@ -270,7 +270,10 @@ class ConferenciaBensService
         return (new ItemInventario)->getConnectionName();
     }
 
-    public function naoLocalizados(array $scope, array $bemIds, string $justificativa): array
+    /**
+     * @param  array<int, int>|null  $bemIds  null = todos os pendentes do setor ("selecionar todos")
+     */
+    public function naoLocalizados(array $scope, ?array $bemIds, string $justificativa): array
     {
         $justificativa = $this->limitarObservacao($justificativa);
 
@@ -281,11 +284,12 @@ class ConferenciaBensService
         $inventario = $this->inventarioAtual();
         $this->atividadeEditavel($inventario, $scope);
 
-        $bemIds = array_values(array_unique(array_map('intval', $bemIds)));
+        $todos = $bemIds === null;
+        $bemIds = $todos ? [] : array_values(array_unique(array_map('intval', $bemIds)));
 
         // só bens ainda pendentes: localizado ou divergente não vira "não localizado" por seleção em massa
         $bens = $this->wherePendente($this->bensEsperadosQuery($scope), $inventario, $scope)
-            ->whereIn('id', $bemIds)
+            ->when(! $todos, fn(Builder $query): Builder => $query->whereIn('id', $bemIds))
             ->get();
 
         if ($bens->isEmpty()) {
@@ -322,7 +326,7 @@ class ConferenciaBensService
             return $registrados;
         });
 
-        $ignorados = count($bemIds) - $registrados->count();
+        $ignorados = $todos ? 0 : count($bemIds) - $registrados->count();
 
         return [
             'message' => $ignorados > 0
@@ -1109,8 +1113,21 @@ class ConferenciaBensService
             ->where('SituacaoBem', 8)
             ->count();
 
+        // bens do setor que já têm item neste inventário (qualquer situação)
+        [$bemIds, $patrimonios] = $this->itensInventarioFiltro($inventario, $scope);
+        $conferidos = $bemIds->isEmpty() && $patrimonios->isEmpty()
+            ? 0
+            : (clone $this->bensEsperadosQuery($scope))
+                ->where(fn(Builder $query): Builder => $query
+                    ->when($bemIds->isNotEmpty(), fn(Builder $q): Builder => $q->whereIn('id', $bemIds))
+                    ->when($patrimonios->isNotEmpty(), fn(Builder $q): Builder => $q->orWhereIn('NumPatrimonio', $patrimonios)))
+                ->count();
+
         return [
             'total' => $total,
+            // denominador do progresso: o que precisa ser conferido (pendentes + já conferidos);
+            // em transferência e cadastrados sem termo validado nunca ficam pendentes
+            'total_conferivel' => $pendentes + $conferidos,
             'localizados' => $localizados,
             'pendentes' => $pendentes,
             'nao_localizados' => $naoLocalizados,

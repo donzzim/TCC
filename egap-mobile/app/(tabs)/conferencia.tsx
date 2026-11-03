@@ -10,6 +10,7 @@ import { Card } from '@/src/components/Card';
 import { DivergenciaModal } from '@/src/components/DivergenciaModal';
 import { EmptyState } from '@/src/components/EmptyState';
 import { Folha } from '@/src/components/Folha';
+import { useFilaLeituras } from '@/src/conferencia/FilaLeituras';
 import { Foto } from '@/src/components/Foto';
 import { GradientHeader } from '@/src/components/GradientHeader';
 import { ProgressRing } from '@/src/components/ProgressRing';
@@ -43,6 +44,8 @@ export default function Conferencia() {
     const [filtro, setFiltro] = useState<ConferenciaFiltro>('pendente');
     const [selecao, setSelecao] = useState<{ filtro: ConferenciaFiltro; ids: number[] }>({ filtro: 'pendente', ids: [] });
     const [aviso, setAviso] = useState<string | null>(null);
+    /** "Selecionar todos os pendentes": o servidor resolve a lista (inclui os que ainda não foram carregados). */
+    const [todosPendentes, setTodosPendentes] = useState(false);
     const [justificando, setJustificando] = useState(false);
     const [justificativa, setJustificativa] = useState('');
     const [erroJustificativa, setErroJustificativa] = useState<string | null>(null);
@@ -57,6 +60,7 @@ export default function Conferencia() {
     const lista = useConferenciaBens(filtro);
     const naoLocalizados = useNaoLocalizados();
     const finalizar = useFinalizarSetor();
+    const fila = useFilaLeituras();
 
     useErroRede(atual.isError && !atual.data ? atual.error : null, 'conferencia');
 
@@ -65,6 +69,8 @@ export default function Conferencia() {
     const atividade = atual.data?.atividade;
     const editavel = !!atividade?.pode_editar;
     const percentual = progressoConferencia(resumo);
+    const prazo = situacaoPrazo(atividade?.prazo ?? null);
+    const totalPendentes = resumo?.pendentes ?? 0;
 
     // A seleção vale só para o filtro atual e só para bens ainda pendentes.
     const selecionados = useMemo(() => {
@@ -80,13 +86,19 @@ export default function Conferencia() {
     const alternar = (id: number) =>
         setSelecionados(selecionados.includes(id) ? selecionados.filter((x) => x !== id) : [...selecionados, id]);
 
+    const quantidadeSelecionada = todosPendentes ? totalPendentes : selecionados.length;
+
     const marcarNaoLocalizados = async () => {
         setErroJustificativa(null);
         try {
-            const r = await naoLocalizados.mutateAsync({ bemIds: selecionados, justificativa: justificativa.trim() });
+            const r = await naoLocalizados.mutateAsync({
+                bemIds: todosPendentes ? 'todos' : selecionados,
+                justificativa: justificativa.trim(),
+            });
 
             setAviso(r.message ?? 'Bens marcados como não localizados.');
             setSelecionados([]);
+            setTodosPendentes(false);
             setJustificativa('');
             setJustificando(false);
         } catch (e) {
@@ -134,11 +146,60 @@ export default function Conferencia() {
                         `A conferência deste setor não pode ser editada (${atividade?.situacao ?? 'encerrada'}).`}
                 </Text>
             ) : null}
-            {editavel && atividade?.prazo ? (
-                <Text style={[styles.aviso, { color: atividade.prazo_vencido ? colors.danger : colors.textMuted }]}>
-                    {atividade.prazo_vencido ? 'Prazo vencido em ' : 'Prazo do setor: '}
-                    {atividade.prazo.split('-').reverse().join('/')}
+            {editavel && prazo ? (
+                <View
+                    style={[
+                        styles.faixa,
+                        {
+                            backgroundColor: `${prazo.urgente ? colors.danger : colors.textMuted}1a`,
+                            borderColor: prazo.urgente ? colors.danger : colors.border,
+                        },
+                    ]}
+                >
+                    <Ionicons name="time-outline" size={16} color={prazo.urgente ? colors.danger : colors.textMuted} />
+                    <Text style={{ color: prazo.urgente ? colors.danger : colors.text, fontWeight: '600', fontSize: 13, flex: 1 }}>
+                        {prazo.texto}
+                    </Text>
+                </View>
+            ) : null}
+            {fila.pendentes.length > 0 ? (
+                <View style={[styles.faixa, { backgroundColor: `${colors.warning}1a`, borderColor: colors.warning }]}>
+                    <Ionicons name="cloud-offline-outline" size={16} color={colors.warning} />
+                    <Text style={{ color: colors.text, fontWeight: '600', fontSize: 13, flex: 1 }}>
+                        {fila.pendentes.length === 1
+                            ? '1 leitura aguardando envio'
+                            : `${fila.pendentes.length} leituras aguardando envio`}
+                    </Text>
+                    <Pressable accessibilityRole="button" disabled={fila.enviando} onPress={() => void fila.enviarAgora()} hitSlop={8}>
+                        {fila.enviando ? (
+                            <ActivityIndicator color={colors.primary} />
+                        ) : (
+                            <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 13 }}>Enviar agora</Text>
+                        )}
+                    </Pressable>
+                </View>
+            ) : null}
+            {fila.deOutroSetor > 0 ? (
+                <Text style={[styles.aviso, { color: colors.textMuted }]}>
+                    {fila.deOutroSetor} leitura(s) guardada(s) em outro setor: serão enviadas quando você voltar para ele.
                 </Text>
+            ) : null}
+            {fila.falhas.length > 0 ? (
+                <View style={[styles.faixa, { backgroundColor: `${colors.danger}1a`, borderColor: colors.danger, alignItems: 'flex-start' }]}>
+                    <View style={{ flex: 1, gap: 2 }}>
+                        <Text style={{ color: colors.danger, fontWeight: '700', fontSize: 13 }}>
+                            Leituras guardadas que não foram aceitas:
+                        </Text>
+                        {fila.falhas.slice(0, 5).map((f, i) => (
+                            <Text key={`${f.codigo}-${i}`} style={{ color: colors.text, fontSize: 12 }}>
+                                Nº {f.codigo}: {f.mensagem}
+                            </Text>
+                        ))}
+                    </View>
+                    <Pressable accessibilityRole="button" onPress={fila.descartarFalhas} hitSlop={8}>
+                        <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 13 }}>Ok</Text>
+                    </Pressable>
+                </View>
             ) : null}
             {aviso ? (
                 <Text accessibilityRole="alert" style={[styles.aviso, { color: colors.success }]}>
@@ -170,7 +231,21 @@ export default function Conferencia() {
                 />
             </View>
 
-            {selecionados.length > 0 ? (
+            {editavel && filtro === 'pendente' && totalPendentes > 0 ? (
+                <Pressable
+                    accessibilityRole="button"
+                    onPress={() => {
+                        setTodosPendentes((t) => !t);
+                        setSelecionados([]);
+                    }}
+                    hitSlop={6}
+                >
+                    <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 13 }}>
+                        {todosPendentes ? 'Limpar seleção' : `Selecionar todos os pendentes (${numero(totalPendentes)})`}
+                    </Text>
+                </Pressable>
+            ) : null}
+            {quantidadeSelecionada > 0 ? (
                 <Pressable
                     accessibilityRole="button"
                     disabled={!editavel}
@@ -181,7 +256,7 @@ export default function Conferencia() {
                     style={[styles.botaoSelecao, { backgroundColor: colors.danger, opacity: editavel ? 1 : 0.5 }]}
                 >
                     <Text style={{ color: '#ffffff', fontWeight: '700' }}>
-                        Marcar não localizados ({selecionados.length})
+                        Marcar não localizados ({numero(quantidadeSelecionada)})
                     </Text>
                 </Pressable>
             ) : null}
@@ -195,7 +270,10 @@ export default function Conferencia() {
                             key={f.valor}
                             accessibilityRole="button"
                             accessibilityState={{ selected: ativo }}
-                            onPress={() => setFiltro(f.valor)}
+                            onPress={() => {
+                                setFiltro(f.valor);
+                                setTodosPendentes(false);
+                            }}
                             style={[
                                 styles.chip,
                                 {
@@ -235,7 +313,7 @@ export default function Conferencia() {
                     // recria a lista ao trocar o filtro: sem reaproveitar linhas e rolagem do filtro anterior
                     key={filtro}
                     data={itens}
-                    extraData={selecionados}
+                    extraData={[selecionados, todosPendentes]}
                     keyExtractor={(b) => String(b.id)}
                     contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 24 }}
                     ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
@@ -243,8 +321,12 @@ export default function Conferencia() {
                         <LinhaConferencia
                             bem={item}
                             editavel={editavel}
-                            selecionado={selecionados.includes(item.id)}
-                            onSelecionar={() => alternar(item.id)}
+                            selecionado={(todosPendentes && item.conferencia.status === 'pendente') || selecionados.includes(item.id)}
+                            onSelecionar={() => {
+                                // tocar num item sai do "todos" e volta para a seleção manual
+                                setTodosPendentes(false);
+                                alternar(item.id);
+                            }}
                             onAbrir={() =>
                                 router.push({ pathname: '/bem/[patrimonio]', params: { patrimonio: String(item.patrimonio) } })
                             }
@@ -282,7 +364,9 @@ export default function Conferencia() {
 
             <Folha visible={justificando} title="Marcar como não localizados" onClose={() => setJustificando(false)}>
                 <Text style={{ color: colors.textMuted }}>
-                    {selecionados.length} bem(ns) selecionado(s). Informe a justificativa.
+                    {todosPendentes
+                        ? `Todos os ${numero(totalPendentes)} bens pendentes do setor serão marcados. Informe a justificativa.`
+                        : `${selecionados.length} bem(ns) selecionado(s). Informe a justificativa.`}
                 </Text>
                 <TextInput
                     value={justificativa}
@@ -307,6 +391,22 @@ export default function Conferencia() {
             </Folha>
 
             <Folha visible={confirmandoFim} title="Finalizar setor" onClose={() => setConfirmandoFim(false)}>
+                {resumo ? (
+                    <View style={{ gap: 4 }}>
+                        <Text style={{ color: colors.text }}>Localizados: {numero(resumo.localizados)}</Text>
+                        <Text style={{ color: resumo.nao_localizados > 0 ? colors.danger : colors.text }}>
+                            Não localizados: {numero(resumo.nao_localizados)}
+                        </Text>
+                        <Text style={{ color: resumo.divergentes > 0 ? colors.warning : colors.text }}>
+                            Divergentes: {numero(resumo.divergentes)}
+                        </Text>
+                        {fila.pendentes.length > 0 ? (
+                            <Text style={{ color: colors.danger, fontWeight: '600' }}>
+                                Ainda há {fila.pendentes.length} leitura(s) guardada(s) sem envio: envie antes de finalizar.
+                            </Text>
+                        ) : null}
+                    </View>
+                ) : null}
                 <Text style={{ color: colors.text }}>
                     Deseja finalizar a conferência deste setor? Depois disso não será possível editar.
                 </Text>
@@ -475,6 +575,15 @@ const styles = StyleSheet.create({
         borderWidth: StyleSheet.hairlineWidth,
     },
     botaoSelecao: { alignItems: 'center', paddingVertical: 12, borderRadius: radius.input },
+    faixa: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: radius.input,
+        borderWidth: 1,
+    },
     chips: { gap: 8, paddingVertical: 2 },
     chip: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: 14, paddingVertical: 7 },
     linha: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 14, borderWidth: 1 },
@@ -491,3 +600,18 @@ const styles = StyleSheet.create({
     },
     botaoFolha: { alignItems: 'center', justifyContent: 'center', paddingVertical: 14, borderRadius: radius.input },
 });
+
+/** Texto e urgência do prazo do setor (vermelho nos últimos 7 dias e depois de vencido). */
+function situacaoPrazo(prazo: string | null): { texto: string; urgente: boolean } | null {
+    if (!prazo) return null;
+
+    const [ano, mes, dia] = prazo.split('-').map(Number);
+    const fim = new Date(ano, mes - 1, dia, 23, 59, 59);
+    const dias = Math.ceil((fim.getTime() - Date.now()) / 86_400_000);
+    const data = `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${ano}`;
+
+    if (dias < 1) return { texto: `Prazo vencido em ${data}`, urgente: true };
+    if (dias === 1) return { texto: `Prazo do setor: ${data} (termina hoje)`, urgente: true };
+
+    return { texto: `Prazo do setor: ${data} (faltam ${dias} dias)`, urgente: dias <= 7 };
+}

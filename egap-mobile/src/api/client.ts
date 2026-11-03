@@ -14,7 +14,9 @@ export class ApiError extends Error {
     }
 }
 
-const VIA_NGROK = /\.ngrok(-free)?\.(app|dev|io)\b/.test(ENV.API_URL);
+const TEMPO_LIMITE_MS = 15_000;
+
+const VIA_NGROK =/\.ngrok(-free)?\.(app|dev|io)\b/.test(ENV.API_URL);
 
 let token: string | null = null;
 let unauthorizedHandler: (() => void) | null = null;
@@ -63,15 +65,25 @@ export async function api<T>(path: string, init: ApiInit = {}): Promise<T> {
     }
 
     let response: Response;
+    // sem limite, uma requisição presa (sinal fraco) deixava o botão girando para sempre
+    const controle = new AbortController();
+    const limite = setTimeout(() => controle.abort(), TEMPO_LIMITE_MS);
 
     try {
         response = await fetch(buildUrl(path, init.query), {
             method: init.method ?? 'GET',
             headers,
             body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+            signal: controle.signal,
         });
     } catch {
-        throw new ApiError(0, 'Não foi possível conectar ao servidor.');
+        // status 0 = sem resposta (rede ou tempo esgotado): quem chama pode tentar de novo
+        throw new ApiError(
+            0,
+            controle.signal.aborted ? 'O servidor demorou para responder.' : 'Não foi possível conectar ao servidor.',
+        );
+    } finally {
+        clearTimeout(limite);
     }
 
     const text = await response.text();

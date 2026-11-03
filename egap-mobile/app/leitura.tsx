@@ -18,6 +18,7 @@ import { Text, TextInput } from '@/src/components/Text';
 import { ApiError } from '@/src/api/client';
 import type { LeituraConferencia } from '@/src/api/types';
 import { DivergenciaModal } from '@/src/components/DivergenciaModal';
+import { useFilaLeituras } from '@/src/conferencia/FilaLeituras';
 import { Scanner } from '@/src/components/Scanner';
 import { bemQueryOptions } from '@/src/hooks/useBens';
 import { mensagemErro, useLerCodigo } from '@/src/hooks/useConferencia';
@@ -63,6 +64,7 @@ export default function Leitura() {
     const ocupado = useRef(false);
     const ultimaLeitura = useRef<{ codigo: string; em: number } | null>(null);
     const lerCodigo = useLerCodigo();
+    const fila = useFilaLeituras();
     const [resultado, setResultado] = useState<{ leitura: LeituraConferencia; codigo: string } | null>(null);
     const [divergenciaAberta, setDivergenciaAberta] = useState(false);
 
@@ -82,8 +84,19 @@ export default function Leitura() {
             vibrar(leitura.status === 'localizado' || leitura.status === 'relocalizado');
             setDigitado('');
         } catch (e) {
-            // erro de rede/servidor segue para o tratamento comum; 4xx (inclui 422) aparece inline
-            if (e instanceof ApiError && (e.status === 0 || e.status >= 500)) {
+            // sem rede (ou tempo esgotado): guarda no aparelho e segue lendo; a fila reenvia sozinha
+            if (e instanceof ApiError && e.status === 0) {
+                fila.adicionar(codigo);
+                setResultado(null);
+                setDigitado('');
+                vibrar(false);
+                setMensagem(
+                    `Sem conexão: leitura guardada no aparelho (${fila.pendentes.length + 1} aguardando). Será enviada quando a rede voltar.`,
+                );
+                return;
+            }
+            // erro do servidor segue para o tratamento comum; 4xx (inclui 422) aparece inline
+            if (e instanceof ApiError && e.status >= 500) {
                 throw e;
             }
             setResultado(null);
@@ -188,6 +201,17 @@ export default function Leitura() {
                     visible={divergenciaAberta}
                     onClose={() => setDivergenciaAberta(false)}
                     codigoInicial={resultado?.codigo ?? ''}
+                    // bem de outro setor achado aqui: a divergência é de localização, já preenchida
+                    {...(resultado?.leitura.status === 'outro_setor' && resultado.leitura.bem
+                        ? {
+                              bem: {
+                                  id: resultado.leitura.bem.id,
+                                  rotulo: `${resultado.leitura.bem.descricao_resumida || resultado.leitura.bem.descricao || 'Bem'} · Nº ${resultado.leitura.bem.patrimonio ?? '-'}`,
+                              },
+                              camposIniciais: ['Localização'],
+                              observacaoInicial: `Bem cadastrado em ${resultado.leitura.bem.setor.nome ?? 'outro setor'}, encontrado neste setor.`,
+                          }
+                        : {})}
                     onRegistrado={(texto) => {
                         setResultado(null);
                         setMensagem(texto);
@@ -229,11 +253,11 @@ function Feedback({
             {bem?.situacao_bem_id === 8 ? (
                 <Text style={{ color: colors.warning, fontWeight: '700' }}>Verifique o termo</Text>
             ) : null}
-            {leitura.status === 'nao_cadastrado' ? (
+            {leitura.status === 'nao_cadastrado' || leitura.status === 'outro_setor' ? (
                 <Pressable
                     accessibilityRole="button"
                     onPress={onDivergencia}
-                    style={[styles.atalho, { backgroundColor: colors.danger }]}
+                    style={[styles.atalho, { backgroundColor: leitura.status === 'nao_cadastrado' ? colors.danger : colors.warning }]}
                 >
                     <Text style={{ color: '#ffffff', fontWeight: '700' }}>Registrar divergência</Text>
                 </Pressable>

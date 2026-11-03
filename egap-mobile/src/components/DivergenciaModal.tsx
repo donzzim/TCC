@@ -26,10 +26,21 @@ interface Props {
     /** Divergência de um bem cadastrado; sem ele, informa-se o código patrimonial. */
     bem?: { id: number; rotulo: string } | null;
     codigoInicial?: string;
+    /** Campos já marcados ao abrir (ex.: "Localização" para bem de outro setor). */
+    camposIniciais?: string[];
+    observacaoInicial?: string;
     onRegistrado?: (mensagem: string) => void;
 }
 
-export function DivergenciaModal({ visible, onClose, bem = null, codigoInicial = '', onRegistrado }: Props) {
+export function DivergenciaModal({
+    visible,
+    onClose,
+    bem = null,
+    codigoInicial = '',
+    camposIniciais,
+    observacaoInicial,
+    onRegistrado,
+}: Props) {
     const { colors } = useTheme();
     const mutation = useDivergencia();
     const [codigo, setCodigo] = useState(codigoInicial);
@@ -46,6 +57,8 @@ export function DivergenciaModal({ visible, onClose, bem = null, codigoInicial =
         if (visible) {
             setCodigo(codigoInicial);
             setErro(null);
+            if (camposIniciais) setCampos(camposIniciais);
+            if (observacaoInicial) setObservacao(observacaoInicial);
         }
     }
 

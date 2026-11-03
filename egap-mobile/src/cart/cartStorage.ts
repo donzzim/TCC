@@ -1,61 +1,9 @@
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
+import { apagarJson, gravarJson, lerJson } from '@/src/utils/armazenamentoLocal';
 
 const KEY = 'egap_mobile_carrinho';
-// SecureStore limita cada valor a cerca de 2 KB: o carrinho é gravado em pedaços.
-const PEDACO = 1500;
 
-export async function lerCarrinhoSalvo(): Promise<unknown> {
-    try {
-        if (Platform.OS === 'web') {
-            const bruto = window.localStorage.getItem(KEY);
-
-            return bruto ? JSON.parse(bruto) : null;
-        }
-
-        const total = Number(await SecureStore.getItemAsync(`${KEY}_n`));
-
-        if (!total) return null;
-
-        let texto = '';
-
-        for (let i = 0; i < total; i += 1) {
-            const parte = await SecureStore.getItemAsync(`${KEY}_${i}`);
-
-            if (parte === null) return null;
-
-            texto += parte;
-        }
-
-        return JSON.parse(texto);
-    } catch {
-        return null;
-    }
-}
-
-async function gravar(valor: unknown): Promise<void> {
-    try {
-        const texto = JSON.stringify(valor);
-
-        if (Platform.OS === 'web') {
-            window.localStorage.setItem(KEY, texto);
-            return;
-        }
-
-        const anterior = Number(await SecureStore.getItemAsync(`${KEY}_n`)) || 0;
-        const partes = Math.ceil(texto.length / PEDACO);
-
-        for (let i = 0; i < partes; i += 1) {
-            await SecureStore.setItemAsync(`${KEY}_${i}`, texto.slice(i * PEDACO, (i + 1) * PEDACO));
-        }
-        await SecureStore.setItemAsync(`${KEY}_n`, String(partes));
-
-        for (let i = partes; i < anterior; i += 1) {
-            await SecureStore.deleteItemAsync(`${KEY}_${i}`);
-        }
-    } catch {
-        // o carrinho segue em memória
-    }
+export function lerCarrinhoSalvo(): Promise<unknown> {
+    return lerJson(KEY);
 }
 
 // Toda escrita/limpeza passa por esta fila: nunca há duas operações de storage intercaladas.
@@ -75,7 +23,7 @@ export function salvarCarrinho(valor: unknown): void {
 
     timer = setTimeout(() => {
         timer = null;
-        void enfileirar(() => gravar(valor));
+        void enfileirar(() => gravarJson(KEY, valor));
     }, ATRASO);
 }
 
@@ -87,23 +35,5 @@ export function limparCarrinhos(): Promise<void> {
         timer = null;
     }
 
-    return enfileirar(apagar);
-}
-
-async function apagar(): Promise<void> {
-    try {
-        if (Platform.OS === 'web') {
-            window.localStorage.removeItem(KEY);
-            return;
-        }
-
-        const total = Number(await SecureStore.getItemAsync(`${KEY}_n`)) || 0;
-
-        for (let i = 0; i < total; i += 1) {
-            await SecureStore.deleteItemAsync(`${KEY}_${i}`);
-        }
-        await SecureStore.deleteItemAsync(`${KEY}_n`);
-    } catch {
-        // nada a limpar
-    }
+    return enfileirar(() => apagarJson(KEY));
 }

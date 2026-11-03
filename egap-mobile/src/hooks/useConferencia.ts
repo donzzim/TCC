@@ -68,7 +68,7 @@ export function useNaoLocalizados() {
     const invalidar = useInvalidarConferencia();
 
     return useMutation({
-        mutationFn: ({ bemIds, justificativa }: { bemIds: number[]; justificativa: string }) =>
+        mutationFn: ({ bemIds, justificativa }: { bemIds: number[] | 'todos'; justificativa: string }) =>
             conferenciaApi.naoLocalizados(bemIds, justificativa),
         onSuccess: () => invalidar(),
     });
