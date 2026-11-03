@@ -437,7 +437,8 @@ class BensNoSetorTable extends Component implements HasActions, HasForms, HasTab
             try {
                 $resultado = $service->localizar($scope, ['bem_id' => $record->getKey()]);
 
-                if (($resultado['status'] ?? null) === 'localizado') {
+                // "relocalizado" = estava como não localizado e foi encontrado
+                if (in_array($resultado['status'] ?? null, ['localizado', 'relocalizado'], true)) {
                     $localizados++;
                 } else {
                     $falhas++;
@@ -503,7 +504,7 @@ class BensNoSetorTable extends Component implements HasActions, HasForms, HasTab
         }
 
         try {
-            app(ConferenciaBensService::class)->naoLocalizados($scope, $records->pluck('id')->all(), $justificativa);
+            $resultado = app(ConferenciaBensService::class)->naoLocalizados($scope, $records->pluck('id')->all(), $justificativa);
         } catch (HttpException | NotFoundHttpException $exception) {
             Notification::make()
                 ->title('Não foi possível registrar a informação.')
@@ -517,8 +518,10 @@ class BensNoSetorTable extends Component implements HasActions, HasForms, HasTab
         $this->resetConferencia();
         $this->resetTable();
 
+        // bens já conferidos na seleção são ignorados pelo serviço
         Notification::make()
             ->title('Informação registrada! Materiais atualizados.')
+            ->body(($resultado['ignorados'] ?? 0) > 0 ? $resultado['message'] : null)
             ->success()
             ->send();
     }

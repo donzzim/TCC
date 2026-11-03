@@ -33,6 +33,7 @@ const JANELA_DUPLO_MS = 2000;
 
 const TITULOS: Record<string, string> = {
     localizado: 'Bem localizado',
+    relocalizado: 'Bem reencontrado',
     ja_conferido: 'Já conferido',
     outro_setor: 'Bem de outro setor',
     situacao_nao_conferivel: 'Situação não conferível',
@@ -78,7 +79,7 @@ export default function Leitura() {
             const leitura = await lerCodigo.mutateAsync(codigo);
 
             setResultado({ leitura, codigo });
-            vibrar(leitura.status === 'localizado');
+            vibrar(leitura.status === 'localizado' || leitura.status === 'relocalizado');
             setDigitado('');
         } catch (e) {
             // erro de rede/servidor segue para o tratamento comum; 4xx (inclui 422) aparece inline
@@ -207,7 +208,7 @@ function Feedback({
     const { colors } = useTheme();
     const { leitura } = resultado;
     const cor =
-        leitura.status === 'localizado'
+        leitura.status === 'localizado' || leitura.status === 'relocalizado'
             ? colors.success
             : leitura.status === 'ja_conferido'
               ? colors.primary
