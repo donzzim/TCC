@@ -1,33 +1,26 @@
 <?php
 
-namespace App\Filament\Egap\Externo\Pages\Widgets\Almoxarifado;
+namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Patrimonio;
 
 use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
-use App\Models\egap\Almoxarifado\MovimentacaoEstoque;
+use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
 
-class MateriaisConsumoAlmoxarifado extends BaseChart
+class BensPermanentesMoveisPatrimonio extends BaseChart
 {
-    protected ?string $heading = 'Materiais de Consumo Fornecidos pelo Almoxarifado por Ano';
+    protected ?string $heading = 'Bens Permanentes Móveis Adquiridos por Ano do Patrimônio';
 
     protected function getData(): array
     {
         $registros = $this->aggregateByYear(
-            MovimentacaoEstoque::query()
-                ->whereYear('date_time', '>', 2017)
-                ->where('tipo_movimentacao', 2)
-                ->whereHas('materialRel', fn($query) => $query->where('item_estoque', 1)),
-            'date_time',
-            ['qtde' => 'SUM(quantidade)'],
+            BemMovel::query()
+                ->whereYear('DatadeIncorporacao', '>', 2006)
+                ->where('UnidadeJudiciaria', 766),
+            'DatadeIncorporacao',
+            ['qtde' => 'COUNT(*)', 'valor' => 'SUM(ValorAquisicao)'],
         );
 
-        $labels = $registros->pluck('ano')
-            ->map(fn($v) => (string) $v)
-            ->toArray();
-
-        $quantidades = $registros->pluck('qtde')
-            ->map(fn($v) => (int) $v)
-            ->toArray();
-
+        $labels = $registros->pluck('ano')->map(fn($value) => (string) $value)->toArray();
+        $quantidades = $registros->pluck('qtde')->map(fn($value) => (int) $value)->toArray();
         $colors = $this->getColors(count($quantidades));
         $border_colors = $this->getBorderColors(count($quantidades));
 
@@ -35,14 +28,15 @@ class MateriaisConsumoAlmoxarifado extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Saída de estoque',
+                        'label' => 'Quantidade',
                         'data' => $registros->map(function ($item) {
                             $qtde = max((int) $item->qtde, 1);
+                            $valor = (float) $item->valor;
 
                             return [
                                 'x' => (int) $item->ano,
                                 'y' => $qtde,
-                                'r' => max(5, min(25, (int) round(sqrt($qtde) * 1.5))),
+                                'r' => max(5, min(25, (int) round($valor / 10000))),
                             ];
                         })->toArray(),
                         'backgroundColor' => $this->getColors($registros->count()),
@@ -56,7 +50,7 @@ class MateriaisConsumoAlmoxarifado extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Saída de estoque',
+                        'label' => 'Quantidade',
                         'data' => $quantidades,
                         'backgroundColor' => $colors,
                     ],
@@ -69,7 +63,7 @@ class MateriaisConsumoAlmoxarifado extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Saída de estoque',
+                        'label' => 'Quantidade',
                         'data' => $quantidades,
                         'backgroundColor' => 'rgba(59, 130, 246, 0.12)',
                         'borderColor' => 'rgba(59, 130, 246, 1)',
@@ -85,7 +79,7 @@ class MateriaisConsumoAlmoxarifado extends BaseChart
         return [
             'datasets' => [
                 [
-                    'label' => 'Saída de estoque',
+                    'label' => 'Quantidade',
                     'data' => $quantidades,
                     'backgroundColor' => $colors,
                     'borderColor' => $border_colors,

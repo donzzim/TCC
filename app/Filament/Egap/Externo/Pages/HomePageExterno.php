@@ -223,14 +223,6 @@ class HomePageExterno extends ExternoPage
                     'url' => Fiscal::getUrl(),
                 ],
             ],
-            'Portal Transparência' => [
-                [
-                    'label' => PortalTransparencia::getNavigationLabel(),
-                    'description' => 'Visualizar gráficos correspondentes aos dados de Patrimônio e Almoxarifado.',
-                    'icon' => PortalTransparencia::getNavigationIcon() ?? 'heroicon-o-presentation-chart-bar',
-                    'url' => PortalTransparencia::getUrl(),
-                ],
-            ],
         ];
 
         return collect($grupos)

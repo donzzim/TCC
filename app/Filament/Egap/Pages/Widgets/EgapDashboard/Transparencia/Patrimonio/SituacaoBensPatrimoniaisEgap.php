@@ -1,23 +1,33 @@
 <?php
 
-namespace App\Filament\Egap\Externo\Pages\Widgets\Patrimonio;
+namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Patrimonio;
 
 use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
-use App\Models\egap\Patrimonio\BensMoveis\TransferenciaBemMovel;
+use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
 
-class BensPatrimoniaisMovimentados extends BaseChart
+class SituacaoBensPatrimoniaisEgap extends BaseChart
 {
-    protected ?string $heading = 'Bens Patrimoniais Movimentados por Ano';
+    protected ?string $heading = 'Situação Atual dos Bens Patrimoniais no Sistema E-Gap';
 
     protected function getData(): array
     {
-        $registros = $this->aggregateByYear(
-            TransferenciaBemMovel::query()->whereYear('date_time', '>', 2016),
-            'date_time',
-            ['qtde' => 'COUNT(*)'],
-        );
+        $registros = BemMovel::query()
+            ->with('situacaoBemRef')
+            ->get(['id', 'SituacaoBem'])
+            ->groupBy('SituacaoBem')
+            ->map(function ($bens, $situacaoId): object {
+                $situacao = $bens->first()?->situacaoBemRef;
 
-        $labels = $registros->pluck('ano')->map(fn($value) => (string) $value)->toArray();
+                return (object) [
+                    'id' => (int) $situacaoId,
+                    'situacao' => $situacao?->descricao ?? 'Sem situacao',
+                    'qtde' => $bens->count(),
+                ];
+            })
+            ->sortBy('situacao')
+            ->values();
+
+        $labels = $registros->pluck('situacao')->toArray();
         $quantidades = $registros->pluck('qtde')->map(fn($value) => (int) $value)->toArray();
         $colors = $this->getColors(count($quantidades));
         $border_colors = $this->getBorderColors(count($quantidades));
@@ -26,17 +36,17 @@ class BensPatrimoniaisMovimentados extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Quantidade de transferências',
-                        'data' => $registros->map(function ($item) {
+                        'label' => 'Quantidade de bens por situação',
+                        'data' => $registros->values()->map(function ($item, $index) {
                             $qtde = max((int) $item->qtde, 1);
 
                             return [
-                                'x' => (int) $item->ano,
+                                'x' => $index + 1,
                                 'y' => $qtde,
                                 'r' => max(5, min(25, (int) round(sqrt($qtde) * 1.5))),
                             ];
                         })->toArray(),
-                        'backgroundColor' => $this->getColors($registros->count()),
+                        'backgroundColor' => $colors,
                     ],
                 ],
                 'labels' => $labels,
@@ -47,7 +57,7 @@ class BensPatrimoniaisMovimentados extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Quantidade de transferências',
+                        'label' => 'Quantidade de bens por situação',
                         'data' => $quantidades,
                         'backgroundColor' => $colors,
                     ],
@@ -60,7 +70,7 @@ class BensPatrimoniaisMovimentados extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Quantidade de transferências',
+                        'label' => 'Quantidade de bens por situação',
                         'data' => $quantidades,
                         'backgroundColor' => 'rgba(59, 130, 246, 0.12)',
                         'borderColor' => 'rgba(59, 130, 246, 1)',
@@ -76,7 +86,7 @@ class BensPatrimoniaisMovimentados extends BaseChart
         return [
             'datasets' => [
                 [
-                    'label' => 'Quantidade de transferências',
+                    'label' => 'Quantidade de bens por situação',
                     'data' => $quantidades,
                     'backgroundColor' => $colors,
                     'borderColor' => $border_colors,

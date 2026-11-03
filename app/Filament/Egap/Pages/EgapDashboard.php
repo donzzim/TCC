@@ -7,6 +7,8 @@ use App\Filament\Egap\Pages\Widgets\EgapDashboard\PatrimonioMoveisPorAnoChart;
 use App\Filament\Egap\Pages\Widgets\EgapDashboard\PatrimonioMoveisPorSituacaoChart;
 use App\Filament\Egap\Pages\Widgets\EgapDashboard\PatrimonioOverviewStats;
 use App\Filament\Egap\Pages\Widgets\EgapDashboard\PatrimonioTopMateriaisValorTable;
+use App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\TransparenciaAlmoxarifadoWidget;
+use App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\TransparenciaPatrimonioWidget;
 use Filament\Notifications\Notification;
 use Filament\Pages\Dashboard;
 use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
@@ -29,6 +31,9 @@ class EgapDashboard extends Dashboard
     {
         return [
             PatrimonioOverviewStats::class,
+            // gráficos que ficavam no Portal Transparência do ambiente externo
+            TransparenciaPatrimonioWidget::class,
+            TransparenciaAlmoxarifadoWidget::class,
             PatrimonioMoveisPorSituacaoChart::class,
             PatrimonioMoveisPorAnoChart::class,
             PatrimonioImoveisPorContaChart::class,

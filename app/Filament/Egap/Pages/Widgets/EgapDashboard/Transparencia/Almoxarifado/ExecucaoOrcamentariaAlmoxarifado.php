@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Egap\Externo\Pages\Widgets\Almoxarifado;
+namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Almoxarifado;
 
 use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
 use App\Models\egap\Almoxarifado\MovimentacaoEstoque;

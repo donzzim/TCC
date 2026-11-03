@@ -19,8 +19,6 @@ use App\Filament\Egap\Externo\Groups\Patrimonio\Components\MateriaisPermanentesT
 use App\Filament\Egap\Externo\Groups\Patrimonio\Components\MovimentacaoDeMateriaisTable;
 use App\Filament\Egap\Externo\Groups\Patrimonio\Components\PedidoItensModal as PedidoItensModalPatrimonio;
 use App\Filament\Egap\Externo\Groups\Patrimonio\Components\PedidosPatrimonioTable;
-use App\Filament\Egap\Externo\Pages\Components\AlmoxarifadoCharts;
-use App\Filament\Egap\Externo\Pages\Components\PatrimonioCharts;
 use App\Filament\Egap\Interno\Groups\Admin\Components\LotacoesTable;
 use App\Filament\Egap\Interno\Groups\Admin\Components\RoleUsersTable;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensImoveis\Components\DepreciacaoImovelModal;
@@ -83,10 +81,6 @@ class LivewireComponentsService
         Livewire::component('processos.materiais-modal', MateriaisModal::class);
         Livewire::component('processos.reservas-modal', ReservasModal::class);
         Livewire::component('processos.empenhos-modal', EmpenhosModal::class);
-
-        // PORTAL TRANSPARÊNCIA
-        Livewire::component('portal-transparencia.patrimonio-charts', PatrimonioCharts::class);
-        Livewire::component('portal-transparencia.almoxarifado-charts', AlmoxarifadoCharts::class);
 
         //EXTERNO AGENDAMENTO
         Livewire::component('externo-agendamento.solicitacao-veiculo-form', SolicitacaoVeiculoForm::class);

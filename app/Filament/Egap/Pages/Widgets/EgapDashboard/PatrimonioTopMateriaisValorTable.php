@@ -13,7 +13,7 @@ class PatrimonioTopMateriaisValorTable extends TableWidget
 {
     use InteractsWithPageFilters;
 
-    protected static ?int $sort = 5;
+    protected static ?int $sort = 7;
 
     protected static bool $isLazy = false;
 
