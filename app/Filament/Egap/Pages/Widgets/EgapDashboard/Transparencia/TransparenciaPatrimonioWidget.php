@@ -25,7 +25,7 @@ class TransparenciaPatrimonioWidget extends SeletorGraficosWidget
 
     public function icone(): string
     {
-        return 'heroicon-o-building-library';
+        return 'heroicon-o-building-office-2';
     }
 
     public function prefixo(): string

@@ -2,7 +2,7 @@
     <x-filament::section
         :heading="$this->titulo()"
         :icon="$this->icone()"
-        description="Escolha o indicador e o tipo de gráfico e clique em &quot;Gerar gráfico&quot;."
+        description="Escolha o indicador e o tipo de gráfico."
     >
         <div class="flex flex-col gap-3">
             <label

@@ -20,7 +20,7 @@ class TransparenciaAlmoxarifadoWidget extends SeletorGraficosWidget
 
     public function icone(): string
     {
-        return 'heroicon-o-archive-box';
+        return 'heroicon-o-circle-stack';
     }
 
     public function prefixo(): string
