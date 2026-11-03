@@ -1,23 +1,23 @@
 <?php
 
-namespace App\Filament\Egap\Externo\Pages\Widgets\Patrimonio;
+namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Almoxarifado;
 
 use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
-use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
+use App\Models\egap\Almoxarifado\MovimentacaoEstoque;
 use Filament\Support\RawJs;
 
-class ExecucaoOrcamentariaPatrimonio extends BaseChart
+class ExecucaoOrcamentaria extends BaseChart
 {
-    protected ?string $heading = 'Execução Orçamentária do Patrimônio';
+    protected ?string $heading = 'Execução Orçamentária';
 
     protected function getData(): array
     {
         $registros = $this->aggregateByYear(
-            BemMovel::query()
-                ->whereYear('DatadeIncorporacao', '>', 2006)
-                ->where('UnidadeJudiciaria', 766),
-            'DatadeIncorporacao',
-            ['qtde' => 'COUNT(*)', 'valor' => 'SUM(ValorAquisicao)'],
+            MovimentacaoEstoque::query()
+                ->where('tipo_movimentacao', 2)
+                ->whereHas('materialRel.descricao_resumida_text.produto_id', fn($query) => $query->whereBetween('CodigodaClasse', [33000000, 33999999])),
+            'date_time',
+            ['valor' => 'SUM(quantidade * preco_unitario)'],
         );
 
         $labels = $registros->pluck('ano')
@@ -35,15 +35,14 @@ class ExecucaoOrcamentariaPatrimonio extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Valor de aquisição',
+                        'label' => 'Valor movimentado',
                         'data' => $registros->map(function ($item) {
                             $valor = max((float) $item->valor, 1);
-                            $qtde = max((int) $item->qtde, 1);
 
                             return [
                                 'x' => (int) $item->ano,
                                 'y' => $valor,
-                                'r' => max(5, min(25, (int) round(sqrt($qtde) * 1.5))),
+                                'r' => max(5, min(25, (int) round($valor / 100000))),
                             ];
                         })->toArray(),
                         'backgroundColor' => $this->getColors($registros->count()),
@@ -57,7 +56,7 @@ class ExecucaoOrcamentariaPatrimonio extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Valor de aquisição',
+                        'label' => 'Valor movimentado',
                         'data' => $valores,
                         'backgroundColor' => $colors,
                     ],
@@ -70,7 +69,7 @@ class ExecucaoOrcamentariaPatrimonio extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Valor de aquisição',
+                        'label' => 'Valor movimentado',
                         'data' => $valores,
                         'backgroundColor' => 'rgba(59, 130, 246, 0.12)',
                         'borderColor' => 'rgba(59, 130, 246, 1)',
@@ -86,7 +85,7 @@ class ExecucaoOrcamentariaPatrimonio extends BaseChart
         return [
             'datasets' => [
                 [
-                    'label' => 'Valor de aquisição',
+                    'label' => 'Valor movimentado',
                     'data' => $valores,
                     'backgroundColor' => $colors,
                     'borderColor' => $border_colors,

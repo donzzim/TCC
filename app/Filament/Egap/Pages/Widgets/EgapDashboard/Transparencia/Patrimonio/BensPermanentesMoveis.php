@@ -1,36 +1,33 @@
 <?php
 
-namespace App\Filament\Egap\Externo\Pages\Widgets\Patrimonio;
+namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Patrimonio;
 
 use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
 use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
 
-class InventarioOnlineSituacaoContabil extends BaseChart
+class BensPermanentesMoveis extends BaseChart
 {
-    protected ?string $heading = 'Acompanhamento do Invetário Online Anual - Situação Contábil';
+    protected ?string $heading = 'Bens Permanentes Móveis Adquiridos por Ano';
 
     protected function getData(): array
     {
-        $bens = BemMovel::query()
-            ->whereIn('SituacaoBem', [1, 7])
-            ->get(['situacao_contabil', 'SituacaoBem']);
+        $data = $this->aggregateByYear(
+            BemMovel::query()->whereYear('DatadeIncorporacao', '>', 2006),
+            'DatadeIncorporacao',
+            ['qtde' => 'COUNT(*)', 'valor' => 'SUM(ValorAquisicao)'],
+        );
 
-        $normalizar = fn(mixed $value): string => mb_strtoupper(trim((string) $value), 'UTF-8');
+        $labels = $data->pluck('ano')
+            ->map(fn($value) => (string) $value)
+            ->toArray();
 
-        $dados = (object) [
-            'localizados' => $bens->filter(fn(BemMovel $bem): bool => str_starts_with($normalizar($bem->situacao_contabil), 'LOCALIZADO'))->count(),
-            'nao_localizados' => $bens->filter(fn(BemMovel $bem): bool => str_starts_with($normalizar($bem->situacao_contabil), 'N'))->count(),
-        ];
+        $quantidades = $data->pluck('qtde')
+            ->map(fn($value) => (int) $value)
+            ->toArray();
 
-        $labels = [
-            'Localizados',
-            'Não localizados',
-        ];
-
-        $quantidades = [
-            (int) $dados->localizados,
-            (int) $dados->nao_localizados,
-        ];
+        $valores = $data->pluck('valor')
+            ->map(fn($value) => (float) $value)
+            ->toArray();
 
         $colors = $this->getColors(count($quantidades));
         $border_colors = $this->getBorderColors(count($quantidades));
@@ -39,17 +36,18 @@ class InventarioOnlineSituacaoContabil extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Quantidade',
-                        'data' => collect($quantidades)->map(function ($valor, $index) {
-                            $qtde = max((int) $valor, 1);
+                        'label' => 'Quantidade de patrimônios',
+                        'data' => $data->map(function ($item) {
+                            $qtde = max((int) $item->qtde, 1);
+                            $valor = (float) $item->valor;
 
                             return [
-                                'x' => $index + 1,
+                                'x' => (int) $item->ano,
                                 'y' => $qtde,
-                                'r' => max(5, min(25, (int) round(sqrt($qtde) * 1.5))),
+                                'r' => max(5, min(25, (int) round($valor / 10000))),
                             ];
                         })->toArray(),
-                        'backgroundColor' => $colors,
+                        'backgroundColor' => $this->getColors($data->count()),
                     ],
                 ],
                 'labels' => $labels,
@@ -60,7 +58,7 @@ class InventarioOnlineSituacaoContabil extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Quantidade',
+                        'label' => 'Quantidade de patrimônios',
                         'data' => $quantidades,
                         'backgroundColor' => $colors,
                     ],
@@ -73,7 +71,7 @@ class InventarioOnlineSituacaoContabil extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Quantidade',
+                        'label' => 'Quantidade de patrimônios',
                         'data' => $quantidades,
                         'backgroundColor' => 'rgba(59, 130, 246, 0.12)',
                         'borderColor' => 'rgba(59, 130, 246, 1)',
@@ -89,7 +87,7 @@ class InventarioOnlineSituacaoContabil extends BaseChart
         return [
             'datasets' => [
                 [
-                    'label' => 'Quantidade',
+                    'label' => 'Quantidade de patrimônios',
                     'data' => $quantidades,
                     'backgroundColor' => $colors,
                     'borderColor' => $border_colors,

@@ -14,7 +14,7 @@ class PatrimonioImoveisPorContaChart extends ChartWidget
 
     protected ?string $heading = 'Imóveis por conta contábil';
 
-    protected static ?int $sort = 4;
+    protected static ?int $sort = 6;
 
     protected static bool $isLazy = false;
 

@@ -1,34 +1,33 @@
 <?php
 
-namespace App\Filament\Egap\Externo\Pages\Widgets\Patrimonio;
+namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Almoxarifado;
 
 use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
-use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
+use App\Models\egap\Almoxarifado\MovimentacaoEstoque;
 
-class SituacaoBensPatrimoniaisEgap extends BaseChart
+class MateriaisConsumoAlmoxarifado extends BaseChart
 {
-    protected ?string $heading = 'Situação Atual dos Bens Patrimoniais no Sistema E-Gap';
+    protected ?string $heading = 'Materiais de Consumo Fornecidos pelo Almoxarifado por Ano';
 
     protected function getData(): array
     {
-        $registros = BemMovel::query()
-            ->with('situacaoBemRef')
-            ->get(['id', 'SituacaoBem'])
-            ->groupBy('SituacaoBem')
-            ->map(function ($bens, $situacaoId): object {
-                $situacao = $bens->first()?->situacaoBemRef;
+        $registros = $this->aggregateByYear(
+            MovimentacaoEstoque::query()
+                ->whereYear('date_time', '>', 2017)
+                ->where('tipo_movimentacao', 2)
+                ->whereHas('materialRel', fn($query) => $query->where('item_estoque', 1)),
+            'date_time',
+            ['qtde' => 'SUM(quantidade)'],
+        );
 
-                return (object) [
-                    'id' => (int) $situacaoId,
-                    'situacao' => $situacao?->descricao ?? 'Sem situacao',
-                    'qtde' => $bens->count(),
-                ];
-            })
-            ->sortBy('situacao')
-            ->values();
+        $labels = $registros->pluck('ano')
+            ->map(fn($v) => (string) $v)
+            ->toArray();
 
-        $labels = $registros->pluck('situacao')->toArray();
-        $quantidades = $registros->pluck('qtde')->map(fn($value) => (int) $value)->toArray();
+        $quantidades = $registros->pluck('qtde')
+            ->map(fn($v) => (int) $v)
+            ->toArray();
+
         $colors = $this->getColors(count($quantidades));
         $border_colors = $this->getBorderColors(count($quantidades));
 
@@ -36,17 +35,17 @@ class SituacaoBensPatrimoniaisEgap extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Quantidade de bens por situação',
-                        'data' => $registros->values()->map(function ($item, $index) {
+                        'label' => 'Saída de estoque',
+                        'data' => $registros->map(function ($item) {
                             $qtde = max((int) $item->qtde, 1);
 
                             return [
-                                'x' => $index + 1,
+                                'x' => (int) $item->ano,
                                 'y' => $qtde,
                                 'r' => max(5, min(25, (int) round(sqrt($qtde) * 1.5))),
                             ];
                         })->toArray(),
-                        'backgroundColor' => $colors,
+                        'backgroundColor' => $this->getColors($registros->count()),
                     ],
                 ],
                 'labels' => $labels,
@@ -57,7 +56,7 @@ class SituacaoBensPatrimoniaisEgap extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Quantidade de bens por situação',
+                        'label' => 'Saída de estoque',
                         'data' => $quantidades,
                         'backgroundColor' => $colors,
                     ],
@@ -70,7 +69,7 @@ class SituacaoBensPatrimoniaisEgap extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Quantidade de bens por situação',
+                        'label' => 'Saída de estoque',
                         'data' => $quantidades,
                         'backgroundColor' => 'rgba(59, 130, 246, 0.12)',
                         'borderColor' => 'rgba(59, 130, 246, 1)',
@@ -86,7 +85,7 @@ class SituacaoBensPatrimoniaisEgap extends BaseChart
         return [
             'datasets' => [
                 [
-                    'label' => 'Quantidade de bens por situação',
+                    'label' => 'Saída de estoque',
                     'data' => $quantidades,
                     'backgroundColor' => $colors,
                     'borderColor' => $border_colors,

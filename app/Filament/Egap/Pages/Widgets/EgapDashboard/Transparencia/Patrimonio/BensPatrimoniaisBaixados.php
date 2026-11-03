@@ -1,32 +1,24 @@
 <?php
 
-namespace App\Filament\Egap\Externo\Pages\Widgets\Almoxarifado;
+namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Patrimonio;
 
 use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
-use App\Models\egap\Almoxarifado\MovimentacaoEstoque;
+use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
 
-class MateriaisConsumo extends BaseChart
+class BensPatrimoniaisBaixados extends BaseChart
 {
-    protected ?string $heading = 'Materiais de Consumo Fornecidos por Ano';
+    protected ?string $heading = 'Bens Patrimoniais Baixados por Ano';
 
     protected function getData(): array
     {
         $registros = $this->aggregateByYear(
-            MovimentacaoEstoque::query()
-                ->whereYear('date_time', '>', 2017)
-                ->where('tipo_movimentacao', 2),
-            'date_time',
-            ['qtde' => 'SUM(quantidade)'],
+            BemMovel::query()->whereIn('SituacaoBem', [2, 3, 4, 5, 6, 11]),
+            'DataBaixa',
+            ['qtde' => 'COUNT(*)'],
         );
 
-        $labels = $registros->pluck('ano')
-            ->map(fn($value) => (string) $value)
-            ->toArray();
-
-        $quantidades = $registros->pluck('qtde')
-            ->map(fn($value) => (int) $value)
-            ->toArray();
-
+        $labels = $registros->pluck('ano')->map(fn($value) => (string) $value)->toArray();
+        $quantidades = $registros->pluck('qtde')->map(fn($value) => (int) $value)->toArray();
         $colors = $this->getColors(count($quantidades));
         $border_colors = $this->getBorderColors(count($quantidades));
 
@@ -34,7 +26,7 @@ class MateriaisConsumo extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Quantidade movimentada',
+                        'label' => 'Baixas por ano',
                         'data' => $registros->map(function ($item) {
                             $qtde = max((int) $item->qtde, 1);
 
@@ -55,7 +47,7 @@ class MateriaisConsumo extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Quantidade movimentada',
+                        'label' => 'Baixas por ano',
                         'data' => $quantidades,
                         'backgroundColor' => $colors,
                     ],
@@ -68,7 +60,7 @@ class MateriaisConsumo extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Quantidade movimentada',
+                        'label' => 'Baixas por ano',
                         'data' => $quantidades,
                         'backgroundColor' => 'rgba(59, 130, 246, 0.12)',
                         'borderColor' => 'rgba(59, 130, 246, 1)',
@@ -84,7 +76,7 @@ class MateriaisConsumo extends BaseChart
         return [
             'datasets' => [
                 [
-                    'label' => 'Quantidade movimentada',
+                    'label' => 'Baixas por ano',
                     'data' => $quantidades,
                     'backgroundColor' => $colors,
                     'borderColor' => $border_colors,

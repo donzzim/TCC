@@ -1,30 +1,24 @@
 <?php
 
-namespace App\Filament\Egap\Externo\Pages\Widgets\Almoxarifado;
+namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Patrimonio;
 
 use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
-use App\Models\egap\Almoxarifado\Pedidos;
+use App\Models\egap\Patrimonio\BensMoveis\TransferenciaBemMovel;
 
-class RequisicoesBensConsumoAtendidas extends BaseChart
+class BensPatrimoniaisMovimentados extends BaseChart
 {
-    protected ?string $heading = 'Requisições de Bens de Consumo Atendidas por Ano';
+    protected ?string $heading = 'Bens Patrimoniais Movimentados por Ano';
 
     protected function getData(): array
     {
         $registros = $this->aggregateByYear(
-            Pedidos::query()->where('setor_responsavel', 799),
+            TransferenciaBemMovel::query()->whereYear('date_time', '>', 2016),
             'date_time',
             ['qtde' => 'COUNT(*)'],
         );
 
-        $labels = $registros->pluck('ano')
-            ->map(fn($v) => (string) $v)
-            ->toArray();
-
-        $quantidades = $registros->pluck('qtde')
-            ->map(fn($v) => (int) $v)
-            ->toArray();
-
+        $labels = $registros->pluck('ano')->map(fn($value) => (string) $value)->toArray();
+        $quantidades = $registros->pluck('qtde')->map(fn($value) => (int) $value)->toArray();
         $colors = $this->getColors(count($quantidades));
         $border_colors = $this->getBorderColors(count($quantidades));
 
@@ -32,7 +26,7 @@ class RequisicoesBensConsumoAtendidas extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Pedidos por ano',
+                        'label' => 'Quantidade de transferências',
                         'data' => $registros->map(function ($item) {
                             $qtde = max((int) $item->qtde, 1);
 
@@ -53,7 +47,7 @@ class RequisicoesBensConsumoAtendidas extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Pedidos por ano',
+                        'label' => 'Quantidade de transferências',
                         'data' => $quantidades,
                         'backgroundColor' => $colors,
                     ],
@@ -66,7 +60,7 @@ class RequisicoesBensConsumoAtendidas extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Pedidos por ano',
+                        'label' => 'Quantidade de transferências',
                         'data' => $quantidades,
                         'backgroundColor' => 'rgba(59, 130, 246, 0.12)',
                         'borderColor' => 'rgba(59, 130, 246, 1)',
@@ -82,7 +76,7 @@ class RequisicoesBensConsumoAtendidas extends BaseChart
         return [
             'datasets' => [
                 [
-                    'label' => 'Pedidos por ano',
+                    'label' => 'Quantidade de transferências',
                     'data' => $quantidades,
                     'backgroundColor' => $colors,
                     'borderColor' => $border_colors,

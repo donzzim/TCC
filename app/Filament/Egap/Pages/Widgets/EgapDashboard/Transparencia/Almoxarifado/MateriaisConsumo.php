@@ -1,32 +1,30 @@
 <?php
 
-namespace App\Filament\Egap\Externo\Pages\Widgets\Patrimonio;
+namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Almoxarifado;
 
 use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
-use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
+use App\Models\egap\Almoxarifado\MovimentacaoEstoque;
 
-class BensPermanentesMoveis extends BaseChart
+class MateriaisConsumo extends BaseChart
 {
-    protected ?string $heading = 'Bens Permanentes Móveis Adquiridos por Ano';
+    protected ?string $heading = 'Materiais de Consumo Fornecidos por Ano';
 
     protected function getData(): array
     {
-        $data = $this->aggregateByYear(
-            BemMovel::query()->whereYear('DatadeIncorporacao', '>', 2006),
-            'DatadeIncorporacao',
-            ['qtde' => 'COUNT(*)', 'valor' => 'SUM(ValorAquisicao)'],
+        $registros = $this->aggregateByYear(
+            MovimentacaoEstoque::query()
+                ->whereYear('date_time', '>', 2017)
+                ->where('tipo_movimentacao', 2),
+            'date_time',
+            ['qtde' => 'SUM(quantidade)'],
         );
 
-        $labels = $data->pluck('ano')
+        $labels = $registros->pluck('ano')
             ->map(fn($value) => (string) $value)
             ->toArray();
 
-        $quantidades = $data->pluck('qtde')
+        $quantidades = $registros->pluck('qtde')
             ->map(fn($value) => (int) $value)
-            ->toArray();
-
-        $valores = $data->pluck('valor')
-            ->map(fn($value) => (float) $value)
             ->toArray();
 
         $colors = $this->getColors(count($quantidades));
@@ -36,18 +34,17 @@ class BensPermanentesMoveis extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Quantidade de patrimônios',
-                        'data' => $data->map(function ($item) {
+                        'label' => 'Quantidade movimentada',
+                        'data' => $registros->map(function ($item) {
                             $qtde = max((int) $item->qtde, 1);
-                            $valor = (float) $item->valor;
 
                             return [
                                 'x' => (int) $item->ano,
                                 'y' => $qtde,
-                                'r' => max(5, min(25, (int) round($valor / 10000))),
+                                'r' => max(5, min(25, (int) round(sqrt($qtde) * 1.5))),
                             ];
                         })->toArray(),
-                        'backgroundColor' => $this->getColors($data->count()),
+                        'backgroundColor' => $this->getColors($registros->count()),
                     ],
                 ],
                 'labels' => $labels,
@@ -58,7 +55,7 @@ class BensPermanentesMoveis extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Quantidade de patrimônios',
+                        'label' => 'Quantidade movimentada',
                         'data' => $quantidades,
                         'backgroundColor' => $colors,
                     ],
@@ -71,7 +68,7 @@ class BensPermanentesMoveis extends BaseChart
             return [
                 'datasets' => [
                     [
-                        'label' => 'Quantidade de patrimônios',
+                        'label' => 'Quantidade movimentada',
                         'data' => $quantidades,
                         'backgroundColor' => 'rgba(59, 130, 246, 0.12)',
                         'borderColor' => 'rgba(59, 130, 246, 1)',
@@ -87,7 +84,7 @@ class BensPermanentesMoveis extends BaseChart
         return [
             'datasets' => [
                 [
-                    'label' => 'Quantidade de patrimônios',
+                    'label' => 'Quantidade movimentada',
                     'data' => $quantidades,
                     'backgroundColor' => $colors,
                     'borderColor' => $border_colors,

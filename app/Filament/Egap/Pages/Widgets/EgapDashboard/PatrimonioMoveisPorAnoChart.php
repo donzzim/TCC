@@ -14,7 +14,7 @@ class PatrimonioMoveisPorAnoChart extends ChartWidget
 
     protected ?string $heading = 'Bens móveis por ano de incorporação';
 
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 5;
 
     protected static bool $isLazy = false;
 

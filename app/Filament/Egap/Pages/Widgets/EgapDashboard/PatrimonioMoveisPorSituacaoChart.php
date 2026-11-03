@@ -14,7 +14,7 @@ class PatrimonioMoveisPorSituacaoChart extends ChartWidget
 
     protected ?string $heading = 'Bens móveis por situação';
 
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 4;
 
     protected static bool $isLazy = false;
 
