@@ -140,6 +140,8 @@ export interface DashboardSituacao {
 
 export interface ConferenciaResumo {
     total: number;
+    /** Pendentes + já conferidos: o que de fato precisa ser conferido (base do progresso). */
+    total_conferivel?: number;
     localizados: number;
     pendentes: number;
     nao_localizados: number;

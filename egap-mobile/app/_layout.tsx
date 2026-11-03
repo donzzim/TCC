@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { CartProvider } from '@/src/cart/CartProvider';
+import { FilaLeiturasProvider } from '@/src/conferencia/FilaLeituras';
 import { SessionProvider, useSessao } from '@/src/session/SessionProvider';
 import { fontes } from '@/src/theme/fonts';
 import { ThemeProvider, useTheme } from '@/src/theme/ThemeProvider';
@@ -78,10 +79,12 @@ export default function RootLayout() {
                 <QueryClientProvider client={queryClient}>
                     <SessionProvider>
                         <CartProvider>
-                            <ThemeProvider>
-                                <StatusBar style="light" />
-                                <Rotas />
-                            </ThemeProvider>
+                            <FilaLeiturasProvider>
+                                <ThemeProvider>
+                                    <StatusBar style="light" />
+                                    <Rotas />
+                                </ThemeProvider>
+                            </FilaLeiturasProvider>
                         </CartProvider>
                     </SessionProvider>
                 </QueryClientProvider>

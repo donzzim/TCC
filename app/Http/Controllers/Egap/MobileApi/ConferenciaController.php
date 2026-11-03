@@ -41,7 +41,7 @@ class ConferenciaController extends Controller
         return response()->json(
             $this->service->naoLocalizados(
                 $sessao->escopo(),
-                $request->validated('bem_ids'),
+                $request->bemIds(),
                 $request->validated('justificativa'),
             ),
         );

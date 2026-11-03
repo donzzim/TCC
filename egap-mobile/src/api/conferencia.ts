@@ -14,10 +14,11 @@ export const conferenciaApi = {
             query: { status: status === 'todos' ? undefined : status, page, per_page: 30 },
         }),
     ler: (codigo: string) => api<LeituraConferencia>('/conferencia/leituras', { method: 'POST', body: { codigo } }),
-    naoLocalizados: (bemIds: number[], justificativa: string) =>
-        api<{ message?: string }>('/conferencia/nao-localizados', {
+    /** `bemIds = 'todos'`: todos os pendentes do setor (o servidor resolve a lista). */
+    naoLocalizados: (bemIds: number[] | 'todos', justificativa: string) =>
+        api<{ message?: string; registrados?: number; ignorados?: number }>('/conferencia/nao-localizados', {
             method: 'POST',
-            body: { bem_ids: bemIds, justificativa },
+            body: bemIds === 'todos' ? { todos_pendentes: true, justificativa } : { bem_ids: bemIds, justificativa },
         }),
     divergencia: (payload: DivergenciaPayload) =>
         api<{ message?: string }>('/conferencia/divergencias', { method: 'POST', body: payload }),

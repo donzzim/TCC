@@ -13,6 +13,7 @@ import { Platform } from 'react-native';
 import { ApiError, onUnauthorized, setAuthToken } from '@/src/api/client';
 import { sessaoApi } from '@/src/api/sessao';
 import { limparCarrinhos } from '@/src/cart/cartStorage';
+import { limparFilaLeituras } from '@/src/conferencia/filaStorage';
 import { limparRecentes } from '@/src/utils/recentes';
 import type { Sessao } from '@/src/api/types';
 
@@ -42,6 +43,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         await limparToken();
         await limparRecentes();
         await limparCarrinhos();
+        await limparFilaLeituras();
         queryClient.clear();
         setSessao(undefined);
         setStatus('anonimo');

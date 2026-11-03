@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Egap\MobileApi;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class NaoLocalizadosRequest extends FormRequest
 {
@@ -14,10 +15,18 @@ class NaoLocalizadosRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'bem_ids' => ['required', 'array', 'min:1'],
+            // ou a lista de bens, ou "todos os pendentes do setor" (o servidor resolve a lista)
+            'bem_ids' => [Rule::requiredIf(! $this->boolean('todos_pendentes')), 'array', 'min:1'],
             'bem_ids.*' => ['integer'],
+            'todos_pendentes' => ['sometimes', 'boolean'],
             // vai para a observação do item, que é varchar(255)
             'justificativa' => ['required', 'string', 'max:255'],
         ];
+    }
+
+    /** @return array<int, int>|null  null = todos os pendentes */
+    public function bemIds(): ?array
+    {
+        return $this->boolean('todos_pendentes') ? null : $this->validated('bem_ids');
     }
 }

@@ -179,6 +179,55 @@ class EgapCicloInventarioTest extends TestCase
         return $this->withToken($this->token);
     }
 
+    // ---- etapa 3 da revisão do inventário ----
+
+    public function test_total_conferivel_ignora_bens_que_nunca_ficam_pendentes(): void
+    {
+        $inventario = Inventario::query()->create(['num_inventario' => 98, 'ano_inventario' => 2026, 'situacao' => Inventario::SITUACAO_A_INVENTARIAR]);
+        $inventario->unidadesInventariadas()->create(['unidades' => $this->setor->id, 'situacao' => Inventario::SITUACAO_A_INVENTARIAR]);
+        Bus::fake([NotificarAberturaInventario::class]);
+        $inventario->update(['situacao' => Inventario::SITUACAO_EM_EXECUCAO]);
+
+        // em transferência: entra no total, mas nunca fica pendente
+        $this->bens[2]->forceFill(['SituacaoBem' => 7])->saveQuietly();
+
+        $this->api()->getJson('/mobile-api/conferencia')
+            ->assertJsonPath('resumo.total', 3)
+            ->assertJsonPath('resumo.pendentes', 2)
+            ->assertJsonPath('resumo.total_conferivel', 2);
+
+        $this->api()->postJson('/mobile-api/conferencia/leituras', ['codigo' => (string) $this->bens[0]->NumPatrimonio]);
+
+        $this->api()->getJson('/mobile-api/conferencia')
+            ->assertJsonPath('resumo.pendentes', 1)
+            ->assertJsonPath('resumo.total_conferivel', 2);
+    }
+
+    public function test_nao_localizados_de_todos_os_pendentes(): void
+    {
+        $this->inventarioAberto();
+        $this->api()->postJson('/mobile-api/conferencia/leituras', ['codigo' => (string) $this->bens[0]->NumPatrimonio]);
+
+        $this->api()->postJson('/mobile-api/conferencia/nao-localizados', [
+            'todos_pendentes' => true,
+            'justificativa' => 'Sala trancada.',
+        ])
+            ->assertSuccessful()
+            ->assertJsonPath('registrados', 2)
+            ->assertJsonPath('ignorados', 0);
+
+        $this->api()->getJson('/mobile-api/conferencia')
+            ->assertJsonPath('resumo.pendentes', 0)
+            ->assertJsonPath('resumo.localizados', 1)
+            ->assertJsonPath('resumo.nao_localizados', 2);
+
+        // sem lista e sem "todos": erro de validação, não vira "todos"
+        $this->api()->postJson('/mobile-api/conferencia/nao-localizados', [
+            'todos_pendentes' => false,
+            'justificativa' => 'x',
+        ])->assertUnprocessable()->assertJsonValidationErrors('bem_ids');
+    }
+
     /** O usuário fictício entra no painel com as roles pedidas. */
     private function noPainelCom(array $roles): void
     {
