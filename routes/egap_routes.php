@@ -85,7 +85,6 @@ Route::get('/egap-mobile/{path?}', function (?string $path = null) {
     return response()->file(public_path('egap-mobile/index.html'));
 })->where('path', '.*')->name('egap-mobile.pwa');
 
-// endereço antigo do app web (favoritos e atalhos instalados)
 Route::get('/inventario/{path?}', fn(?string $path = null) => redirect()->to(
     '/egap-mobile'.($path ? '/'.trim($path, '/') : ''),
     301,
