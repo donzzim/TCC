@@ -5,6 +5,7 @@ namespace App\Services\Egap\Inventario;
 use App\Filament\Egap\Externo\Groups\Patrimonio\Pages\BensNoSetor;
 use App\Models\egap\Cadastro\Setores;
 use App\Models\egap\Patrimonio\BensMoveis\AtividadeInventario;
+use App\Services\Egap\Mobile\ConferenciaBensService;
 use App\Models\egap\Patrimonio\BensMoveis\Inventario;
 use App\Models\egap\User;
 use Carbon\CarbonImmutable;
@@ -115,13 +116,31 @@ class NotificadorInventario
             }
 
             $destinatarios = DestinatariosInventario::porSetor($pendentes->keys());
-            $nomes = Setores::query()->whereIn('id', $pendentes->keys()->all())->pluck('setor', 'id');
+            $setores = Setores::query()->whereIn('id', $pendentes->keys()->all())->get(['id', 'setor', 'codigodauo'])->keyBy('id');
             $numero = "{$inventario->num_inventario}/{$inventario->ano_inventario}";
+            $conferencia = app(ConferenciaBensService::class);
 
             foreach ($pendentes as $setorId => $cobertura) {
                 $dias = array_search($cobertura['prazo']->format('Y-m-d'), $alvos, true);
                 $prazo = $cobertura['prazo']->format('d/m/Y');
-                $nome = (string) ($nomes[$setorId] ?? "Setor {$setorId}");
+                $setor = $setores->get($setorId);
+                $nome = (string) ($setor?->setor ?? "Setor {$setorId}");
+
+                // o texto diz quantos bens faltam; setor sem bem nenhum a conferir não é lembrado
+                $resumo = filled($setor?->codigodauo)
+                    ? $conferencia->resumoDoSetor($inventario, (int) $setorId, (int) $setor->codigodauo)
+                    : null;
+
+                if ($resumo !== null && (int) $resumo['total'] === 0) {
+                    continue;
+                }
+
+                $faltam = (int) ($resumo['pendentes'] ?? 0);
+                $situacao = $resumo === null
+                    ? 'Finalize o setor antes do prazo.'
+                    : ($faltam > 0
+                        ? ($faltam === 1 ? 'Ainda há 1 bem pendente' : "Ainda há {$faltam} bens pendentes").': confira e finalize o setor antes do prazo.'
+                        : 'Todos os bens já foram conferidos: falta usar "Finalizar setor".');
 
                 $doSetor = $destinatarios
                     ->filter(fn (array $setores): bool => in_array($setorId, $setores, true))
@@ -138,7 +157,7 @@ class NotificadorInventario
                     destinatarios: $doSetor,
                     montar: fn (array $ids): array => [
                         'titulo' => "Inventário {$numero}: ".($dias === 1 ? 'falta 1 dia' : "faltam {$dias} dias")." — Prazo: {$prazo}",
-                        'corpo' => '<p>A conferência do setor '.e($nome)." termina em {$prazo}. Ainda há bens pendentes: finalize o setor antes do prazo.</p>",
+                        'corpo' => '<p>A conferência do setor '.e($nome)." termina em {$prazo}. ".e($situacao).'</p>',
                     ],
                 );
             }

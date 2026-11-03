@@ -7,6 +7,7 @@ use App\Filament\Egap\Externo\Groups\Patrimonio\Components\BensNoSetorTable;
 use App\Filament\Egap\Externo\Groups\Patrimonio\Components\LevantamentoComissaoTable;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\AtividadeInventarioResource\Pages\ListAtividadeInventarios;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\InventarioResource;
+use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\InventarioUnidadeResource;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\InventarioResource\Pages\EditInventario;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\InventarioResource\Pages\ListInventarios;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\ItemInventarioResource\Pages\ListItemInventarios;
@@ -177,6 +178,96 @@ class EgapCicloInventarioTest extends TestCase
     private function api(): static
     {
         return $this->withToken($this->token);
+    }
+
+    // ---- etapa 4 da revisão do inventário ----
+
+    public function test_sem_vinculo_com_o_egap_nao_grava(): void
+    {
+        $this->inventarioAberto();
+        $sufixo = Str::lower(Str::random(10));
+        $semEgap = User::query()->create([
+            'login' => "teste.{$sufixo}",
+            'name' => "Usuário Teste {$sufixo}",
+            'email' => "teste.{$sufixo}@example.invalid",
+            'password' => bcrypt(Str::random(16)),
+            'cpf' => '999'.str_pad((string) random_int(0, 99999999), 8, '0', STR_PAD_LEFT),
+            'ativo' => 1,
+        ]);
+        UserLotacao::query()->create(['user_id' => $semEgap->id, 'setor_id' => $this->setor->id, 'atualizado_por' => $semEgap->id, 'principal' => true]);
+        $semEgap->assignRole(User::ROLE_USER);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        [, $token] = $this->sessaoPara($semEgap->fresh());
+
+        $this->withToken($token)->getJson('/mobile-api/conferencia')
+            ->assertOk()
+            ->assertJsonPath('atividade.pode_editar', false)
+            ->assertJsonPath('atividade.bloqueio.code', 'sem_vinculo_egap');
+
+        $this->withToken($token)->postJson('/mobile-api/conferencia/leituras', ['codigo' => (string) $this->bens[0]->NumPatrimonio])
+            ->assertForbidden();
+    }
+
+    public function test_bens_no_setor_le_patrimonio_e_registra_divergencia(): void
+    {
+        $this->inventarioAberto();
+        [$a, $b] = $this->bens;
+        $this->actingAs($this->user, User::GUARD);
+        Filament::setCurrentPanel('egap');
+
+        Livewire::test(BensNoSetorTable::class)
+            ->assertSee('Pendentes: 3')
+            ->callAction('lerPatrimonio', ['codigo' => (string) $a->NumPatrimonio])
+            ->assertNotified('Bem localizado no setor.');
+
+        Livewire::test(BensNoSetorTable::class)
+            ->callAction(TestAction::make('divergencia')->table($b), [
+                'campos' => ['serie'],
+                'valores' => ['serie' => 'SERIE-WEB'],
+                'observacao' => 'Etiqueta de série diferente.',
+            ])
+            ->assertNotified('Divergência registrada.');
+
+        $item = ItemInventario::query()->where('id_bem', $b->id)->sole();
+        $this->assertSame('DIVERGENTE', $item->situacao);
+        $this->assertSame('SERIE-WEB', $item->num_serie);
+        $this->assertStringContainsString('Número de série', (string) $item->observacao);
+
+        Livewire::test(BensNoSetorTable::class)->assertSee('Pendentes: 1');
+    }
+
+    public function test_datas_do_inventario_vao_para_as_unidades_que_tinham_a_data_antiga(): void
+    {
+        $inventario = Inventario::query()->create([
+            'num_inventario' => 98,
+            'ano_inventario' => 2026,
+            'situacao' => Inventario::SITUACAO_A_INVENTARIAR,
+            'inicio_inventario' => '2026-11-01 00:00:00',
+            'termino_inventario' => '2026-11-30 00:00:00',
+        ]);
+        $igual = $inventario->unidadesInventariadas()->create(['unidades' => $this->setor->id, 'data_inicio' => '2026-11-01 00:00:00', 'data_termino' => '2026-11-30 00:00:00', 'situacao' => '0']);
+        $propria = $inventario->unidadesInventariadas()->create(['unidades' => $this->setor->id, 'data_inicio' => '2026-11-01 00:00:00', 'data_termino' => '2026-11-15 00:00:00', 'situacao' => '0']);
+
+        $inventario->update(['termino_inventario' => '2026-12-10 00:00:00']);
+
+        $this->assertSame('2026-12-10', $igual->fresh()->data_termino->toDateString());
+        $this->assertSame(39, (int) $igual->fresh()->dias);
+        // prazo próprio da unidade não muda
+        $this->assertSame('2026-11-15', $propria->fresh()->data_termino->toDateString());
+    }
+
+    public function test_unidade_de_inventario_com_conferencia_nao_pode_ser_excluida(): void
+    {
+        $inventario = $this->inventarioAberto();
+        $unidade = $inventario->unidadesInventariadas()->sole();
+        $this->noPainelCom(['egap_inventario']);
+
+        $this->assertTrue(InventarioUnidadeResource::canDelete($unidade));
+
+        $this->api()->postJson('/mobile-api/conferencia/leituras', ['codigo' => (string) $this->bens[0]->NumPatrimonio]);
+
+        $this->assertFalse(InventarioUnidadeResource::canDelete($unidade->fresh()));
+        $this->assertFalse(InventarioResource::canDelete($inventario->fresh()));
     }
 
     // ---- etapa 3 da revisão do inventário ----
@@ -655,6 +746,8 @@ class EgapCicloInventarioTest extends TestCase
         $lembretes = $this->notificacoes('inventario_lembrete');
         $this->assertCount(1, $lembretes);
         $this->assertStringContainsString('falta 1 dia', $lembretes->first()->data['title']);
+        // conferiu tudo: o lembrete diz que só falta finalizar (antes dizia "ainda há bens pendentes")
+        $this->assertStringContainsString('Todos os bens já foram conferidos', $lembretes->first()->data['body']);
     }
 
     public function test_finalizar_pela_tela_bens_no_setor(): void
@@ -673,7 +766,7 @@ class EgapCicloInventarioTest extends TestCase
         Livewire::test(BensNoSetorTable::class)
             ->assertActionVisible('finalizarInventario')
             ->callAction('finalizarInventario')
-            ->assertNotified('Inventário finalizado com sucesso!');
+            ->assertNotified('Setor finalizado com sucesso!');
 
         $atividade = AtividadeInventario::query()->doInventario($inventario)->where('setor', $this->setor->id)->sole();
         $this->assertTrue($atividade->estaFinalizada());

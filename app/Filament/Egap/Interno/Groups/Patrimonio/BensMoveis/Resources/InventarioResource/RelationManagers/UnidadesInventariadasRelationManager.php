@@ -66,7 +66,9 @@ class UnidadesInventariadasRelationManager extends RelationManager
             ])
             ->recordActions([
                 EditAction::make()->hiddenLabel()->tooltip('Editar'),
-                DeleteAction::make()->hiddenLabel()->tooltip('Excluir'),
+                // tirar uma unidade de um inventário já conferido deixaria itens e atividades fora da abrangência
+                DeleteAction::make()->hiddenLabel()->tooltip('Excluir')
+                    ->visible(fn(): bool => ! $this->getOwnerRecord()->temConferencia()),
             ])
             ->defaultSort('id')
             ->paginated([10, 25, 50]);

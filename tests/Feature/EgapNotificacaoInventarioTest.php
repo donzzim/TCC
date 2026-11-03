@@ -7,6 +7,8 @@ use App\Jobs\Egap\NotificarAberturaInventario;
 use App\Models\egap\Admin\InfoUser;
 use App\Models\egap\Admin\Lotacao;
 use App\Models\egap\Cadastro\Setores;
+use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
+use App\Services\Egap\Mobile\ConferenciaBensService;
 use App\Models\egap\Patrimonio\BensMoveis\AtividadeInventario;
 use App\Models\egap\Patrimonio\BensMoveis\Inventario;
 use App\Models\egap\User;
@@ -46,7 +48,8 @@ class EgapNotificacaoInventarioTest extends TestCase
     /** @return array<int, Setores> setores específicos (não unidades), para não cobrir árvores inteiras */
     private function setores(int $quantos): array
     {
-        $setores = Setores::query()->setoresInventariaveis()->orderBy('id')->take($quantos)->get()->all();
+        // com unidade (codigodauo): o lembrete conta os bens pendentes do setor nela
+        $setores = Setores::query()->setoresInventariaveis()->whereNotNull('codigodauo')->orderBy('id')->take($quantos)->get()->all();
 
         if (count($setores) < $quantos) {
             $this->markTestSkipped('setores insuficientes neste banco');
@@ -83,6 +86,29 @@ class EgapNotificacaoInventarioTest extends TestCase
         }
 
         return $user;
+    }
+
+    /** Bem conferível fictício no setor: setor sem bem nenhum não recebe lembrete. */
+    private function novoBem(Setores $setor): BemMovel
+    {
+        do {
+            $patrimonio = random_int(970000000, 979999999);
+        } while (BemMovel::query()->where('NumPatrimonio', $patrimonio)->exists());
+
+        return BemMovel::query()->create([
+            'NumPatrimonio' => $patrimonio,
+            'Descricao' => 'BEM FICTÍCIO DE TESTE',
+            'SituacaoBem' => 1,
+            'UnidadeJudiciaria' => $setor->codigodauo,
+            'Setor' => $setor->id,
+        ]);
+    }
+
+    private function textoPendentes(Inventario $inventario, Setores $setor): string
+    {
+        $faltam = (int) app(ConferenciaBensService::class)->resumoDoSetor($inventario, (int) $setor->id, (int) $setor->codigodauo)['pendentes'];
+
+        return ($faltam === 1 ? 'Ainda há 1 bem pendente' : "Ainda há {$faltam} bens pendentes").': confira e finalize o setor antes do prazo.';
     }
 
     private function cobrir(Inventario $inventario, Setores $setor, ?string $termino = null): void
@@ -266,6 +292,7 @@ class EgapNotificacaoInventarioTest extends TestCase
         $u7 = $this->usuarioFicticio([$a->id]);
         $u1 = $this->usuarioFicticio([$b->id]);
         $u3 = $this->usuarioFicticio([$c->id]);
+        array_map($this->novoBem(...), [$a, $b, $c]);
 
         $this->assertGreaterThanOrEqual(2, NotificadorInventario::notificarLembretes($hoje));
 
@@ -273,7 +300,7 @@ class EgapNotificacaoInventarioTest extends TestCase
         $this->assertCount(1, $n7);
         $this->assertSame('Inventário 55/2026: faltam 7 dias — Prazo: 30/10/2026', $n7->first()->data['title']);
         $this->assertSame(
-            '<p>A conferência do setor '.e($a->setor).' termina em 30/10/2026. Ainda há bens pendentes: finalize o setor antes do prazo.</p>',
+            '<p>A conferência do setor '.e($a->setor).' termina em 30/10/2026. '.e($this->textoPendentes($inventario, $a)).'</p>',
             $n7->first()->data['body']
         );
         $this->assertSame("inventario_lembrete:{$inventario->id}:{$a->id}:7", $n7->first()->data['viewData']['chave']);
@@ -306,6 +333,25 @@ class EgapNotificacaoInventarioTest extends TestCase
         $this->assertCount(0, $this->lembretesDe($user));
     }
 
+    public function test_setor_sem_bens_nao_recebe_lembrete(): void
+    {
+        $hoje = CarbonImmutable::parse('2026-10-23');
+        $setor = Setores::query()->setoresInventariaveis()->whereNotNull('codigodauo')->orderBy('id')->limit(300)->get()
+            ->first(fn (Setores $s): bool => ! BemMovel::query()->where('Setor', $s->id)->whereIn('SituacaoBem', [1, 7, 8])->exists());
+
+        if ($setor === null) {
+            $this->markTestSkipped('nenhum setor sem bens neste banco');
+        }
+
+        $inventario = $this->novoInventario(['situacao' => Inventario::SITUACAO_EM_EXECUCAO]);
+        $this->cobrir($inventario, $setor, $hoje->addDays(7)->format('Y-m-d').' 00:00:00');
+        $user = $this->usuarioFicticio([$setor->id]);
+
+        NotificadorInventario::notificarLembretes($hoje);
+
+        $this->assertCount(0, $this->lembretesDe($user));
+    }
+
     public function test_lembrete_nao_repete(): void
     {
         $hoje = CarbonImmutable::parse('2026-10-23');
@@ -313,6 +359,7 @@ class EgapNotificacaoInventarioTest extends TestCase
         $inventario = $this->novoInventario(['situacao' => Inventario::SITUACAO_EM_EXECUCAO]);
         $this->cobrir($inventario, $a, $hoje->addDays(7)->format('Y-m-d').' 00:00:00');
         $user = $this->usuarioFicticio([$a->id]);
+        $this->novoBem($a);
 
         $this->assertGreaterThanOrEqual(1, NotificadorInventario::notificarLembretes($hoje));
         $this->assertSame(0, NotificadorInventario::notificarLembretes($hoje));
@@ -325,6 +372,7 @@ class EgapNotificacaoInventarioTest extends TestCase
         $inventario = $this->novoInventario(['situacao' => Inventario::SITUACAO_EM_EXECUCAO]);
         $this->cobrir($inventario, $a, '2026-10-30 00:00:00');
         $user = $this->usuarioFicticio([$a->id]);
+        $this->novoBem($a);
 
         $this->artisan('egap:inventario-lembretes', ['--data' => '2026-10-23'])->assertSuccessful();
 

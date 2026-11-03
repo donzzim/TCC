@@ -292,6 +292,13 @@ class InventarioUnidadeResource extends InventarioGestaoResource
             ));
     }
 
+    /** Tirar uma unidade de um inventário já conferido deixaria itens e atividades fora da abrangência. */
+    public static function canDelete(Model $record): bool
+    {
+        /** @var InventarioUnidade $record */
+        return parent::canDelete($record) && ! $record->inventario?->temConferencia();
+    }
+
     public static function getPages(): array
     {
         return [
