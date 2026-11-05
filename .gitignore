@@ -21,6 +21,7 @@ yarn-error.log
 /.zed
 .idea
 /docs
+/.agents
 /*.sql
 .claude
 .github

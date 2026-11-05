@@ -28,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->prepend(\App\Http\Middleware\LogRequestTiming::class);
+        $middleware->prepend(\App\Monitoramento\Coleta\ColetorDeMetricas::class);
         $middleware->alias([
             'mobile.sessao' => \App\Http\Middleware\Egap\GarantirSessaoMobile::class,
             'mobile.setor' => \App\Http\Middleware\Egap\GarantirSessaoMobile::class . ':setor',
@@ -48,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withProviders([
         App\Providers\SettingsServiceProvider::class,
+        App\Monitoramento\MonitoramentoServiceProvider::class,
     ])
     ->withExceptions(function (Exceptions $exceptions) {
         // 403 dentro do painel EGAP: mostra a página de acesso negado com a marca

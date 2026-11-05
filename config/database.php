@@ -42,6 +42,16 @@ return [
             'synchronous' => null,
         ],
 
+        'monitoramento' => [
+            'driver' => 'sqlite',
+            'database' => env('MONITORAMENTO_SQLITE', storage_path('app/monitoramento/metricas.sqlite')),
+            'prefix' => '',
+            'foreign_key_constraints' => false,
+            'busy_timeout' => 3000,
+            'journal_mode' => 'wal',
+            'synchronous' => 'normal',
+        ],
+
         'emes' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),
