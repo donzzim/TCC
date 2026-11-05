@@ -21,3 +21,5 @@ Schedule::command('egap:inventario-lembretes')->dailyAt('07:00');
 Schedule::call(function () {
     app(QueueService::class)->ensureRunning();
 })->everyFifteenMinutes();
+
+Schedule::command('monitoramento:coletar')->everyMinute();
