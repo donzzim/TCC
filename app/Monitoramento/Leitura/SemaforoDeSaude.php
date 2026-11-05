@@ -43,7 +43,7 @@ final class SemaforoDeSaude
         }
 
         if ($agora - $s->instante > 180) {
-            $acionar('amarelo', 'coleta parada há '.intdiv($agora - $s->instante, 60).' min');
+            $acionar('amarelo', 'coleta parada há '.self::duracao($agora - $s->instante));
         }
 
         $fila = $s->fila;
@@ -52,7 +52,7 @@ final class SemaforoDeSaude
             $idade = $fila['idade_mais_antigo_seg'] ?? null;
 
             if ($idade !== null && $idade > 600) {
-                $acionar('amarelo', 'fila parada há '.intdiv((int) $idade, 60).' min');
+                $acionar('amarelo', 'fila parada há '.self::duracao((int) $idade));
             }
 
             if (($fila['pendentes'] ?? 0) > 0 && ($fila['worker']['running'] ?? null) === false) {
@@ -74,5 +74,14 @@ final class SemaforoDeSaude
         }
 
         return ['nivel' => $nivel, 'motivos' => $motivos];
+    }
+
+    public static function duracao(int $segundos): string
+    {
+        return match (true) {
+            $segundos < 3600 => intdiv($segundos, 60).' min',
+            $segundos < 86400 => intdiv($segundos, 3600).' h',
+            default => intdiv($segundos, 86400).' dias',
+        };
     }
 }

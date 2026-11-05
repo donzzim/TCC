@@ -59,6 +59,15 @@ class SemaforoDeSaudeTest extends TestCase
         $this->assertSame('verde', SemaforoDeSaude::avaliar($this->resumo(), $vazia, 1060)['nivel']);
     }
 
+    public function test_duracoes_longas_em_horas_e_dias(): void
+    {
+        $fila = $this->snapshot(fila: ['pendentes' => 3, 'idade_mais_antigo_seg' => 135461 * 60, 'worker' => ['running' => true]]);
+        $this->assertContains('fila parada há 94 dias', SemaforoDeSaude::avaliar($this->resumo(), $fila, 1060)['motivos']);
+
+        $this->assertContains('coleta parada há 2 h', SemaforoDeSaude::avaliar($this->resumo(), $this->snapshot(1000), 1000 + 7300)['motivos']);
+        $this->assertContains('coleta parada há 6 min', SemaforoDeSaude::avaliar($this->resumo(), $this->snapshot(1000), 1000 + 387)['motivos']);
+    }
+
     public function test_conexoes_do_mysql(): void
     {
         $this->assertSame('amarelo', SemaforoDeSaude::avaliar($this->resumo(), $this->snapshot(mysql: ['threads_connected' => 110, 'max_connections' => 151]), 1060)['nivel']);

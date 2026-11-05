@@ -115,6 +115,7 @@ trait LeituraSql
     {
         return $this->db()->table('requisicoes')
             ->where('instante', '>=', $agora - $p->segundos())
+            ->where('instante', '<=', $agora)
             ->when($contexto !== null, fn ($q) => $q->where('contexto', $contexto))
             ->orderByDesc('instante')
             ->limit($limite)
@@ -141,7 +142,7 @@ trait LeituraSql
     {
         $porPasso = [];
 
-        foreach ($this->db()->table('snapshots')->where('instante', '>=', $agora - $p->segundos())->orderBy('instante')->get() as $linha) {
+        foreach ($this->db()->table('snapshots')->whereBetween('instante', [$agora - $p->segundos(), $agora])->orderBy('instante')->get() as $linha) {
             $porPasso[intdiv((int) $linha->instante, $p->passoSeg())] = $linha;
         }
 
@@ -172,6 +173,7 @@ trait LeituraSql
         if (! $p->usaHoras()) {
             return $filtrar($this->db()->table('agregados_minuto')->select([...$colunas, 'minuto as t']))
                 ->where('minuto', '>=', $inicio)
+                ->where('minuto', '<', $agora)
                 ->get()
                 ->all();
         }
@@ -186,6 +188,7 @@ trait LeituraSql
 
         $minutos = $filtrar($this->db()->table('agregados_minuto')->select([...$colunas, 'minuto as t']))
             ->where('minuto', '>=', $horaAtual)
+            ->where('minuto', '<', $agora)
             ->get()
             ->all();
 

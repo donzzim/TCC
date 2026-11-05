@@ -58,6 +58,24 @@ class LeituraDeMetricasTest extends TestCase
         $this->assertEqualsWithDelta(100 / 60, $r->reqPorMin, 0.0001);
     }
 
+    public function test_periodo_anterior_nao_inclui_o_atual(): void
+    {
+        $this->repo->gravarAgregados([
+            $this->agregado($this->minuto(2), 'a', 10, 80),
+            $this->agregado($this->minuto(70), 'a', 4, 80),
+        ]);
+        $this->repo->gravarDetalhadas([
+            new RegistroDeRequisicao(self::AGORA - 60, 'egap', 'x', 'GET', 200, 1500, 1, 1, 1, [], false, 'atual', ['top_consultas' => [], 'erro' => null]),
+        ]);
+        $this->repo->gravarSnapshot(new Snapshot(self::AGORA - 60, null, null, null, null));
+
+        $anterior = self::AGORA - Periodo::H1->segundos();
+
+        $this->assertSame(4, $this->repo->resumo(Periodo::H1, null, $anterior)->qtd);
+        $this->assertSame([], $this->repo->requisicoesLentas(Periodo::H1, null, 10, $anterior));
+        $this->assertSame([], $this->repo->serieSnapshots(Periodo::H1, $anterior));
+    }
+
     public function test_resumo_sem_dados(): void
     {
         $r = $this->repo->resumo(Periodo::Q15, null, self::AGORA);
