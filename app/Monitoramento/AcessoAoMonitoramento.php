@@ -13,6 +13,10 @@ final class AcessoAoMonitoramento
             return false;
         }
 
+        if ($u->isSuperAdminEgap()) {
+            return true;
+        }
+
         if (! $u->isAdminEgap() && ! $u->hasRole(User::ROLE_ADMIN)) {
             return false;
         }

@@ -59,6 +59,19 @@ class PaginaMonitoramentoTest extends TestCase
         $this->actingAs($u, User::GUARD)->get(self::URL)->assertForbidden();
     }
 
+    public function test_super_admin_acessa_sem_estar_na_lista(): void
+    {
+        $u = $this->usuarioEgap(User::ROLE_SUPER_ADMIN);
+        $u->forceFill(['email_verified_at' => now()])->save();
+        config(['monitoramento.ativo' => true, 'monitoramento.devs' => []]);
+
+        $this->assertTrue(AcessoAoMonitoramento::permitido($u));
+        $this->actingAs($u, User::GUARD)->get(self::URL)->assertOk()->assertSee('Monitoramento');
+
+        config(['monitoramento.ativo' => false]);
+        $this->assertFalse(AcessoAoMonitoramento::permitido($u));
+    }
+
     public function test_dev_que_nao_e_admin_nao_acessa(): void
     {
         $u = $this->usuarioEgap(User::ROLE_USER);
