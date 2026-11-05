@@ -12,6 +12,11 @@
             [Widgets\ErrosChart::class, 'half'],
             [Widgets\UsuariosOnlineChart::class, 'half'],
         ],
+        'desempenho' => [
+            [Widgets\RotasLentasTable::class, 'full'],
+            [Widgets\LivewireCarosTable::class, 'full'],
+            [Widgets\RequisicoesLentasTable::class, 'full'],
+        ],
     ][$aba] ?? [];
 
     $ultimaColeta = $this->ultimaColeta();
