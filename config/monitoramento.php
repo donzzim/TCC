@@ -7,6 +7,7 @@ return [
         explode(',', (string) env('MONITORAMENTO_DEVS', ''))
     ))),
     'conexao_leitura' => 'emes',
+    'logs_dir' => storage_path('logs'),
     'limiar_lenta_ms' => 1000,
     'amostragem' => 0.01,
     'limiar_n_mais_um' => 20,

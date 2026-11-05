@@ -2,6 +2,7 @@
 
 namespace App\Monitoramento\Fontes;
 
+use App\Monitoramento\Logs\Sanitizador;
 use Illuminate\Database\ConnectionInterface;
 
 final class JobsFalhos extends Fonte
@@ -17,7 +18,7 @@ final class JobsFalhos extends Fonte
                 'uuid' => (string) $j->uuid,
                 'fila' => (string) $j->queue,
                 'job' => (string) (json_decode((string) $j->payload, true)['displayName'] ?? 'desconhecido'),
-                'excecao' => mb_strimwidth(trim(strtok((string) $j->exception, "\n") ?: ''), 0, 300, '...'),
+                'excecao' => mb_strimwidth(Sanitizador::limpar(trim(strtok((string) $j->exception, "\n") ?: '')), 0, 300, '...'),
                 'falhou_em' => (string) $j->failed_at,
             ])
             ->all());

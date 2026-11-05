@@ -28,6 +28,11 @@
             [Widgets\JobsFalhosTable::class, 'full'],
             [Widgets\AgendadorTable::class, 'full'],
         ],
+        'erros' => [
+            [Widgets\BuscaOcorrenciaWidget::class, 'full'],
+            [Widgets\ExcecoesAgrupadasTable::class, 'full'],
+            [Widgets\LogTable::class, 'full'],
+        ],
     ][$aba] ?? [];
 
     $ultimaColeta = $this->ultimaColeta();

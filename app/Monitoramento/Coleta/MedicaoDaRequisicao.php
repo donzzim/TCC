@@ -2,6 +2,7 @@
 
 namespace App\Monitoramento\Coleta;
 
+use App\Monitoramento\Logs\Sanitizador;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -103,7 +104,7 @@ final class MedicaoDaRequisicao
             ),
             'erro' => $this->erro === null ? null : [
                 'class' => $this->erro::class,
-                'message' => Str::limit($this->erro->getMessage(), 300),
+                'message' => Str::limit(Sanitizador::limpar($this->erro->getMessage()), 300),
                 'file' => $this->erro->getFile(),
                 'line' => $this->erro->getLine(),
             ],
