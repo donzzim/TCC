@@ -99,9 +99,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const trocarSetor = useCallback(
         async (id: number) => {
             const atual = await sessaoApi.trocarSetor(id);
+            const novoSetor = atual.setor_atual?.id ?? null;
 
+            void queryClient.invalidateQueries({
+                predicate: (query) => query.queryKey[1] === novoSetor,
+                refetchType: 'none',
+            });
             setSessao(atual);
-            await queryClient.invalidateQueries();
         },
         [queryClient],
     );
