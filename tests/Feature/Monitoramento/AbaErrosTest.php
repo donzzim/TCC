@@ -82,4 +82,22 @@ class AbaErrosTest extends TestCase
             ->assertSee('usuario entrou')
             ->assertSee('Erro 500 exibido ao usuário');
     }
+
+    public function test_log_e_paginado(): void
+    {
+        $linhas = '';
+        for ($i = 1; $i <= 30; $i++) {
+            $linhas .= sprintf("[2026-11-05 11:%02d:00] local.INFO: entrada-%02d-fim\n", $i, $i);
+        }
+        file_put_contents($this->dir.'/laravel.log', $linhas);
+
+        Livewire::test(LogTable::class, ['periodo' => '1h', 'contexto' => null])
+            ->assertSee('entrada-30-fim')
+            ->assertSee('entrada-06-fim')
+            ->assertDontSee('entrada-05-fim')
+            ->call('gotoPage', 2, 'page')
+            ->assertSee('entrada-05-fim')
+            ->assertSee('entrada-01-fim')
+            ->assertDontSee('entrada-30-fim');
+    }
 }

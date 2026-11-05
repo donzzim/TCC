@@ -8,6 +8,7 @@ use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\HtmlString;
 
 class LogTable extends TabelaDoMonitoramento
@@ -24,17 +25,14 @@ class LogTable extends TabelaDoMonitoramento
         return $table
             ->heading('Log da aplicação')
             ->description('Últimas 200 entradas dos últimos 2 MB do arquivo escolhido. CPF, tokens e senhas aparecem mascarados.')
-            ->records(function (?array $filters, ?string $search) use ($leitor, $arquivos): array {
+            ->records(function (?array $filters, ?string $search, int $page, int $recordsPerPage) use ($leitor, $arquivos): LengthAwarePaginator {
                 $escolhido = $filters['arquivo']['value'] ?? null;
                 $arquivo = $escolhido !== null && $leitor->permitido($escolhido) ? $escolhido : ($arquivos[0] ?? null);
 
-                if ($arquivo === null) {
-                    return [];
-                }
+                $entradas = $arquivo === null ? [] : $leitor->ultimas($arquivo, nivel: $filters['nivel']['value'] ?? null, texto: $search, limite: 200);
+                $pagina = array_slice($entradas, ($page - 1) * $recordsPerPage, $recordsPerPage, true);
 
-                $entradas = $leitor->ultimas($arquivo, nivel: $filters['nivel']['value'] ?? null, texto: $search, limite: 200);
-
-                return array_map(fn (EntradaDeLog $e, int $i): array => [
+                $linhas = array_map(fn (EntradaDeLog $e, int $i): array => [
                     '__key' => (string) $i,
                     'data' => $e->data,
                     'nivel' => $e->nivel,
@@ -42,7 +40,9 @@ class LogTable extends TabelaDoMonitoramento
                     'completa' => $e->mensagem,
                     'contexto' => $e->contexto === null ? '' : json_encode($e->contexto, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                     'trace' => $e->trace,
-                ], $entradas, array_keys($entradas));
+                ], $pagina, array_keys($pagina));
+
+                return new LengthAwarePaginator($linhas, count($entradas), $recordsPerPage, $page);
             })
             ->searchable()
             ->filters([
@@ -80,7 +80,8 @@ class LogTable extends TabelaDoMonitoramento
                         .'</div>'
                     )),
             ])
-            ->paginated(false)
+            ->paginated([10, 25, 50, 100])
+            ->defaultPaginationPageOption(25)
             ->emptyStateHeading('Nenhuma entrada encontrada.');
     }
 }
