@@ -5,7 +5,7 @@ namespace App\Monitoramento\Logs;
 final class Sanitizador
 {
     private const REGRAS = [
-        '/(Connection: [\w.-]+), SQL: .*?\)(?=\s+at\s|\s*$|"|\s*\{|\s*\[)/s' => '$1, SQL omitida)',
+        '/(Connection: [^()]*?), SQL: .*?\)(?=\s+at\s|\s*$|"|\s*\{|\s*\[)/s' => '$1, SQL omitida)',
         '/\b\d+\|[A-Za-z0-9]{40,}\b/' => '***',
         '/Authorization:\s*\S+\s+\S+/i' => 'Authorization: ***',
         '/Bearer\s+\S+/i' => 'Bearer ***',

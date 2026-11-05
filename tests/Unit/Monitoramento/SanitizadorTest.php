@@ -42,6 +42,14 @@ class SanitizadorTest extends TestCase
         $this->assertStringContainsString('SQL omitida) at /app/X.php:10)', $c);
     }
 
+    public function test_omite_sql_no_formato_do_laravel_12(): void
+    {
+        $t = Sanitizador::limpar('SQLSTATE[HY000]: General error: 1449 (Connection: emes, Host: 127.0.0.1, Port: 3306, Database: emes-egap, SQL: select count(*) as aggregate from `egap_bens` where `patrimonio_id` = 4512 and `cpf` = 98765432100)');
+
+        $this->assertStringNotContainsString('4512', $t);
+        $this->assertStringContainsString('(Connection: emes, Host: 127.0.0.1, Port: 3306, Database: emes-egap, SQL omitida)', $t);
+    }
+
     public function test_preserva_texto_comum(): void
     {
         $texto = 'SQLSTATE[42S02]: tabela egap_bens não existe (linha 120, id 4512)';

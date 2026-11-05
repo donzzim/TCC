@@ -58,7 +58,7 @@ abstract class GraficoDoMonitoramento extends ChartWidget
     protected function getOptions(): array
     {
         return [
-            'animation' => false,
+            'animation' => ['duration' => 0],
             'interaction' => ['mode' => 'index', 'intersect' => false],
             'plugins' => ['legend' => ['display' => true, 'position' => 'bottom']],
             'scales' => [

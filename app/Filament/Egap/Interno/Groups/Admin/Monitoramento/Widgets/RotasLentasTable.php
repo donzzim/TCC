@@ -42,8 +42,8 @@ class RotasLentasTable extends TabelaDoMonitoramento
                 TextColumn::make('rota')->label('Rota')->wrap()->fontFamily('mono')->size('sm')
                     ->description(fn (array $record): string => Monitoramento::CONTEXTOS[$record['contexto']] ?? $record['contexto']),
                 TextColumn::make('qtd')->label('Chamadas')->numeric(locale: 'pt_BR')->alignEnd(),
-                TextColumn::make('p50')->label('p50')->formatStateUsing(fn ($state) => self::ms($state))->alignEnd(),
-                TextColumn::make('p95')->label('p95')->formatStateUsing(fn ($state) => self::ms($state))->alignEnd()
+                TextColumn::make('p50')->label('p50')->formatStateUsing(fn ($state) => self::percentil($state))->alignEnd(),
+                TextColumn::make('p95')->label('p95')->formatStateUsing(fn ($state) => self::percentil($state))->alignEnd()
                     ->color(fn ($state) => $state !== null && $state > 1000 ? 'warning' : null),
                 TextColumn::make('maxMs')->label('Máx.')->formatStateUsing(fn ($state) => self::ms($state))->alignEnd(),
                 TextColumn::make('tempoTotalMs')->label('Tempo total')->formatStateUsing(fn ($state) => self::ms($state))->alignEnd(),
@@ -51,11 +51,11 @@ class RotasLentasTable extends TabelaDoMonitoramento
                     ->color(fn ($state) => $state > 100 ? 'danger' : null),
                 TextColumn::make('percentualSql')->label('% em SQL')->formatStateUsing(fn ($state) => self::numero($state).'%')->alignEnd(),
                 TextColumn::make('maxMemoriaMb')->label('Memória')->formatStateUsing(fn ($state) => self::numero($state, 1).' MB')->alignEnd(),
-                TextColumn::make('nMaisUm')->label('Alertas')
+                TextColumn::make('alerta')->label('Alertas')
+                    ->state(fn (array $record): ?string => $record['nMaisUm'] > 0 ? 'N+1' : null)
                     ->badge()
-                    ->formatStateUsing(fn ($state) => $state > 0 ? 'N+1' : '')
                     ->color('warning')
-                    ->tooltip(fn ($state) => $state > 0 ? "{$state} requisições repetiram a mesma consulta 20 vezes ou mais" : null),
+                    ->tooltip(fn (array $record) => $record['nMaisUm'] > 0 ? "{$record['nMaisUm']} requisições repetiram a mesma consulta 20 vezes ou mais" : null),
                 TextColumn::make('erros5xx')->label('5xx')->numeric()->alignEnd()
                     ->color(fn ($state) => $state > 0 ? 'danger' : null),
             ])

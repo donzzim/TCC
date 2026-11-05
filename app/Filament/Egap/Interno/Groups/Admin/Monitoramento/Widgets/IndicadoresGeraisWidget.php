@@ -32,8 +32,8 @@ class IndicadoresGeraisWidget extends StatsOverviewWidget
             $this->online(UsuariosOnline::contar($agora)),
             Stat::make('Requisições por minuto', number_format($resumo->reqPorMin, 1, ',', '.'))
                 ->description(self::variacao($resumo->reqPorMin, $anterior->reqPorMin).' · '.number_format($resumo->qtd, 0, ',', '.').' no período'),
-            Stat::make('Tempo de resposta (p95)', self::ms($resumo->p95))
-                ->description('p50 '.self::ms($resumo->p50).' · anterior '.self::ms($anterior->p95))
+            Stat::make('Tempo de resposta (p95)', self::percentil($resumo->p95))
+                ->description('p50 '.self::percentil($resumo->p50).' · anterior '.self::percentil($anterior->p95))
                 ->color($resumo->p95 !== null && $resumo->p95 > 1000 ? 'warning' : null),
             Stat::make('Erros 5xx', number_format($resumo->taxaErro5xx * 100, 2, ',', '.').'%')
                 ->description($resumo->erros5xx.' erros · '.$resumo->erros4xx.' respostas 4xx')

@@ -47,13 +47,18 @@ trait WidgetDoMonitoramento
             return '—';
         }
 
-        if ($ms >= 10000) {
-            return '> 10 s';
+        if ($ms >= 60000) {
+            return number_format($ms / 60000, 1, ',', '.').' min';
         }
 
         return $ms >= 1000
             ? number_format($ms / 1000, 1, ',', '.').' s'
             : number_format($ms, 0, ',', '.').' ms';
+    }
+
+    protected static function percentil(?float $ms): string
+    {
+        return $ms !== null && $ms >= 10000 ? '≥ 10 s' : self::ms($ms);
     }
 
     protected static function rotuloDoInstante(int $instante, bool $comData = false): string

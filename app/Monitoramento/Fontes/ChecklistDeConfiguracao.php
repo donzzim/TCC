@@ -14,7 +14,11 @@ final class ChecklistDeConfiguracao
 
         return [
             self::item('APP_DEBUG desligado fora de local', ! $debug || app()->environment('local'),
-                $debug ? 'APP_DEBUG=true em "'.$ambiente.'": a tela de erro detalhada pode aparecer para usuários.' : 'APP_DEBUG=false'),
+                match (true) {
+                    ! $debug => 'APP_DEBUG=false',
+                    app()->environment('local') => 'APP_DEBUG=true só no ambiente local',
+                    default => 'APP_DEBUG=true em "'.$ambiente.'": a tela de erro detalhada pode aparecer para usuários.',
+                }),
             self::item('Ambiente', true, $ambiente),
             self::item('Configuração em cache', app()->configurationIsCached(),
                 'php artisan config:cache acelera cada requisição em produção.'),

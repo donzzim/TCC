@@ -27,8 +27,8 @@ class ConsultasServidorTable extends TabelaDoMonitoramento
                 TextColumn::make('media_ms')->label('Média')->formatStateUsing(fn ($state) => self::ms($state))->alignEnd(),
                 TextColumn::make('linhas_examinadas')->label('Linhas examinadas')->numeric(locale: 'pt_BR')->alignEnd(),
                 TextColumn::make('linhas_retornadas')->label('Linhas retornadas')->numeric(locale: 'pt_BR')->alignEnd(),
-                TextColumn::make('proporcao')->label('Alerta')->badge()->color('warning')
-                    ->formatStateUsing(fn ($state) => $state > 100 ? 'possível índice faltando' : ''),
+                TextColumn::make('alerta')->label('Alerta')->badge()->color('warning')
+                    ->state(fn (array $record): ?string => $record['proporcao'] > 100 ? 'possível índice faltando' : null),
             ])
             ->paginated(false)
             ->emptyStateHeading($consultas === null ? 'Estatísticas indisponíveis' : 'Sem estatísticas ainda')

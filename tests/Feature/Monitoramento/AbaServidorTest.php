@@ -47,6 +47,7 @@ class AbaServidorTest extends TestCase
 
         $this->app['env'] = 'local';
         $this->assertTrue($this->item('APP_DEBUG desligado fora de local')['ok']);
+        $this->assertSame('APP_DEBUG=true só no ambiente local', $this->item('APP_DEBUG desligado fora de local')['detalhe']);
     }
 
     public function test_fila_sync_falha_o_item(): void
