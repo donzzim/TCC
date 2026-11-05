@@ -5,6 +5,7 @@ namespace App\Monitoramento\Console;
 use App\Monitoramento\Agregacao\AgregadorDeRequisicoes;
 use App\Monitoramento\Armazenamento\RepositorioDeMetricas;
 use App\Monitoramento\Coleta\BufferDeRequisicoes;
+use App\Monitoramento\Coleta\ColetorDeSnapshot;
 use Illuminate\Console\Command;
 use Throwable;
 
@@ -40,6 +41,7 @@ class ColetarMetricas extends Command
                 $this->processar($arquivo, $repositorio, $buffer);
             }
 
+            $repositorio->gravarSnapshot(ColetorDeSnapshot::capturar($agora));
             $repositorio->consolidarHora(intdiv($agora, 3600) * 3600 - 3600);
             $repositorio->limpar($agora);
             $repositorio->registrarBatimento(self::TAREFA, $agora, true);

@@ -2,6 +2,8 @@
 
 namespace App\Monitoramento\Armazenamento;
 
+use App\Monitoramento\Coleta\Snapshot;
+
 interface RepositorioDeMetricas
 {
     public function instalado(): bool;
@@ -15,4 +17,6 @@ interface RepositorioDeMetricas
     public function limpar(int $agora): void;
 
     public function registrarBatimento(string $tarefa, int $quando, bool $sucesso, ?string $mensagem = null): void;
+
+    public function gravarSnapshot(Snapshot $s): void;
 }

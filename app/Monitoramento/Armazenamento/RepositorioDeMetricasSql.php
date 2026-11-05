@@ -5,6 +5,7 @@ namespace App\Monitoramento\Armazenamento;
 use App\Monitoramento\Agregacao\AgregadoMinuto;
 use App\Monitoramento\Agregacao\Histograma;
 use App\Monitoramento\Coleta\RegistroDeRequisicao;
+use App\Monitoramento\Coleta\Snapshot;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\DB;
 
@@ -103,6 +104,17 @@ class RepositorioDeMetricasSql implements RepositorioDeMetricas
             ['tarefa' => $tarefa],
             ['ultima_execucao' => $quando, 'sucesso' => $sucesso, 'mensagem' => $mensagem],
         );
+    }
+
+    public function gravarSnapshot(Snapshot $s): void
+    {
+        $dados = $s->toArray();
+        unset($dados['instante']);
+
+        $this->db()->table('snapshots')->insert([
+            'instante' => $s->instante,
+            'dados' => json_encode($dados, self::JSON),
+        ]);
     }
 
     private function somarNaTabela(string $tabela, string $colunaTempo, int $tempo, AgregadoMinuto $a): void
