@@ -7,6 +7,7 @@ import { Text } from '@/src/components/Text';
 import { Card } from '@/src/components/Card';
 import { GradientHeader } from '@/src/components/GradientHeader';
 import { Screen } from '@/src/components/Screen';
+import { podeTrocarSetor } from '@/src/components/SetorSeletor';
 import { SetorSheet } from '@/src/components/SetorSheet';
 import { useSessao } from '@/src/session/SessionProvider';
 import { useTheme, type TemaPreferencia } from '@/src/theme/ThemeProvider';
@@ -41,7 +42,7 @@ export default function Perfil() {
     const [saindo, setSaindo] = useState(false);
 
     const usuario = sessao?.usuario;
-    const podeTrocarSetor = !sessao?.lotacao_legada && (sessao?.lotacoes.length ?? 0) > 1;
+    const trocavel = podeTrocarSetor(sessao);
     const setor = sessao?.setor_atual;
 
     const aoSair = async () => {
@@ -74,7 +75,7 @@ export default function Perfil() {
                     <Linha rotulo="CPF" valor={usuario?.cpf} />
                     <Linha rotulo="Setor" valor={setor?.setor} />
                     <Linha rotulo="Unidade" valor={setor?.unidade} />
-                    {podeTrocarSetor ? (
+                    {trocavel ? (
                         <Pressable
                             accessibilityRole="button"
                             onPress={() => setSetorAberto(true)}

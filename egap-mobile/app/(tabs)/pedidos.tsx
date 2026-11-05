@@ -10,6 +10,7 @@ import { Card } from '@/src/components/Card';
 import { EmptyState } from '@/src/components/EmptyState';
 import { Foto } from '@/src/components/Foto';
 import { GradientHeader } from '@/src/components/GradientHeader';
+import { SetorSeletor } from '@/src/components/SetorSeletor';
 import { useErroRede } from '@/src/hooks/useErroRede';
 import { usePedidos } from '@/src/hooks/usePedidos';
 import { useSessao } from '@/src/session/SessionProvider';
@@ -86,7 +87,9 @@ export default function Pedidos() {
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <GradientHeader title="Pedidos" subtitle="Histórico do setor" overlap={8} />
+            <GradientHeader title="Pedidos" subtitle="Histórico do setor" overlap={8}>
+                <SetorSeletor />
+            </GradientHeader>
             {semCadastroEgap ? (
                 <EmptyState
                     title="Sem cadastro no EGAP"
