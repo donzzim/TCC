@@ -23,6 +23,11 @@
             [Widgets\ConsultasServidorTable::class, 'full'],
             [Widgets\TabelasTable::class, 'full'],
         ],
+        'filas' => [
+            [Widgets\FilaWidget::class, 'full'],
+            [Widgets\JobsFalhosTable::class, 'full'],
+            [Widgets\AgendadorTable::class, 'full'],
+        ],
     ][$aba] ?? [];
 
     $ultimaColeta = $this->ultimaColeta();
