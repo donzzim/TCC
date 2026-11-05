@@ -15,5 +15,5 @@ return [
     'retencao_hora_dias' => 30,
     'retencao_snapshots_dias' => 14,
     'buffer_dir' => storage_path('app/monitoramento/buffer'),
-    'faixas_ms' => [50, 100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 10000, PHP_INT_MAX],
+    'faixas_ms' => App\Monitoramento\Agregacao\Histograma::FAIXAS,
 ];
