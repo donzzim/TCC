@@ -101,6 +101,29 @@ class LeitorDeLogTest extends TestCase
         $this->assertSame([$novo, $antigo], (new LeitorDeLog($this->dir))->arquivos());
     }
 
+    public function test_contexto_com_stacktrace_em_varias_linhas(): void
+    {
+        $arquivo = $this->log(
+            "[2026-11-05 15:34:40] local.ERROR: Arquivo não existe {\"userId\":7,\"exception\":\"[object] (Illuminate\\\\View\\\\ViewException(code: 0): Arquivo não existe at D:\\\\app\\\\Connection.php:838)\n"
+            ."[stacktrace]\n"
+            ."#0 D:/app/Engine.php(58): Engine->handle()\n"
+            ."#1 {main}\n"
+            ."\"} \n"
+            ."[2026-11-05 15:35:00] local.INFO: depois\n"
+        );
+
+        $entrada = (new LeitorDeLog($this->dir))->ultimas($arquivo, nivel: 'ERROR')[0];
+
+        $this->assertSame('Arquivo não existe', $entrada->mensagem);
+        $this->assertSame(7, $entrada->contexto['userId']);
+        $this->assertStringStartsWith('[object] (Illuminate\\View\\ViewException(code: 0)', $entrada->contexto['exception']);
+        $this->assertStringNotContainsString('[stacktrace]', $entrada->contexto['exception']);
+        $this->assertStringContainsString('#0 D:/app/Engine.php(58)', $entrada->trace);
+
+        $grupo = AgrupadorDeExcecoes::agrupar([$entrada])[0];
+        $this->assertSame(['Illuminate\\View\\ViewException', 'D:\\app\\Connection.php:838'], [$grupo['classe'], $grupo['local']]);
+    }
+
     public function test_agrupa_excecoes_por_classe_e_local(): void
     {
         $arquivo = $this->log(

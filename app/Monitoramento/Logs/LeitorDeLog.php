@@ -135,7 +135,23 @@ final class LeitorDeLog
 
     private function montar(array $bruta, string $arquivo): EntradaDeLog
     {
+        $trace = $bruta['trace'];
         [$mensagem, $contexto] = $this->separarContexto(Sanitizador::limpar($bruta['texto']));
+
+        if ($contexto === null && $trace !== '') {
+            $junto = $bruta['texto'].'\n'.str_replace(["\r", "\n"], ['', '\n'], rtrim($trace));
+            [$mensagemJunta, $contextoJunto] = $this->separarContexto(Sanitizador::limpar($junto));
+
+            if ($contextoJunto !== null) {
+                [$mensagem, $contexto] = [$mensagemJunta, $contextoJunto];
+            }
+        }
+
+        if (is_string($contexto['exception'] ?? null) && str_contains($contexto['exception'], "\n[stacktrace]")) {
+            [$excecao, $pilha] = explode("\n[stacktrace]", $contexto['exception'], 2);
+            $contexto['exception'] = $excecao;
+            $trace = trim($pilha);
+        }
 
         return new EntradaDeLog(
             data: str_replace('T', ' ', $bruta['data']),
@@ -143,7 +159,7 @@ final class LeitorDeLog
             nivel: $bruta['nivel'],
             mensagem: $mensagem,
             contexto: $contexto,
-            trace: Sanitizador::limpar($bruta['trace']),
+            trace: Sanitizador::limpar($trace),
             arquivo: $arquivo,
         );
     }
