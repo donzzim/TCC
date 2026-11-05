@@ -8,6 +8,7 @@ import { Text, TextInput } from '@/src/components/Text';
 import { BemRow } from '@/src/components/BemRow';
 import { EmptyState } from '@/src/components/EmptyState';
 import { GradientHeader } from '@/src/components/GradientHeader';
+import { SetorSeletor } from '@/src/components/SetorSeletor';
 import { useBens } from '@/src/hooks/useBens';
 import { useErroRede } from '@/src/hooks/useErroRede';
 import { useTheme } from '@/src/theme/ThemeProvider';
@@ -45,7 +46,9 @@ export default function Bens() {
                           : `${numero(total)} no setor`
                 }
                 overlap={28}
-            />
+            >
+                <SetorSeletor />
+            </GradientHeader>
             <View style={[styles.busca, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons name="search" size={18} color={colors.textMuted} />
                 <TextInput

@@ -8,7 +8,7 @@ import { Card } from '@/src/components/Card';
 import { EmptyState } from '@/src/components/EmptyState';
 import { GradientHeader } from '@/src/components/GradientHeader';
 import { ProgressRing } from '@/src/components/ProgressRing';
-import { SetorSheet } from '@/src/components/SetorSheet';
+import { SetorSeletor } from '@/src/components/SetorSeletor';
 import { SinoNotificacoes } from '@/src/components/SinoNotificacoes';
 import { useDashboard } from '@/src/hooks/useDashboard';
 import { useErroRede } from '@/src/hooks/useErroRede';
@@ -47,7 +47,6 @@ export default function Inicio() {
     const router = useRouter();
     const { sessao } = useSessao();
     const dashboard = useDashboard();
-    const [setorAberto, setSetorAberto] = useState(false);
     const [recentes, setRecentes] = useState<Recente[]>([]);
     const [atualizando, setAtualizando] = useState(false);
 
@@ -71,7 +70,6 @@ export default function Inicio() {
     const resumo = conf?.resumo;
     const percentual = progressoConferencia(resumo);
     const nome = sessao?.usuario.nome ?? '';
-    const setor = sessao?.setor_atual;
     const situacaoConf = conf?.atividade.situacao ?? conf?.inventario.situacao ?? '';
 
     return (
@@ -98,18 +96,7 @@ export default function Inicio() {
                     </View>
                 }
             >
-                <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Trocar setor"
-                    onPress={() => setSetorAberto(true)}
-                    style={styles.setorPill}
-                >
-                    <Ionicons name="business-outline" size={14} color="#ffffff" />
-                    <Text style={styles.setorTexto} numberOfLines={1}>
-                        {setor ? `${setor.setor} · ${setor.unidade}` : 'Sem setor'}
-                    </Text>
-                    <Ionicons name="chevron-down" size={14} color="#ffffff" />
-                </Pressable>
+                <SetorSeletor />
             </GradientHeader>
 
             <View style={styles.corpo}>
@@ -227,8 +214,6 @@ export default function Inicio() {
                     ))
                 )}
             </View>
-
-            <SetorSheet visible={setorAberto} onClose={() => setSetorAberto(false)} />
         </ScrollView>
     );
 }
@@ -244,19 +229,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     avatarTexto: { color: '#ffffff', fontWeight: '700', fontSize: 13 },
-    setorPill: {
-        marginTop: 10,
-        alignSelf: 'flex-start',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        backgroundColor: 'rgba(255,255,255,0.18)',
-        borderRadius: radius.pill,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        maxWidth: '100%',
-    },
-    setorTexto: { color: '#ffffff', fontSize: 12, fontWeight: '600', flexShrink: 1 },
     corpo: { paddingHorizontal: 14, gap: 12 },
     flutuante: { marginTop: -36, shadowOpacity: 0.16 },
     linha: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

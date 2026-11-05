@@ -13,6 +13,7 @@ import { Folha } from '@/src/components/Folha';
 import { useFilaLeituras } from '@/src/conferencia/FilaLeituras';
 import { Foto } from '@/src/components/Foto';
 import { GradientHeader } from '@/src/components/GradientHeader';
+import { SetorSeletor } from '@/src/components/SetorSeletor';
 import { ProgressRing } from '@/src/components/ProgressRing';
 import { StatPill } from '@/src/components/StatPill';
 import {
@@ -23,6 +24,7 @@ import {
     useNaoLocalizados,
 } from '@/src/hooks/useConferencia';
 import { useErroRede } from '@/src/hooks/useErroRede';
+import { useSessao } from '@/src/session/SessionProvider';
 import { useTheme } from '@/src/theme/ThemeProvider';
 import { radius } from '@/src/theme/tokens';
 import { progressoConferencia } from '@/src/utils/conferencia';
@@ -39,6 +41,12 @@ const FILTROS: { valor: ConferenciaFiltro; rotulo: string }[] = [
 ];
 
 export default function Conferencia() {
+    const setorId = useSessao().sessao?.setor_atual?.id ?? null;
+
+    return <ConferenciaDoSetor key={setorId ?? 'sem-setor'} />;
+}
+
+function ConferenciaDoSetor() {
     const { colors } = useTheme();
     const router = useRouter();
     const [filtro, setFiltro] = useState<ConferenciaFiltro>('pendente');
@@ -303,7 +311,9 @@ export default function Conferencia() {
                 }
                 overlap={28}
                 right={<ProgressRing percent={percentual} size={58} />}
-            />
+            >
+                <SetorSeletor />
+            </GradientHeader>
             <View style={styles.sobrepor}>{cabecalho}</View>
 
             {lista.isPending ? (
