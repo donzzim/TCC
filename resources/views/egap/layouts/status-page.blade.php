@@ -16,7 +16,7 @@
      */
 
     // Sem página anterior (link aberto direto, nova aba) o botão leva ao início.
-    $previousUrl = url()->previous($homeUrl);
+    $previousUrl = rescue(fn () => url()->previous($homeUrl), $homeUrl, false);
 
     $hasPrevious = ! in_array($previousUrl, [url()->current(), $homeUrl], true);
 
@@ -24,7 +24,11 @@
 
     // Só existe sessão quando a rota foi resolvida (ex.: 403, ou 404 de
     // registro inexistente); em rota inexistente o usuário vem nulo.
-    $user = auth(\App\Models\egap\User::GUARD)->user();
+    $user = ($showUser ?? true)
+        ? rescue(fn () => auth(\App\Models\egap\User::GUARD)->user(), null, false)
+        : null;
+
+    $reference = $reference ?? null;
 @endphp
 
 <!DOCTYPE html>
@@ -123,6 +127,19 @@
             overflow-wrap: anywhere;
         }
 
+        .nf__ref {
+            margin: 12px 0 0;
+            font-size: .875rem;
+            color: var(--nf-text-muted);
+        }
+
+        .nf__ref strong {
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: .04em;
+            color: var(--nf-text);
+        }
+
         .nf__link {
             display: inline-flex;
             align-items: center;
@@ -198,6 +215,10 @@
             </svg>
             <span class="nf__url">{{ $pageName }}</span>
         </div>
+
+        @if ($reference)
+            <p class="nf__ref">Código da ocorrência: <strong>{{ $reference }}</strong></p>
+        @endif
 
         <div class="nf__actions">
             @if ($hasPrevious)
