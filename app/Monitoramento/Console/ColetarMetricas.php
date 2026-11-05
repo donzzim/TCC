@@ -62,8 +62,7 @@ class ColetarMetricas extends Command
     {
         $resultado = AgregadorDeRequisicoes::agregar($buffer->ler($arquivo));
 
-        $repositorio->gravarAgregados($resultado['agregados']);
-        $repositorio->gravarDetalhadas($resultado['detalhados']);
+        $repositorio->processarArquivo(basename($arquivo), $resultado['agregados'], $resultado['detalhados']);
         $buffer->descartar($arquivo);
     }
 

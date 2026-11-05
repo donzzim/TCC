@@ -104,6 +104,25 @@ class ColetarMetricasTest extends TestCase
         $this->assertSame(5, json_decode($linhas[0]->faixas, true)[1]);
     }
 
+    public function test_reprocessar_arquivo_que_nao_foi_apagado_nao_conta_duas_vezes(): void
+    {
+        $this->app->instance(BufferDeRequisicoes::class, new class($this->dir) extends BufferDeRequisicoes
+        {
+            public function descartar(string $arquivo): void
+            {
+            }
+        });
+        $this->anexar(3, 1_700_000_000 - 120);
+        $this->artisan('monitoramento:coletar')->assertSuccessful();
+
+        [$pendente] = glob($this->dir.'/*.processando');
+        touch($pendente, time() - 1200);
+        $this->artisan('monitoramento:coletar')->assertSuccessful();
+
+        $this->assertSame(3, (int) $this->minutos()[0]->qtd);
+        $this->assertSame(1, DB::connection('monitoramento')->table('arquivos_processados')->count());
+    }
+
     public function test_consolidar_hora_e_idempotente(): void
     {
         $repo = app(RepositorioDeMetricas::class);

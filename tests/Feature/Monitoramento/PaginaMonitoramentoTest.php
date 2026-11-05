@@ -104,6 +104,20 @@ class PaginaMonitoramentoTest extends TestCase
         }
     }
 
+    public function test_pagina_abre_sem_o_banco_de_metricas(): void
+    {
+        $u = $this->dev();
+        config(['database.connections.monitoramento.database' => sys_get_temp_dir().'/nao/existe/'.uniqid().'.sqlite']);
+        \Illuminate\Support\Facades\DB::purge('monitoramento');
+        $this->actingAs($u, User::GUARD);
+
+        $this->get(self::URL)->assertOk()->assertSee('Nenhuma coleta registrada');
+
+        foreach ([IndicadoresGeraisWidget::class, SemaforoWidget::class, LatenciaChart::class, VolumePorContextoChart::class, ErrosChart::class, UsuariosOnlineChart::class] as $widget) {
+            Livewire::test($widget, ['periodo' => '1h', 'contexto' => null])->assertOk();
+        }
+    }
+
     public function test_widget_sem_permissao_e_bloqueado(): void
     {
         $u = $this->dev();

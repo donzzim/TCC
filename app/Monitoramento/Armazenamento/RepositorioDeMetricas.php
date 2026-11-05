@@ -15,6 +15,8 @@ interface RepositorioDeMetricas
 
     public function gravarDetalhadas(array $registros): void;
 
+    public function processarArquivo(string $nome, array $agregados, array $detalhadas): bool;
+
     public function consolidarHora(int $hora): void;
 
     public function limpar(int $agora): void;

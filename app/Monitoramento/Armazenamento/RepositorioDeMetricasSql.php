@@ -65,6 +65,21 @@ class RepositorioDeMetricasSql implements RepositorioDeMetricas
         }
     }
 
+    public function processarArquivo(string $nome, array $agregados, array $detalhadas): bool
+    {
+        return $this->db()->transaction(function () use ($nome, $agregados, $detalhadas): bool {
+            if ($this->db()->table('arquivos_processados')->where('nome', $nome)->exists()) {
+                return false;
+            }
+
+            $this->gravarAgregados($agregados);
+            $this->gravarDetalhadas($detalhadas);
+            $this->db()->table('arquivos_processados')->insert(['nome' => $nome, 'processado_em' => now()->getTimestamp()]);
+
+            return true;
+        });
+    }
+
     public function consolidarHora(int $hora): void
     {
         $minutos = $this->db()->table('agregados_minuto')
@@ -97,6 +112,7 @@ class RepositorioDeMetricasSql implements RepositorioDeMetricas
 
         $this->db()->table('agregados_minuto')->where('minuto', '<', $limiteBruto)->delete();
         $this->db()->table('requisicoes')->where('instante', '<', $limiteBruto)->delete();
+        $this->db()->table('arquivos_processados')->where('processado_em', '<', $limiteBruto)->delete();
         $this->db()->table('agregados_hora')
             ->where('hora', '<', $agora - (int) config('monitoramento.retencao_hora_dias', 30) * 86400)
             ->delete();

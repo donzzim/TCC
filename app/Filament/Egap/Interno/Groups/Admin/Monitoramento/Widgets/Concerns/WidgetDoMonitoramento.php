@@ -4,6 +4,7 @@ namespace App\Filament\Egap\Interno\Groups\Admin\Monitoramento\Widgets\Concerns;
 
 use App\Monitoramento\AcessoAoMonitoramento;
 use App\Monitoramento\Armazenamento\RepositorioDeMetricas;
+use App\Monitoramento\Armazenamento\RepositorioSeguro;
 use App\Monitoramento\Leitura\Periodo;
 use Livewire\Attributes\Reactive;
 
@@ -32,7 +33,7 @@ trait WidgetDoMonitoramento
 
     protected function repositorio(): RepositorioDeMetricas
     {
-        return app(RepositorioDeMetricas::class);
+        return new RepositorioSeguro(app(RepositorioDeMetricas::class));
     }
 
     protected function agora(): int

@@ -47,7 +47,7 @@ class BufferDeRequisicoes
                 continue;
             }
 
-            $destino = substr($arquivo, 0, -strlen('.ndjson')).'.processando';
+            $destino = substr($arquivo, 0, -strlen('.ndjson')).'-'.bin2hex(random_bytes(4)).'.processando';
 
             if (@rename($arquivo, $destino)) {
                 $reservados[] = $destino;

@@ -49,7 +49,8 @@ class BufferDeRequisicoesTest extends TestCase
 
         $reservados = $b->reservarProntos(1_700_000_070);
 
-        $this->assertSame(["$dir/202311142213.processando"], $reservados);
+        $this->assertCount(1, $reservados);
+        $this->assertMatchesRegularExpression('#/202311142213-[0-9a-f]{8}\.processando$#', $reservados[0]);
         $this->assertSame(["$dir/202311142214.ndjson"], glob("$dir/*.ndjson"));
         $this->assertSame([], $b->reservarProntos(1_700_000_070));
     }
