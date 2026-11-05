@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 
 class RepositorioDeMetricasSql implements RepositorioDeMetricas
 {
+    use LeituraSql;
+
     private const JSON = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE;
 
     public function __construct(private readonly string $conexao = 'monitoramento')
