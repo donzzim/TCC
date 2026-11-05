@@ -135,7 +135,7 @@ class FontesDeSaudeTest extends TestCase
         $this->assertNotEmpty($servidor['filament']);
         $this->assertNotNull($servidor['mysql']);
         $this->assertGreaterThan(0, $servidor['disco_total_bytes']);
-        $this->assertSame('feat/painel-monitoramento', $servidor['branch']);
+        $this->assertSame(trim((string) preg_replace('#^ref: refs/heads/#', '', (string) file_get_contents(base_path('.git/HEAD')))), $servidor['branch']);
         $this->assertMatchesRegularExpression('/^[0-9a-f]{40}$/', $servidor['commit']);
     }
 }
