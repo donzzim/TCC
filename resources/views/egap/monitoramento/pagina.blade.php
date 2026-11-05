@@ -33,6 +33,9 @@
             [Widgets\ExcecoesAgrupadasTable::class, 'full'],
             [Widgets\LogTable::class, 'full'],
         ],
+        'servidor' => [
+            [Widgets\ServidorWidget::class, 'full'],
+        ],
     ][$aba] ?? [];
 
     $ultimaColeta = $this->ultimaColeta();
