@@ -11,7 +11,7 @@ abstract class Fonte
 {
     protected static function emes(?ConnectionInterface $conexao = null): ConnectionInterface
     {
-        return $conexao ?? DB::connection('emes');
+        return $conexao ?? DB::connection((string) config('monitoramento.conexao_leitura', 'emes'));
     }
 
     protected static function seguro(Closure $leitura): mixed

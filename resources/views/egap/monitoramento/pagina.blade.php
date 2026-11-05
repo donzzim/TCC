@@ -17,6 +17,12 @@
             [Widgets\LivewireCarosTable::class, 'full'],
             [Widgets\RequisicoesLentasTable::class, 'full'],
         ],
+        'banco' => [
+            [Widgets\MysqlIndicadoresWidget::class, 'full'],
+            [Widgets\ProcessosTable::class, 'full'],
+            [Widgets\ConsultasServidorTable::class, 'full'],
+            [Widgets\TabelasTable::class, 'full'],
+        ],
     ][$aba] ?? [];
 
     $ultimaColeta = $this->ultimaColeta();
