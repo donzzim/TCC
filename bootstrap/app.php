@@ -48,6 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withProviders([
         App\Providers\SettingsServiceProvider::class,
+        App\Monitoramento\MonitoramentoServiceProvider::class,
     ])
     ->withExceptions(function (Exceptions $exceptions) {
         // 403 dentro do painel EGAP: mostra a página de acesso negado com a marca
