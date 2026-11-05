@@ -195,4 +195,56 @@ return Application::configure(basePath: dirname(__DIR__))
                 Log::error('Falha ao notificar exceção', ['erro' => $notifyException->getMessage()]);
             }
         });
+
+        $exceptions->render(function (Throwable $e, $request) {
+            if (app()->environment('local') && config('app.debug')) {
+                return null;
+            }
+
+            if (
+                $e instanceof \Illuminate\Http\Exceptions\HttpResponseException
+                || $e instanceof \Illuminate\Auth\AuthenticationException
+                || $e instanceof ValidationException
+                || ($e instanceof HttpExceptionInterface && ($e->getStatusCode() < 500 || $e->getStatusCode() === 503))
+            ) {
+                return null;
+            }
+
+            $reference = strtoupper(bin2hex(random_bytes(4)));
+
+            rescue(fn () => Log::error('Erro 500 exibido ao usuário', [
+                'ocorrencia' => $reference,
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'url' => $request->fullUrl(),
+                'method' => $request->method(),
+                'user_id' => Auth::id(),
+            ]), null, false);
+
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => 'Erro interno. Tente novamente mais tarde.',
+                    'ocorrencia' => $reference,
+                ], 500);
+            }
+
+            try {
+                return response()->view('egap.500-page', [
+                    'reference' => $reference,
+                    'homeUrl' => $request->is('egap', 'egap/*') ? url('/egap') : url('/'),
+                ], 500);
+            } catch (\Throwable) {
+                return response(
+                    '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">'
+                    . '<meta name="viewport" content="width=device-width, initial-scale=1">'
+                    . '<meta name="robots" content="noindex, nofollow"><title>Erro · EGAP</title></head>'
+                    . '<body style="font-family:system-ui,sans-serif;max-width:560px;margin:15vh auto;padding:0 16px;color:#0f172a">'
+                    . '<h1>Algo deu errado</h1><p>Ocorreu um erro inesperado. Tente novamente em alguns instantes.</p>'
+                    . '<p>Código da ocorrência: <strong>' . $reference . '</strong></p></body></html>',
+                    500
+                )->header('Content-Type', 'text/html; charset=UTF-8');
+            }
+        });
     })->create();
