@@ -8,6 +8,7 @@ use App\Monitoramento\Coleta\RegistroDeRequisicao;
 use App\Monitoramento\Coleta\Snapshot;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class RepositorioDeMetricasSql implements RepositorioDeMetricas
 {
@@ -26,7 +27,11 @@ class RepositorioDeMetricasSql implements RepositorioDeMetricas
 
     public function instalado(): bool
     {
-        return $this->db()->getSchemaBuilder()->hasTable('agregados_minuto');
+        try {
+            return $this->db()->getSchemaBuilder()->hasTable('agregados_minuto');
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     public function gravarAgregados(array $agregados): void

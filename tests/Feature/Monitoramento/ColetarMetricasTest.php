@@ -147,6 +147,25 @@ class ColetarMetricasTest extends TestCase
         $this->assertSame(0, DB::connection('monitoramento')->table('batimentos')->count());
     }
 
+    public function test_primeira_execucao_cria_o_banco_de_metricas(): void
+    {
+        $arquivo = dirname($this->dir).'/novo/metricas.sqlite';
+        config(['database.connections.monitoramento.database' => $arquivo]);
+        DB::purge('monitoramento');
+        $this->anexar(2, 1_700_000_000 - 120);
+
+        $this->artisan('monitoramento:coletar')->assertSuccessful();
+
+        $this->assertFileExists($arquivo);
+        $this->assertSame(2, (int) $this->minutos()[0]->qtd);
+
+        DB::purge('monitoramento');
+        @unlink($arquivo);
+        @unlink($arquivo.'-wal');
+        @unlink($arquivo.'-shm');
+        @rmdir(dirname($arquivo));
+    }
+
     public function test_registra_batimento(): void
     {
         $this->artisan('monitoramento:coletar')->assertSuccessful();
