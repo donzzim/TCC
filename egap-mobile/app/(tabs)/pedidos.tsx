@@ -41,9 +41,16 @@ function PedidoCard({ pedido, onPress }: { pedido: Pedido; onPress: () => void }
                         <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
                     </View>
                 </View>
+                {pedido.setor || pedido.complemento_setor.descricao ? (
+                    <View style={styles.setor}>
+                        <Ionicons name="business-outline" size={14} color={colors.textMuted} />
+                        <Text style={{ color: colors.text, fontSize: 12, fontWeight: '600', flex: 1 }} numberOfLines={2}>
+                            {[pedido.setor, pedido.complemento_setor.descricao].filter(Boolean).join(' · ')}
+                        </Text>
+                    </View>
+                ) : null}
                 <Text style={{ color: colors.textMuted, fontSize: 12 }}>
                     {ROTULO_TIPO[pedido.tipo]} · {dataHora(pedido.data)}
-                    {pedido.complemento_setor.descricao ? ` · ${pedido.complemento_setor.descricao}` : ''}
                 </Text>
                 {visiveis.map((item) => (
                     <View key={item.id} style={styles.item}>
@@ -87,7 +94,7 @@ export default function Pedidos() {
 
     return (
         <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <GradientHeader title="Pedidos" subtitle="Histórico do setor" overlap={8}>
+            <GradientHeader title="Pedidos" subtitle="Seus pedidos em todos os setores" overlap={8}>
                 <SetorSeletor />
             </GradientHeader>
             {semCadastroEgap ? (
@@ -167,6 +174,7 @@ const styles = StyleSheet.create({
     linha: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
     direita: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     item: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    setor: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     numero: { fontSize: 15, fontWeight: '800' },
     selo: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.pill },
 });

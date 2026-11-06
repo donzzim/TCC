@@ -160,9 +160,8 @@ class PedidosMobileService
     public function pedidosDoUsuario(array $scope, int $perPage): LengthAwarePaginator
     {
         return Pedidos::query()
-            ->with(['situacao', 'itens.situacaoRef', 'itens.materialRef', 'itens.descricaoDetalhadaRef', 'complementoSetor'])
+            ->with(['situacao', 'itens.situacaoRef', 'itens.materialRef', 'itens.descricaoDetalhadaRef', 'complementoSetor', 'setor_get'])
             ->where('Solicitante', $scope['id_egap'])
-            ->where('Setor', $scope['setor'])
             ->orderByDesc('id')
             ->paginate($perPage)
             ->through(fn (Pedidos $pedido): array => $this->pedidoToArray($pedido));
@@ -195,7 +194,6 @@ class PedidosMobileService
 
         return [
             ...$this->pedidoToArray($pedido),
-            'setor' => $pedido->setor_get?->setor,
             'historico' => $fases->map(fn (FasePedido $fase): array => [
                 'id' => (int) $fase->id,
                 'data' => optional($fase->date_time)->toIso8601String(),
@@ -212,7 +210,7 @@ class PedidosMobileService
     }
 
     /**
-     * Pedidos do usuário no setor (mesmo filtro de pedidosDoUsuario) ainda em análise.
+     * Pedidos do usuário no setor da sessão ainda em análise (a lista de pedidos mostra todos os setores).
      *
      * @param  array{id_egap:int|null,setor:int}  $scope
      */
@@ -487,6 +485,7 @@ class PedidosMobileService
                 'id' => $pedido->ComplementoSetor,
                 'descricao' => $pedido->complementoSetor?->descricao,
             ],
+            'setor' => $pedido->setor_get?->setor,
             'observacao' => $pedido->Observacao,
             'itens' => $pedido->itens->map(fn (ItemPedido $item): array => [
                 'id' => (int) $item->id,

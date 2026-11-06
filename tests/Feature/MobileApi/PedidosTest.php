@@ -3,6 +3,7 @@
 namespace Tests\Feature\MobileApi;
 
 use App\Models\egap\Almoxarifado\Pedidos;
+use App\Models\egap\Cadastro\Setores;
 use App\Models\egap\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\Feature\MobileApi\Concerns\UsaSessaoMobile;
@@ -239,5 +240,28 @@ class PedidosTest extends TestCase
         $this->withToken($plain)->getJson('/mobile-api/pedidos')
             ->assertOk()
             ->assertJsonStructure(['pedidos', 'meta' => ['current_page', 'total', 'has_more']]);
+    }
+
+    public function test_lista_pedidos_de_todos_os_setores_com_o_nome_do_setor(): void
+    {
+        [$sessao, $plain] = $this->sessaoComEgapId();
+        [$payload] = $this->payloadConsumo($plain);
+        $outro = Setores::query()->where('id', '!=', $sessao->setorAtual())->whereNotNull('setor')->first();
+
+        if ($outro === null) {
+            $this->markTestSkipped('nenhum outro setor neste banco');
+        }
+
+        $id = $this->withToken($plain)->postJson('/mobile-api/pedidos', $payload)->assertCreated()->json('pedido.id');
+        Pedidos::query()->whereKey($id)->update(['Setor' => $outro->id]);
+
+        $this->withToken($plain)->getJson('/mobile-api/pedidos')
+            ->assertOk()
+            ->assertJsonPath('pedidos.0.id', $id)
+            ->assertJsonPath('pedidos.0.setor', $outro->setor);
+
+        $this->withToken($plain)->getJson('/mobile-api/pedidos/'.$id)
+            ->assertOk()
+            ->assertJsonPath('pedido.setor', $outro->setor);
     }
 }

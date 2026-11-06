@@ -11,10 +11,8 @@ function useSetorId(): number | null {
 }
 
 export function usePedidos(enabled = true) {
-    const setorId = useSetorId();
-
     return useInfiniteQuery({
-        queryKey: ['pedidos', setorId, 'lista'],
+        queryKey: ['pedidos', 'lista'],
         enabled,
         queryFn: ({ pageParam }) => pedidosApi.listar(pageParam),
         initialPageParam: 1,

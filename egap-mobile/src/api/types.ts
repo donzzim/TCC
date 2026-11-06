@@ -282,6 +282,7 @@ export interface Pedido {
     tipo: PedidoTipo;
     situacao: { id: number | string | null; descricao: string | null };
     complemento_setor: { id: number | null; descricao: string | null };
+    setor: string | null;
     observacao: string | null;
     itens: PedidoItem[];
 }
@@ -299,7 +300,6 @@ export interface PedidoFase {
 
 /** Espelha PedidosMobileService::detalhe (GET /pedidos/{id}). */
 export interface PedidoDetalhe extends Pedido {
-    setor: string | null;
     historico: PedidoFase[];
 }
 
