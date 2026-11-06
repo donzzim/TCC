@@ -264,4 +264,23 @@ class PedidosTest extends TestCase
             ->assertOk()
             ->assertJsonPath('pedido.setor', $outro->setor);
     }
+
+    public function test_pedidos_abertos_do_inicio_contam_todos_os_setores(): void
+    {
+        [$sessao, $plain] = $this->sessaoComEgapId();
+        [$payload] = $this->payloadConsumo($plain);
+        $outro = Setores::query()->where('id', '!=', $sessao->setorAtual())->value('id');
+
+        if ($outro === null) {
+            $this->markTestSkipped('nenhum outro setor neste banco');
+        }
+
+        $antes = $this->withToken($plain)->getJson('/mobile-api/dashboard')->assertOk()->json('pedidos_abertos');
+        $id = $this->withToken($plain)->postJson('/mobile-api/pedidos', $payload)->assertCreated()->json('pedido.id');
+        Pedidos::query()->whereKey($id)->update(['Setor' => $outro]);
+
+        $this->withToken($plain)->getJson('/mobile-api/dashboard')
+            ->assertOk()
+            ->assertJsonPath('pedidos_abertos', $antes + 1);
+    }
 }

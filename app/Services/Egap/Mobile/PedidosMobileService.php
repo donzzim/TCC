@@ -210,9 +210,9 @@ class PedidosMobileService
     }
 
     /**
-     * Pedidos do usuário no setor da sessão ainda em análise (a lista de pedidos mostra todos os setores).
+     * Pedidos do usuário ainda em análise, de todos os setores (mesmo filtro de pedidosDoUsuario).
      *
-     * @param  array{id_egap:int|null,setor:int}  $scope
+     * @param  array{id_egap:int|null}  $scope
      */
     public function contarAbertos(array $scope): int
     {
@@ -222,7 +222,6 @@ class PedidosMobileService
 
         return Pedidos::query()
             ->where('Solicitante', $scope['id_egap'])
-            ->where('Setor', $scope['setor'])
             ->where('idSituacao', self::STATUS_EM_ANALISE)
             ->count();
     }
