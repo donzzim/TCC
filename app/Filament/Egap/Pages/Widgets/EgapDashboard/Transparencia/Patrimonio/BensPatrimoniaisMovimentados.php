@@ -2,10 +2,10 @@
 
 namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Patrimonio;
 
-use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
+use App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\GraficoTransparencia;
 use App\Models\egap\Patrimonio\BensMoveis\TransferenciaBemMovel;
 
-class BensPatrimoniaisMovimentados extends BaseChart
+class BensPatrimoniaisMovimentados extends GraficoTransparencia
 {
     protected ?string $heading = 'Bens Patrimoniais Movimentados por Ano';
 

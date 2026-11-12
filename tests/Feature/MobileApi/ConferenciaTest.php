@@ -8,6 +8,7 @@ use App\Models\egap\Patrimonio\BensMoveis\Inventario;
 use App\Models\egap\Patrimonio\BensMoveis\ItemInventario;
 use App\Models\egap\User;
 use App\Services\Egap\Mobile\ConferenciaBensService;
+use App\Services\Egap\Mobile\TransferenciasValidadasCache;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\Feature\Concerns\LimpaTabelasMyIsamDoInventario;
 use Illuminate\Support\Facades\Bus;
@@ -234,6 +235,61 @@ class ConferenciaTest extends TestCase
 
         $this->assertSame($primeira, $segunda);
         $this->assertCount(2, $consultas);
+    }
+
+    public function test_transferencias_validadas_iguais_a_consulta_original(): void
+    {
+        $setor = DB::connection('emes')->selectOne(
+            "select SetorAtual setor, UnidadeAtual unidade, count(*) c from egap_mat_transferencia
+             where SetorAtual regexp '^[0-9]+$' and UnidadeAtual is not null
+             group by SetorAtual, UnidadeAtual order by c desc limit 1"
+        );
+
+        if ($setor === null) {
+            $this->markTestSkipped('nenhuma transferência neste banco');
+        }
+
+        $esperado = collect(DB::connection('emes')->select(
+            'select NumPatrimonio from egap_mat_transferencia where SetorAtual = ? and UnidadeAtual = ? and Termo in (
+                select termo from egap_mat_arquivodigital where id in (
+                    select max(id) from egap_mat_arquivodigital group by termo
+                ) and situacao = 1
+            )',
+            [(string) $setor->setor, (int) $setor->unidade],
+        ))
+            ->pluck('NumPatrimonio')
+            ->filter(fn ($id): bool => $id !== null && $id !== '')
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
+        $metodo = new \ReflectionMethod(ConferenciaBensService::class, 'consultarTransferenciasValidadas');
+        $obtido = $metodo->invoke(new ConferenciaBensService, [
+            'unidade_judiciaria' => (int) $setor->unidade,
+            'setor' => (int) $setor->setor,
+        ])->sort()->values()->all();
+
+        $this->assertSame($esperado, $obtido);
+    }
+
+    public function test_transferencias_validadas_ficam_em_cache_entre_requisicoes(): void
+    {
+        $metodo = new \ReflectionMethod(ConferenciaBensService::class, 'bensComTransferenciaValidadaIds');
+        $escopo = ['unidade_judiciaria' => 1, 'setor' => 1];
+        $contar = fn (): int => collect(DB::connection('emes')->getQueryLog())
+            ->filter(fn (array $q): bool => str_contains($q['query'], 'egap_mat_transferencia'))
+            ->count();
+
+        DB::connection('emes')->enableQueryLog();
+        $metodo->invoke(new ConferenciaBensService, $escopo);
+        $metodo->invoke(new ConferenciaBensService, $escopo);
+        $this->assertSame(1, $contar());
+
+        TransferenciasValidadasCache::invalidar();
+        $metodo->invoke(new ConferenciaBensService, $escopo);
+        $this->assertSame(2, $contar());
     }
 
     public function test_conferencia_exige_sessao(): void

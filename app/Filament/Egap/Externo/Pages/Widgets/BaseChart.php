@@ -4,6 +4,7 @@ namespace App\Filament\Egap\Externo\Pages\Widgets;
 
 use Filament\Widgets\ChartWidget;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Collection;
 
 abstract class BaseChart extends ChartWidget
@@ -11,6 +12,21 @@ abstract class BaseChart extends ChartWidget
     public ?string $chartType = 'bar';
 
     protected int|string|array $columnSpan = 'full';
+
+    protected ?int $segundosEmCache = null;
+
+    protected function getCachedData(): array
+    {
+        if ($this->segundosEmCache === null) {
+            return parent::getCachedData();
+        }
+
+        return $this->cachedData ??= Cache::store(config('cache.egap_store'))->remember(
+            'egap_grafico:' . static::class . ':' . $this->chartType . ':' . $this->filter,
+            $this->segundosEmCache,
+            fn (): array => $this->getData(),
+        );
+    }
 
     protected function getType(): string
     {

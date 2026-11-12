@@ -2,10 +2,10 @@
 
 namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Almoxarifado;
 
-use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
+use App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\GraficoTransparencia;
 use App\Models\egap\Almoxarifado\Pedidos;
 
-class RequisicoesBensConsumoAtendidas extends BaseChart
+class RequisicoesBensConsumoAtendidas extends GraficoTransparencia
 {
     protected ?string $heading = 'Requisições de Bens de Consumo Atendidas por Ano';
 

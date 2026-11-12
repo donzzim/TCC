@@ -2,10 +2,10 @@
 
 namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Patrimonio;
 
-use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
+use App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\GraficoTransparencia;
 use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
 
-class InventarioOnlineSituacaoContabil extends BaseChart
+class InventarioOnlineSituacaoContabil extends GraficoTransparencia
 {
     protected ?string $heading = 'Acompanhamento do Invetário Online Anual - Situação Contábil';
 

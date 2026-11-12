@@ -17,6 +17,8 @@ return [
 
     'default' => env('CACHE_STORE', 'database'),
 
+    'egap_store' => env('EGAP_CACHE_STORE', 'file'),
+
     /*
     |--------------------------------------------------------------------------
     | Cache Stores

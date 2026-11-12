@@ -2,10 +2,10 @@
 
 namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Patrimonio;
 
-use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
+use App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\GraficoTransparencia;
 use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
 
-class SituacaoBensPatrimoniaisEgap extends BaseChart
+class SituacaoBensPatrimoniaisEgap extends GraficoTransparencia
 {
     protected ?string $heading = 'Situação Atual dos Bens Patrimoniais no Sistema E-Gap';
 

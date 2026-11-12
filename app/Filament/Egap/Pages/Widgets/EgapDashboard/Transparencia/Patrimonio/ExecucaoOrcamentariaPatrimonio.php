@@ -2,11 +2,11 @@
 
 namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Patrimonio;
 
-use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
+use App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\GraficoTransparencia;
 use App\Models\egap\Patrimonio\BensMoveis\BemMovel;
 use Filament\Support\RawJs;
 
-class ExecucaoOrcamentariaPatrimonio extends BaseChart
+class ExecucaoOrcamentariaPatrimonio extends GraficoTransparencia
 {
     protected ?string $heading = 'Execução Orçamentária do Patrimônio';
 
