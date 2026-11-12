@@ -10,7 +10,6 @@ use App\Filament\Egap\Support\TableColumns;
 use App\Filament\Egap\Support\TableDefaults;
 use App\Models\egap\Almoxarifado\MovimentacaoEstoque;
 use App\Models\egap\Almoxarifado\NotaFiscal;
-use App\Models\egap\Almoxarifado\SituacaoPedido;
 use App\Models\egap\Almoxarifado\TipoMovimentacaoNotaFiscal;
 use App\Models\egap\Cadastro\DescricaoDetalhada;
 use App\Models\egap\Cadastro\Setores;
