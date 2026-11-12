@@ -26,6 +26,7 @@ use App\Filament\Egap\Externo\Groups\PlanoContratacao\Pages\MeusPlanos;
 use App\Filament\Egap\Externo\Groups\PlanoContratacao\Pages\NovaSolicitacao;
 use App\Filament\Egap\Externo\Groups\ServicosGerais\Pages\Fiscal;
 use App\Filament\Egap\Externo\Groups\ServicosGerais\Pages\Gestor;
+use App\Filament\Egap\Externo\Pages\Widgets\MeusPedidosStats;
 use App\Models\egap\Admin\Lotacao;
 use App\Models\egap\UserEgap;
 use Filament\Pages\Enums\SubNavigationPosition;
@@ -68,12 +69,33 @@ class HomePageExterno extends ExternoPage
         return filled($nome) ? (string) str($nome)->before(' ') : 'visitante';
     }
 
+    public function getHeading(): string
+    {
+        return '';
+    }
+
     public function lotacaoAtual(): ?Lotacao
     {
         return $this->usuarioAtual()
             ?->lotacoes()
             ->with(['unidadeJudiciaria', 'setorRef'])
             ->first();
+    }
+
+    public function saudacao(): string
+    {
+        $hora = now()->hour;
+
+        return match (true) {
+            $hora < 12 => 'Bom dia',
+            $hora < 18 => 'Boa tarde',
+            default => 'Boa noite',
+        };
+    }
+
+    public function pendencias(): array
+    {
+        return (new MeusPedidosStats())->resumo($this->usuarioAtual());
     }
 
     public function gruposDeAcesso(): array
@@ -152,7 +174,7 @@ class HomePageExterno extends ExternoPage
                 ],
                 [
                     'label' => AgendamentoUser::getNavigationLabel(),
-                    'description' => 'Visualizar agendamentos feitos por voce.',
+                    'description' => 'Visualizar agendamentos feitos por você.',
                     'icon' => AgendamentoUser::getNavigationIcon(),
                     'url' => AgendamentoUser::getUrl(),
                 ],
@@ -164,7 +186,7 @@ class HomePageExterno extends ExternoPage
                 ],
                 [
                     'label' => ControleTrafego::getNavigationLabel(),
-                    'description' => 'Solicitar veículo para deslocamento oficial.',
+                    'description' => 'Gerenciar as solicitações de veículo, os motoristas e a frota.',
                     'icon' => ControleTrafego::getNavigationIcon(),
                     'url' => ControleTrafego::getUrl(),
                 ],

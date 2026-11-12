@@ -41,29 +41,36 @@ class MeusPedidosStats extends StatsOverviewWidget
 
     protected function getStats(): array
     {
-        $usuario = UserEgap::currentAuthenticated();
+        return array_map(
+            fn (array $item): Stat => $this->statCard($item['label'], $item['valor'], $item['icon'], $item['url']),
+            $this->resumo(UserEgap::currentAuthenticated()),
+        );
+    }
 
+    public function resumo(?UserEgap $usuario): array
+    {
         return [
-            $this->statCard(
-                label: 'Pedidos de Consumo em análise',
-                valor: $this->contarPedidos(self::SETOR_ALMOXARIFADO, $usuario, self::SITUACOES_PENDENTES_ALMOXARIFADO),
-                icon: 'heroicon-o-inbox',
-                url: AcompanhamentoDePedidosAlmoxarifado::getUrl(),
-            ),
-
-            $this->statCard(
-                label: 'Pedidos de Patrimônio em análise',
-                valor: $this->contarPedidos(self::SETOR_PATRIMONIO, $usuario, self::SITUACOES_PENDENTES_PATRIMONIO),
-                icon: 'heroicon-o-cube',
-                url: AcompanhamentoDePedidosPatrimonio::getUrl(),
-            ),
-
-            $this->statCard(
-                label: 'Solicitações de Veículo em análise',
-                valor: $this->contarSolicitacoesVeiculo($usuario),
-                icon: 'heroicon-o-truck',
-                url: SolicitacaoVeiculos::getUrl(),
-            ),
+            [
+                'label' => 'Pedidos de Consumo em análise',
+                'assunto' => 'Materiais de consumo',
+                'valor' => $this->contarPedidos(self::SETOR_ALMOXARIFADO, $usuario, self::SITUACOES_PENDENTES_ALMOXARIFADO),
+                'icon' => 'heroicon-o-inbox',
+                'url' => AcompanhamentoDePedidosAlmoxarifado::getUrl(),
+            ],
+            [
+                'label' => 'Pedidos de Patrimônio em análise',
+                'assunto' => 'Materiais permanentes',
+                'valor' => $this->contarPedidos(self::SETOR_PATRIMONIO, $usuario, self::SITUACOES_PENDENTES_PATRIMONIO),
+                'icon' => 'heroicon-o-cube',
+                'url' => AcompanhamentoDePedidosPatrimonio::getUrl(),
+            ],
+            [
+                'label' => 'Solicitações de Veículo em análise',
+                'assunto' => 'Veículos',
+                'valor' => $this->contarSolicitacoesVeiculo($usuario),
+                'icon' => 'heroicon-o-truck',
+                'url' => SolicitacaoVeiculos::getUrl(),
+            ],
         ];
     }
 
