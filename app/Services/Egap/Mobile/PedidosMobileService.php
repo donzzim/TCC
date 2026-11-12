@@ -110,7 +110,7 @@ class PedidosMobileService
             ]);
         }
 
-        return DB::connection('egap')->transaction(function () use ($scope, $tipo, $itens, $complementoId, $justificativaGeral): Pedidos {
+        return DB::transaction(function () use ($scope, $tipo, $itens, $complementoId, $justificativaGeral): Pedidos {
             $pedido = Pedidos::query()->create([
                 'date_time' => now(),
                 'Solicitante' => $scope['id_egap'],
