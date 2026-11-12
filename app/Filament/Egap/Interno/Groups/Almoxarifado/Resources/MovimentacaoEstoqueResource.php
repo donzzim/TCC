@@ -3,8 +3,6 @@
 namespace App\Filament\Egap\Interno\Groups\Almoxarifado\Resources;
 
 use App\Filament\Egap\Interno\Clusters\AlmoxarifadoCluster;
-use App\Filament\Egap\Interno\Groups\Almoxarifado\Resources\MovimentacaoEstoqueResource\Pages\CreateMovimentacaoEstoque;
-use App\Filament\Egap\Interno\Groups\Almoxarifado\Resources\MovimentacaoEstoqueResource\Pages\EditMovimentacaoEstoque;
 use App\Filament\Egap\Interno\Groups\Almoxarifado\Resources\MovimentacaoEstoqueResource\Pages\ListMovimentacaoEstoques;
 use App\Filament\Egap\Interno\Permissions\Almoxarifado\AlmoxarifadoResource;
 use App\Filament\Egap\Support\MoneyInput;
@@ -15,18 +13,17 @@ use App\Models\egap\Almoxarifado\NotaFiscal;
 use App\Models\egap\Almoxarifado\TipoMovimentacaoNotaFiscal;
 use App\Models\egap\Cadastro\DescricaoDetalhada;
 use App\Models\egap\Cadastro\Setores;
-use App\Models\egap\UserEgap;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Pages\Enums\SubNavigationPosition;
-use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
+use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use phpDocumentor\Reflection\PseudoTypes\True_;
+use Illuminate\Database\Eloquent\Builder;
 
 class MovimentacaoEstoqueResource extends AlmoxarifadoResource
 {
@@ -203,35 +200,44 @@ class MovimentacaoEstoqueResource extends AlmoxarifadoResource
     public static function table(Table $table): Table
     {
         return TableDefaults::apply($table)
-            ->defaultSort('date_time', 'desc')
+            ->defaultSort(fn (Builder $query, string $direction, HasTable $livewire): Builder => filled($livewire->getTableSearch())
+                ? $query->orderByRaw('`date_time` + 0 ' . ($direction === 'asc' ? 'asc' : 'desc'))
+                : $query->orderBy('date_time', $direction), 'desc')
             ->columns([
-                TableColumns::text('id', '#', isFirstColumn: true, isIdColumn: true),
+                TableColumns::text('id', '#', isFirstColumn: true, isIdColumn: true)
+                    ->searchable(query: fn (Builder $query, string $search): Builder => ctype_digit($search)
+                        ? $query->where('id', (int) $search)
+                        : $query),
 
                 TableColumns::text('tipoMovimentacaoRel.descricao', 'Tipo Mov.'),
 
-                TableColumns::dateTime('date_time', 'Data', 'd/m/Y'),
+                TableColumns::dateTime('date_time', 'Data', 'd/m/Y')->searchable(false),
 
                 TableColumns::text('notaFiscal.num_documento', 'Nota Fiscal'),
 
                 TableColumns::text('materialRel.descricao_detalhada', 'Material'),
 
-                TableColumns::text('quantidade', 'Qtd.'),
+                TableColumns::text('quantidade', 'Qtd.')->searchable(false),
 
-                TableColumns::money('preco_unitario', 'Preço Unit.', divideBy: true),
+                TableColumns::money('preco_unitario', 'Preço Unit.', divideBy: true)->searchable(false),
 
-                TableColumns::money('valor_total', 'Valor Total', divideBy: true),
+                TableColumns::money('valor_total', 'Valor Total', divideBy: true)->searchable(false),
 
-                TableColumns::text('quantidade_estoque', 'Qtd. Estoque'),
+                TableColumns::text('quantidade_estoque', 'Qtd. Estoque')->searchable(false),
 
-                TableColumns::money('preco_medio_estoque', 'Preço Médio', divideBy: true),
+                TableColumns::money('preco_medio_estoque', 'Preço Médio', divideBy: true)->searchable(false),
 
-                TableColumns::money('valor_total_estoque', 'Total Estoque', divideBy: true),
+                TableColumns::money('valor_total_estoque', 'Total Estoque', divideBy: true)->searchable(false),
 
                 TableColumns::text('setor.unidadeorganizacional', 'Unidade Judiciária'),
 
                 TableColumns::text('setor.setor', 'Setor'),
 
-                TableColumns::text('pedido.id', 'Pedido', isIdColumn: true),
+                TableColumns::text('idPedidoRef.id', 'Pedido', isIdColumn: true)
+                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('id_pedido', $direction))
+                    ->searchable(query: fn (Builder $query, string $search): Builder => ctype_digit($search)
+                        ? $query->where('id_pedido', (int) $search)
+                        : $query),
 
                 TableColumns::updatedBy('atualizadoPor.name'),
             ]);
