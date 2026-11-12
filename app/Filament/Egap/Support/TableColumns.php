@@ -3,7 +3,12 @@
 namespace App\Filament\Egap\Support;
 
 use Carbon\Carbon;
+use Closure;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Str;
 
 class TableColumns
 {
@@ -94,7 +99,7 @@ class TableColumns
     {
         $column = TextColumn::make($name)
             ->sortable()
-            ->searchable();
+            ->searchable(query: str_contains($name, '.') ? self::buscaPorRelacao($name) : null);
 
         if (! $isFirstColumn) {
             $column->alignCenter();
@@ -105,5 +110,38 @@ class TableColumns
         }
 
         return $column;
+    }
+
+    private static function buscaPorRelacao(string $name): Closure
+    {
+        $relacao = Str::beforeLast($name, '.');
+        $coluna = Str::afterLast($name, '.');
+
+        return function (Builder $query, string $search) use ($name, $relacao, $coluna): Builder {
+            $termo = '%' . $search . '%';
+            $model = $query->getModel();
+            $primeira = Str::before($relacao, '.');
+
+            $relationship = method_exists($model, $primeira)
+                ? Relation::noConstraints(fn () => $model->{$primeira}())
+                : null;
+
+            if (! $relationship instanceof Relation) {
+                return $query->where(str_replace('.', '->', $name), 'like', $termo);
+            }
+
+            if ($relacao === $primeira
+                && $relationship instanceof BelongsTo
+                && $relationship->getRelated()->getConnectionName() === $model->getConnectionName()) {
+                return $query->whereIn(
+                    $relationship->getQualifiedForeignKeyName(),
+                    $relationship->getQuery()
+                        ->select($relationship->getQualifiedOwnerKeyName())
+                        ->where($relationship->getRelated()->qualifyColumn($coluna), 'like', $termo),
+                );
+            }
+
+            return $query->whereHas($relacao, fn (Builder $related): Builder => $related->where($coluna, 'like', $termo));
+        };
     }
 }

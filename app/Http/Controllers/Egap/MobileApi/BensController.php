@@ -150,28 +150,38 @@ class BensController extends Controller
         if ($temDigito) {
             $query
                 ->orWhere('NumPatrimonio', $codigo)
-                ->orWhere('NumPatrimonio', $semZeros)
-                // orWhereRaw necessario: remove zeros a esquerda no valor armazenado
-                // (TRIM LEADING), funcao que o query builder do Eloquent nao expõe.
-                ->orWhereRaw("TRIM(LEADING '0' FROM NumPatrimonio) = ?", [$semZeros])
-                ->orWhere('NumTomboSmarapd', $codigo);
+                ->orWhere('NumPatrimonio', $semZeros);
         }
 
         if ($temDigito && $somenteDigitos !== $codigo) {
             $query
                 ->orWhere('NumPatrimonio', $somenteDigitos)
                 ->orWhere('TomboSmarapd', $somenteDigitos)
-                ->orWhere('NumTomboSmarapd', $somenteDigitos)
                 ->orWhere('NumerodePatAnterior', $somenteDigitos);
         }
     }
 
     private function buscarBemPorPatrimonio(string $numPatrimonio): ?BemMovel
     {
-        return $this->bensQuery()
+        $bem = $this->bensQuery()
             ->where(function (Builder $query) use ($numPatrimonio): void {
                 $this->applyPatrimonioSearch($query, $numPatrimonio);
             })
+            ->first();
+
+        if ($bem !== null) {
+            return $bem;
+        }
+
+        $codigo = preg_replace('/\s+/', '', trim($numPatrimonio)) ?? '';
+        $somenteDigitos = preg_replace('/\D+/', '', $codigo) ?? '';
+
+        if ($somenteDigitos === '') {
+            return null;
+        }
+
+        return $this->bensQuery()
+            ->whereIn('NumTomboSmarapd', array_unique([$codigo, $somenteDigitos]))
             ->first();
     }
 

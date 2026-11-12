@@ -2,11 +2,11 @@
 
 namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Almoxarifado;
 
-use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
+use App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\GraficoTransparencia;
 use App\Models\egap\Almoxarifado\MovimentacaoEstoque;
 use Filament\Support\RawJs;
 
-class ExecucaoOrcamentaria extends BaseChart
+class ExecucaoOrcamentaria extends GraficoTransparencia
 {
     protected ?string $heading = 'Execução Orçamentária';
 

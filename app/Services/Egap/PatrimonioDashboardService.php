@@ -335,7 +335,7 @@ class PatrimonioDashboardService
 
     protected function remember(string $key, array $filters, Closure $callback): mixed
     {
-        return Cache::store('file')->remember(
+        return Cache::store(config('cache.egap_store'))->remember(
             $this->dashboardCacheKey($key, $filters),
             now()->addMinutes(5),
             $callback

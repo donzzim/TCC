@@ -289,7 +289,7 @@ class TransferenciaBemResource extends PatrimonioResource
                 $userId = auth()->id();
 
                 try {
-                    DB::connection('egap')->transaction(function () use ($record, $userId): void {
+                    DB::transaction(function () use ($record, $userId): void {
                         $record->loadMissing('termoRel');
 
                         $termo = $record->termoRel;

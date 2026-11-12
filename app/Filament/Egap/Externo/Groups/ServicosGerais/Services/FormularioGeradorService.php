@@ -50,7 +50,7 @@ class FormularioGeradorService
             throw new RuntimeException("Não há perguntas cadastradas para o tipo \"{$contrato->tipo->getLabel()}\".");
         }
 
-        return DB::connection('egap')->transaction(function () use ($localidades, $perguntas, $periodo): int {
+        return DB::transaction(function () use ($localidades, $perguntas, $periodo): int {
             foreach ($localidades as $localidade) {
                 $formulario = Formulario::query()->create([
                     'periodo_id' => $periodo->id,

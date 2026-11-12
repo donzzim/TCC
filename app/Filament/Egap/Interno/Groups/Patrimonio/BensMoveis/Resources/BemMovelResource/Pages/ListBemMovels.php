@@ -5,12 +5,15 @@ namespace App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\BemMo
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\BemMovelResource;
 use App\Filament\Egap\Interno\Groups\Patrimonio\BensMoveis\Resources\BemMovelResource\Widgets\BensMoveisCountStats;
 use Filament\Actions\CreateAction;
+use App\Filament\Egap\Support\ContagemDaTabelaEmCache;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Model;
 use Livewire\Attributes\On;
 
 class ListBemMovels extends ListRecords
 {
+    use ContagemDaTabelaEmCache;
+
     protected static string $resource = BemMovelResource::class;
 
     protected function getHeaderActions(): array

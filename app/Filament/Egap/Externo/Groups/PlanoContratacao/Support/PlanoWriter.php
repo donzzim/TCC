@@ -48,7 +48,7 @@ class PlanoWriter
      */
     public function criar(array $cabecalho, array $itens, SituacaoPlano $etapa, ?int $usuarioId): PlanoContratacao
     {
-        return DB::connection('egap')->transaction(function () use ($cabecalho, $itens, $etapa, $usuarioId): PlanoContratacao {
+        return DB::transaction(function () use ($cabecalho, $itens, $etapa, $usuarioId): PlanoContratacao {
             $coordenadoria = (int) $cabecalho['cd_coordenadoria'];
 
             $plano = PlanoContratacao::create([
@@ -85,7 +85,7 @@ class PlanoWriter
      */
     public function atualizarEReenviar(PlanoContratacao $plano, array $itens, array $idsRemover, ?int $usuarioId): PlanoContratacao
     {
-        return DB::connection('egap')->transaction(function () use ($plano, $itens, $idsRemover, $usuarioId): PlanoContratacao {
+        return DB::transaction(function () use ($plano, $itens, $idsRemover, $usuarioId): PlanoContratacao {
             $etapa = SituacaoPlano::EmAnalise->value;
 
             if ($idsRemover !== []) {
@@ -128,7 +128,7 @@ class PlanoWriter
      */
     public function confirmarContratacao(PlanoContratacao $plano, array $itens, ?int $usuarioId): void
     {
-        DB::connection('egap')->transaction(function () use ($plano, $itens, $usuarioId): void {
+        DB::transaction(function () use ($plano, $itens, $usuarioId): void {
             foreach ($itens as $item) {
                 BemServico::query()
                     ->where('id_planocontratacao', $plano->id)
@@ -146,7 +146,7 @@ class PlanoWriter
 
     public function apagar(PlanoContratacao $plano): void
     {
-        DB::connection('egap')->transaction(function () use ($plano): void {
+        DB::transaction(function () use ($plano): void {
             BemServico::query()->where('id_planocontratacao', $plano->id)->delete();
             HistoricoPlano::query()->where('id_planocontratacao', $plano->id)->delete();
             $plano->delete();
@@ -158,7 +158,7 @@ class PlanoWriter
      */
     public function aprovar(PlanoContratacao $plano, ?int $usuarioId): void
     {
-        DB::connection('egap')->transaction(function () use ($plano, $usuarioId): void {
+        DB::transaction(function () use ($plano, $usuarioId): void {
             $etapa = SituacaoPlano::Concluido->value;
 
             $plano->update(['id_etapa' => $etapa]);
@@ -174,7 +174,7 @@ class PlanoWriter
      */
     public function devolver(PlanoContratacao $plano, string $comentario, ?int $usuarioId): void
     {
-        DB::connection('egap')->transaction(function () use ($plano, $comentario, $usuarioId): void {
+        DB::transaction(function () use ($plano, $comentario, $usuarioId): void {
             $etapa = SituacaoPlano::Devolvido->value;
 
             $plano->update(['id_etapa' => $etapa, 'comentario_adm' => $comentario]);
@@ -228,7 +228,7 @@ class PlanoWriter
     {
         return $this->colunasItem ??= array_values(array_filter(
             self::CAMPOS_ITEM,
-            fn (string $coluna): bool => Schema::connection('egap')->hasColumn('pla_bensservicos', $coluna),
+            fn (string $coluna): bool => Schema::hasColumn((new BemServico)->getTable(), $coluna),
         ));
     }
 }

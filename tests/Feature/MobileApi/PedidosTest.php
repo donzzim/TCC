@@ -216,6 +216,25 @@ class PedidosTest extends TestCase
             ->assertJsonValidationErrors('itens.0.tipo_atendimento');
     }
 
+    public function test_item_invalido_nao_deixa_pedido_gravado_pela_metade(): void
+    {
+        [$sessao, $plain] = $this->sessaoComEgapId();
+        [$payload] = $this->payloadConsumo($plain);
+        $payload['itens'][] = ['material_id' => 999999999, 'quantidade' => 1];
+        $ultimoId = (int) Pedidos::query()->max('id');
+
+        $this->withToken($plain)->postJson('/mobile-api/pedidos', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('itens.1.material_id');
+
+        $this->assertFalse(
+            Pedidos::query()
+                ->where('id', '>', $ultimoId)
+                ->where('Solicitante', $sessao->resolverAtual())
+                ->exists(),
+        );
+    }
+
     public function test_pedido_ignora_setor_enviado_pelo_cliente(): void
     {
         [$sessao, $plain] = $this->sessaoComEgapId();

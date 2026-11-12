@@ -212,7 +212,7 @@ class AtendimentoPedidosPage extends PedidoPage
         }
 
         try {
-            $resultado = DB::connection('egap')->transaction(function () {
+            $resultado = DB::transaction(function () {
                 $userId = auth()->id();
 
                 if (! $userId) {

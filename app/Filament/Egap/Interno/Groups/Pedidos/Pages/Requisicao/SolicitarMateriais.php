@@ -356,7 +356,7 @@ class SolicitarMateriais extends PedidoPage implements HasForms
             $this->validateBusinessRules($data);
 
             /** @var \App\Filament\Egap\Interno\Groups\Pedidos\Pages\Requisicao\Pedidos $pedido */
-            $pedido = DB::connection('egap')->transaction(function () use ($data, $userId) {
+            $pedido = DB::transaction(function () use ($data, $userId) {
                 $statusPedido = (int) ($data['idSituacao'] ?? self::STATUS_EM_ANALISE);
 
                 $pedido = Pedidos::query()->create([

@@ -2,10 +2,10 @@
 
 namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Almoxarifado;
 
-use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
+use App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\GraficoTransparencia;
 use App\Models\egap\Almoxarifado\MovimentacaoEstoque;
 
-class MateriaisConsumoAlmoxarifado extends BaseChart
+class MateriaisConsumoAlmoxarifado extends GraficoTransparencia
 {
     protected ?string $heading = 'Materiais de Consumo Fornecidos pelo Almoxarifado por Ano';
 

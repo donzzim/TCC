@@ -2,10 +2,10 @@
 
 namespace App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\Patrimonio;
 
-use App\Filament\Egap\Externo\Pages\Widgets\BaseChart;
+use App\Filament\Egap\Pages\Widgets\EgapDashboard\Transparencia\GraficoTransparencia;
 use App\Models\egap\Almoxarifado\Pedidos;
 
-class BensSolicitados extends BaseChart
+class BensSolicitados extends GraficoTransparencia
 {
     protected ?string $heading = 'Bens Solicitados por Ano';
 

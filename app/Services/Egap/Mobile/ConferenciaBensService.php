@@ -994,7 +994,11 @@ class ConferenciaBensService
     {
         $chave = $scope['unidade_judiciaria'].'|'.$scope['setor'];
 
-        return $this->transferenciasValidadasPorSetor[$chave] ??= $this->consultarTransferenciasValidadas($scope);
+        return $this->transferenciasValidadasPorSetor[$chave] ??= collect(TransferenciasValidadasCache::lembrar(
+            (int) $scope['unidade_judiciaria'],
+            (int) $scope['setor'],
+            fn (): array => $this->consultarTransferenciasValidadas($scope)->all(),
+        ));
     }
 
     /**
@@ -1002,23 +1006,25 @@ class ConferenciaBensService
      */
     private function consultarTransferenciasValidadas(array $scope): Collection
     {
-        $termosComArquivoValidado = ArquivoDigital::query()
-            ->select('termo')
-            ->whereIn('id', function (\Illuminate\Database\Query\Builder $query): void {
-                // o nome vem do model: a tabela é `egap_mat_arquivodigital` na
-                // conexão `emes`, e o literal sem prefixo quebrava a consulta
-                $query->selectRaw('max(id)')
-                    ->from((new ArquivoDigital)->getTable())
-                    ->groupBy('termo');
-            })
-            ->where('situacao', ArquivoDigital::SITUACAO_VALIDADO);
+        $arquivos = (new ArquivoDigital)->getTable();
+        $transferencias = (new TransferenciaBemMovel)->getTable();
 
         return TransferenciaBemMovel::query()
             // SetorAtual é VARCHAR: comparado com inteiro, o MySQL converte a
             // coluna em cada linha e ignora o índice (segundos por consulta)
             ->where('SetorAtual', (string) $scope['setor'])
             ->where('UnidadeAtual', $scope['unidade_judiciaria'])
-            ->whereIn('Termo', $termosComArquivoValidado)
+            ->whereExists(function (\Illuminate\Database\Query\Builder $query) use ($arquivos, $transferencias): void {
+                $query->selectRaw('1')
+                    ->from("{$arquivos} as arquivo")
+                    ->whereColumn('arquivo.termo', "{$transferencias}.Termo")
+                    ->where('arquivo.situacao', ArquivoDigital::SITUACAO_VALIDADO)
+                    ->where('arquivo.id', '=', function (\Illuminate\Database\Query\Builder $ultimo) use ($arquivos, $transferencias): void {
+                        $ultimo->selectRaw('max(ultimo.id)')
+                            ->from("{$arquivos} as ultimo")
+                            ->whereColumn('ultimo.termo', "{$transferencias}.Termo");
+                    });
+            })
             ->pluck('NumPatrimonio')
             ->filter(fn($id): bool => $id !== null && $id !== '')
             ->map(fn($id): int => (int) $id)

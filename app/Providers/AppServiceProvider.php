@@ -7,6 +7,7 @@ use App\Services\Auto\Support\StepStrategyFactory;
 use App\Services\Egap\LivewireComponentsService;
 use App\Auth\HybridUserProvider;
 use App\Services\Auth\TjesLdapService;
+use App\Services\Egap\Mobile\TransferenciasValidadasCache;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -44,6 +45,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        TransferenciasValidadasCache::registrarInvalidacao();
+
         RateLimiter::for('mobile-login', fn ($request) => Limit::perMinute(5)
             ->by(strtolower(trim((string) $request->input('login'))) . '|' . $request->ip()));
 

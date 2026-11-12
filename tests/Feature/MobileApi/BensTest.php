@@ -140,6 +140,40 @@ class BensTest extends TestCase
             ->assertJsonPath('data.patrimonio_anterior', $bem->NumerodePatAnterior);
     }
 
+    public function test_show_acha_bem_pelo_patrimonio_com_zeros_a_esquerda(): void
+    {
+        [, , $plain] = $this->usuarioComBens();
+
+        $bem = BemMovel::query()->where('NumPatrimonio', '>', 0)->orderBy('id')->first(['id', 'NumPatrimonio']);
+
+        $this->withToken($plain)->getJson('/mobile-api/bens/00'.$bem->NumPatrimonio)
+            ->assertOk()
+            ->assertJsonPath('data.patrimonio', (int) $bem->NumPatrimonio);
+    }
+
+    public function test_show_acha_bem_pelo_tombo_smarapd_numerico(): void
+    {
+        [, , $plain] = $this->usuarioComBens();
+
+        $bem = BemMovel::query()
+            ->where('NumTomboSmarapd', '>', 0)
+            ->limit(50)
+            ->get(['id', 'NumPatrimonio', 'NumTomboSmarapd', 'TomboSmarapd', 'NumerodePatAnterior'])
+            ->first(fn (BemMovel $b): bool => ! BemMovel::query()
+                ->where('NumPatrimonio', $b->NumTomboSmarapd)
+                ->orWhere('TomboSmarapd', (string) $b->NumTomboSmarapd)
+                ->orWhere('NumerodePatAnterior', (string) $b->NumTomboSmarapd)
+                ->exists());
+
+        if ($bem === null) {
+            $this->markTestSkipped('nenhum bem achável só pelo tombo SMARAPD numérico');
+        }
+
+        $this->withToken($plain)->getJson('/mobile-api/bens/'.$bem->NumTomboSmarapd)
+            ->assertOk()
+            ->assertJsonPath('data.id', $bem->id);
+    }
+
     public function test_show_bem_do_setor_marca_pertence(): void
     {
         [, $sessao, $plain] = $this->usuarioComBens();

@@ -79,11 +79,20 @@ class MovimentacaoEstoque extends Model
             return collect();
         }
 
+        $tabela = (new static)->getTable();
+
         return static::query()
-            ->whereIn('id', static::query()
-                ->selectRaw('MAX(id)')
-                ->whereIn('material', $materialIds)
-                ->groupBy('material'))
+            ->select("{$tabela}.*")
+            ->joinSub(
+                static::query()
+                    ->selectRaw('MAX(id) as id_atual')
+                    ->whereIn('material', $materialIds)
+                    ->groupBy('material'),
+                'estoque_atual',
+                'estoque_atual.id_atual',
+                '=',
+                "{$tabela}.id",
+            )
             ->get()
             ->keyBy('material');
     }
