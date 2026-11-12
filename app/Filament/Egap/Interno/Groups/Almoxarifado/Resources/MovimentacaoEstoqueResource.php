@@ -245,7 +245,7 @@ class MovimentacaoEstoqueResource extends AlmoxarifadoResource
             ])
             ->filters([
                 SelectFilter::make('tipo_movimentacao')
-                    ->label('Situação do Pedido')
+                    ->label('Tipo de Movimentação')
                     ->options(fn() => TipoMovimentacaoNotaFiscal::all()->pluck('descricao', 'id')->toArray())
                     ->searchable()
                     ->preload()
