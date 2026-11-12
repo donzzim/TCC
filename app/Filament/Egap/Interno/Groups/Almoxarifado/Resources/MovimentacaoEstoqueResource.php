@@ -10,6 +10,7 @@ use App\Filament\Egap\Support\TableColumns;
 use App\Filament\Egap\Support\TableDefaults;
 use App\Models\egap\Almoxarifado\MovimentacaoEstoque;
 use App\Models\egap\Almoxarifado\NotaFiscal;
+use App\Models\egap\Almoxarifado\SituacaoPedido;
 use App\Models\egap\Almoxarifado\TipoMovimentacaoNotaFiscal;
 use App\Models\egap\Cadastro\DescricaoDetalhada;
 use App\Models\egap\Cadastro\Setores;
@@ -22,6 +23,7 @@ use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -240,6 +242,14 @@ class MovimentacaoEstoqueResource extends AlmoxarifadoResource
                         : $query),
 
                 TableColumns::updatedBy('atualizadoPor.name'),
+            ])
+            ->filters([
+                SelectFilter::make('tipo_movimentacao')
+                    ->label('Situação do Pedido')
+                    ->options(fn() => TipoMovimentacaoNotaFiscal::all()->pluck('descricao', 'id')->toArray())
+                    ->searchable()
+                    ->preload()
+                    ->native(false),
             ]);
     }
 
