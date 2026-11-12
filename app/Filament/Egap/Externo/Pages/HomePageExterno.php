@@ -66,7 +66,7 @@ class HomePageExterno extends ExternoPage
     {
         $nome = $this->usuarioAtual()?->name;
 
-        return filled($nome) ? (string) str($nome)->before(' ') : 'visitante';
+        return filled($nome) ? (string) str($nome)->trim()->before(' ')->lower()->ucfirst() : 'visitante';
     }
 
     public function getHeading(): string

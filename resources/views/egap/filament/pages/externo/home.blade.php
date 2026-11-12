@@ -14,33 +14,39 @@
 
     <style>
         .eh {
-            --eh-tinta: #13294d;
-            --eh-tinta-2: #1c3866;
-            --eh-gravado: #c9d6ea;
+            --eh-titulo: #13294d;
             --eh-azul: #2563eb;
             --eh-ambar: #d97706;
-            --eh-ambar-fundo: #fef3c7;
             --eh-linha: #dbe2ec;
             --eh-texto: #1e293b;
             --eh-texto-2: #5b6779;
             --eh-realce: #eef3fb;
             --eh-furo: var(--gray-50, #f9fafb);
+            --eh-placa: #fff;
+            --eh-placa-borda: #bfd0ee;
+            --eh-placa-linha: #e2e8f0;
+            --eh-anel: #dbe7fb;
+            --eh-canhoto: #f5f8fd;
+            --eh-zero: #b6c0cd;
             --eh-display: "Archivo", "Inter", ui-sans-serif, system-ui, sans-serif;
             color: var(--eh-texto);
         }
 
         .dark .eh {
-            --eh-tinta: #172c52;
-            --eh-tinta-2: #213d6e;
-            --eh-gravado: #a9bcdb;
+            --eh-titulo: #fff;
             --eh-azul: #60a5fa;
             --eh-ambar: #fbbf24;
-            --eh-ambar-fundo: rgba(251, 191, 36, .14);
             --eh-linha: rgba(255, 255, 255, .09);
             --eh-texto: #e5e9f0;
             --eh-texto-2: #97a3b6;
             --eh-realce: rgba(96, 165, 250, .08);
             --eh-furo: var(--gray-950, #030712);
+            --eh-placa: #0b1220;
+            --eh-placa-borda: rgba(96, 165, 250, .35);
+            --eh-placa-linha: rgba(255, 255, 255, .08);
+            --eh-anel: rgba(96, 165, 250, .15);
+            --eh-canhoto: rgba(96, 165, 250, .05);
+            --eh-zero: rgba(255, 255, 255, .3);
         }
 
         .eh-placa {
@@ -48,10 +54,9 @@
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
             border-radius: 1.25rem;
-            background:
-                repeating-linear-gradient(115deg, rgba(255, 255, 255, .025) 0 2px, transparent 2px 9px),
-                linear-gradient(160deg, var(--eh-tinta-2), var(--eh-tinta) 60%);
-            color: #fff;
+            background: var(--eh-placa);
+            border: 1.5px solid var(--eh-placa-borda);
+            color: var(--eh-texto);
             overflow: hidden;
             transform-origin: 2.75rem 2.75rem;
             animation: eh-pendura .9s cubic-bezier(.3, 1.6, .5, 1) both;
@@ -71,7 +76,7 @@
             height: 1.25rem;
             border-radius: 999px;
             background: var(--eh-furo);
-            box-shadow: inset 0 2px 3px rgba(0, 0, 0, .35), 0 0 0 4px rgba(255, 255, 255, .08);
+            box-shadow: inset 0 2px 3px rgba(0, 0, 0, .3), 0 0 0 4px var(--eh-anel);
         }
 
         .eh-corpo {
@@ -88,13 +93,13 @@
             font-weight: 700;
             font-size: .8125rem;
             letter-spacing: .04em;
-            color: var(--eh-gravado);
+            color: var(--eh-texto-2);
         }
 
         .eh-engrenagem {
             width: 1rem;
             height: 1rem;
-            color: #fbbf24;
+            color: var(--eh-ambar);
         }
 
         .eh-saudacao {
@@ -106,6 +111,7 @@
             line-height: 1.02;
             letter-spacing: -.02em;
             overflow-wrap: anywhere;
+            color: var(--eh-titulo);
         }
 
         .eh-lotacao {
@@ -114,12 +120,12 @@
             gap: .75rem 2.5rem;
             margin-top: 2rem;
             padding-top: 1.25rem;
-            border-top: 1px solid rgba(255, 255, 255, .14);
+            border-top: 1px solid var(--eh-placa-linha);
         }
 
         .eh-campo dt {
             font-size: .75rem;
-            color: var(--eh-gravado);
+            color: var(--eh-texto-2);
         }
 
         .eh-campo dd {
@@ -134,8 +140,8 @@
             display: flex;
             flex-direction: column;
             padding: 2rem 1.75rem 1.75rem 2rem;
-            background: rgba(255, 255, 255, .04);
-            border-left: 2px dashed rgba(255, 255, 255, .22);
+            background: var(--eh-canhoto);
+            border-left: 2px dashed var(--eh-placa-borda);
         }
 
         .eh-canhoto::before,
@@ -147,6 +153,7 @@
             height: 1.5rem;
             border-radius: 999px;
             background: var(--eh-furo);
+            box-shadow: inset 0 0 0 1.5px var(--eh-placa-borda);
         }
 
         .eh-canhoto::before { top: -0.75rem; }
@@ -157,12 +164,13 @@
             font-stretch: 112%;
             font-weight: 700;
             font-size: 1rem;
+            color: var(--eh-titulo);
         }
 
         .eh-canhoto-resumo {
             margin-top: .2rem;
             font-size: .8125rem;
-            color: var(--eh-gravado);
+            color: var(--eh-texto-2);
         }
 
         .eh-pendencias {
@@ -178,19 +186,17 @@
             gap: .75rem;
             padding: .55rem .6rem .55rem 0;
             border-radius: .6rem;
-            color: #fff;
+            color: var(--eh-texto);
             text-decoration: none;
         }
 
-        .eh-pendencia:hover { background: rgba(255, 255, 255, .07); }
+        .eh-pendencia:hover { background: var(--eh-realce); }
 
         .eh-pendencia:focus-visible,
         .eh-servico:focus-visible {
             outline: 2px solid var(--eh-azul);
             outline-offset: 2px;
         }
-
-        .eh-pendencia:focus-visible { outline-color: #fbbf24; }
 
         .eh-numero {
             font-family: var(--eh-display);
@@ -200,10 +206,10 @@
             line-height: 1;
             text-align: right;
             font-variant-numeric: tabular-nums;
-            color: rgba(255, 255, 255, .45);
+            color: var(--eh-zero);
         }
 
-        .eh-pendencia.tem .eh-numero { color: #fbbf24; }
+        .eh-pendencia.tem .eh-numero { color: var(--eh-ambar); }
 
         .eh-pendencia-nome {
             font-size: .875rem;
@@ -213,7 +219,7 @@
         .eh-pendencia-icone {
             width: 1rem;
             height: 1rem;
-            color: var(--eh-gravado);
+            color: var(--eh-texto-2);
         }
 
         .eh-indice {
@@ -307,7 +313,7 @@
 
             .eh-canhoto {
                 border-left: 0;
-                border-top: 2px dashed rgba(255, 255, 255, .22);
+                border-top: 2px dashed var(--eh-placa-borda);
                 padding: 1.75rem 1.5rem;
             }
 
