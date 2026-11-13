@@ -62,19 +62,21 @@ A primeira versão do app funcionava, mas a sessão mobile não seguia o modelo 
 
 ## 2. Telas
 
-Capturas do app rodando em `npx expo start --web`, em viewport de celular (390×844), com o usuário de teste `mobile.teste`.
+Capturas do build web publicado (`/egap-mobile`), em viewport de celular (390×844) e tema escuro, com o usuário de teste `mobile.teste`. Atualizadas em 13/11/2026.
 
 | Login | Escolha do setor | Início |
 |:---:|:---:|:---:|
 | <img src="egap-mobile/docs/telas/01-login.png" width="240" alt="Tela de login"> | <img src="egap-mobile/docs/telas/02-setor.png" width="240" alt="Escolha do setor"> | <img src="egap-mobile/docs/telas/03-inicio.png" width="240" alt="Início"> |
-| **Bens** | **Detalhe do bem** | **Conferência** |
-| <img src="egap-mobile/docs/telas/04-bens.png" width="240" alt="Lista de bens"> | <img src="egap-mobile/docs/telas/05-detalhe-bem.png" width="240" alt="Detalhe do bem"> | <img src="egap-mobile/docs/telas/06-conferencia.png" width="240" alt="Conferência"> |
-| **Pedidos** | **Catálogo (consumo)** | **Carrinho** |
-| <img src="egap-mobile/docs/telas/07-pedidos.png" width="240" alt="Pedidos"> | <img src="egap-mobile/docs/telas/08-catalogo.png" width="240" alt="Catálogo de materiais"> | <img src="egap-mobile/docs/telas/09-carrinho.png" width="240" alt="Carrinho"> |
+| **Troca de setor (cabeçalho)** | **Bens** | **Detalhe do bem** |
+| <img src="egap-mobile/docs/telas/13-trocar-setor.png" width="240" alt="Troca de setor pelo cabeçalho"> | <img src="egap-mobile/docs/telas/04-bens.png" width="240" alt="Lista de bens"> | <img src="egap-mobile/docs/telas/05-detalhe-bem.png" width="240" alt="Detalhe do bem"> |
+| **Conferência** | **Pedidos** | **Catálogo (consumo)** |
+| <img src="egap-mobile/docs/telas/06-conferencia.png" width="240" alt="Conferência"> | <img src="egap-mobile/docs/telas/07-pedidos.png" width="240" alt="Pedidos"> | <img src="egap-mobile/docs/telas/08-catalogo.png" width="240" alt="Catálogo de materiais"> |
+| **Carrinho** | **Aviso de notificações** | **Notificações** |
+| <img src="egap-mobile/docs/telas/09-carrinho.png" width="240" alt="Carrinho"> | <img src="egap-mobile/docs/telas/10-aviso-notificacoes.png" width="240" alt="Aviso de notificações não lidas"> | <img src="egap-mobile/docs/telas/11-notificacoes.png" width="240" alt="Notificações"> |
 | **Perfil** | | |
-| <img src="egap-mobile/docs/telas/10-perfil.png" width="240" alt="Perfil"> | | |
+| <img src="egap-mobile/docs/telas/12-perfil.png" width="240" alt="Perfil"> | | |
 
-> Na captura, a conferência do setor de teste já estava **finalizada**, por isso as ações aparecem desabilitadas. A tela de leitura usa a câmera do aparelho e não aparece aqui. As capturas são da primeira versão desta reescrita: não mostram o seletor de setor no cabeçalho, as fotos dos materiais, as notificações nem o detalhe do pedido.
+> Nas capturas, nenhum inventário estava "Em execução" no banco, por isso a conferência aparece bloqueada e com as ações desabilitadas. O usuário de teste não tem pedidos, então o histórico e o detalhe do pedido não aparecem. As notificações foram criadas só para a captura e apagadas depois. A tela de leitura usa a câmera do aparelho e não aparece aqui.
 
 ---
 
@@ -669,4 +671,3 @@ egap-mobile/
 
 - Permissão própria para pedidos/inventário no lugar de `egap_access`.
 - Modo offline também para divergências e não localizados (hoje só as leituras entram na fila).
-- Novas capturas de tela com o seletor de setor, as fotos e as notificações.
