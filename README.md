@@ -62,7 +62,7 @@ A primeira versão do app funcionava, mas a sessão mobile não seguia o modelo 
 
 ## 2. Telas
 
-Capturas do build web publicado (`/egap-mobile`), em viewport de celular (390×844) e tema escuro, com o usuário de teste `mobile.teste`. Atualizadas em 13/11/2026.
+Capturas do build web publicado (`/egap-mobile`), em viewport de celular (390×844) e tema claro, com o usuário de teste `mobile.teste`. Atualizadas em 13/11/2026.
 
 | Login | Escolha do setor | Início |
 |:---:|:---:|:---:|
