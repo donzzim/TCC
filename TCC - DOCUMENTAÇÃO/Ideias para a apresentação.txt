@@ -1,0 +1,82 @@
+IDEIAS PARA ACRESCENTAR À APRESENTAÇÃO DO TCC (EGAP MOBILE)
+Arquivo da apresentação: Apresentação - TCC EGAP.pptx (nesta pasta)
+Registrado em 23/11/2026
+
+
+1. FOTOS DO INVENTÁRIO ATUAL (slide 4: "Como o inventário é feito hoje")
+   - Já existem três espaços reservados, com o texto "Espaço para foto".
+   - Fotos sugeridas, na ordem das legendas:
+       a) Relação de bens impressa (a lista usada para orientar a vistoria)
+       b) Anotação na sala, durante a vistoria (prancheta, caneta, etiqueta do bem)
+       c) Lançamento posterior no computador (alguém digitando no EGAP)
+   - Como trocar: apagar o quadro pontilhado, o ícone da câmera e o texto
+     "Espaço para foto"; inserir a foto no mesmo lugar e manter a legenda abaixo.
+   - Cuidado: não mostrar rosto, nome ou CPF de servidores sem autorização.
+
+
+2. ANTES E DEPOIS DA MESMA SALA
+   - Fotografar o mesmo ambiente duas vezes: uma com a prancheta/planilha,
+     outra com o celular lendo a plaqueta.
+   - Lugar sugerido: slide 6 ("Do papel ao aplicativo, etapa por etapa") ou um
+     slide novo logo depois dele.
+
+
+3. CLOSE DAS PLAQUETAS PATRIMONIAIS
+   - Fotos de etiquetas em bom estado, desgastadas e com tombo antigo.
+   - Mostram por que a digitação manual gera erro e por que o app aceita
+     digitar o código quando a câmera não consegue ler.
+   - Lugar sugerido: slide 3 (problema) ou slide 8 (fluxo da conferência).
+
+
+4. VÍDEO OU GIF CURTO DA LEITURA
+   - 10 a 15 segundos: abrir a conferência, ler uma plaqueta e ver o bem
+     passar para "localizado".
+   - No PowerPoint: Inserir > Vídeo > Este dispositivo.
+   - Serve também como plano B se a demonstração ao vivo falhar.
+
+
+5. DEMONSTRAÇÃO AO VIVO
+   - Abrir /egap-mobile no celular durante a apresentação.
+   - Conferir antes: rede do local, usuário de teste, inventário em execução
+     e um bem do setor à mão para ler.
+   - Ter o vídeo do item 4 pronto caso a rede falhe.
+
+
+6. NÚMEROS DO INVENTÁRIO MANUAL
+   - Levantar com quem faz o inventário hoje (mesmo que sejam estimativas):
+       * quantos bens tem um setor típico;
+       * quanto tempo leva a conferência de um setor;
+       * quanto tempo leva o lançamento depois da vistoria;
+       * quantas folhas são impressas;
+       * quantas correções costumam aparecer depois.
+   - Dá escala ao problema e conversa com os indicadores que o artigo propõe
+     para o piloto (tempo por bem, transcrições, correções, pendências).
+   - Lugar sugerido: slide 3 ou 4, como números grandes em destaque.
+
+
+7. DEPOIMENTO DE QUEM FAZ O INVENTÁRIO
+   - Uma frase curta de um servidor sobre a parte mais trabalhosa hoje.
+   - Pedir autorização para citar (ou citar só o cargo/setor).
+
+
+8. PAINEL WEB ACOMPANHANDO EM TEMPO REAL
+   - Captura do painel (Filament) mostrando o progresso do setor enquanto
+     alguém confere pelo app.
+   - Reforça a ideia de "uma só fonte de verdade" (slide 7, arquitetura).
+
+
+9. RESULTADO DE UM PILOTO (se der tempo antes da defesa)
+   - Conferir um setor pequeno pelo app e anotar: tempo gasto, bens lidos,
+     não localizados, divergências e pendências no final.
+   - Se possível, comparar com o mesmo setor no procedimento manual.
+   - Vale mais que qualquer estimativa; entraria antes do slide 14.
+
+
+10. OUTROS AJUSTES POSSÍVEIS
+   - Diagrama do banco (entidades centrais do artigo) como slide extra de
+     reserva, para perguntas da banca.
+   - Slide de reserva com os endpoints da API (/mobile-api) para perguntas
+     técnicas.
+   - Slide de reserva com o teste de carga detalhado (degraus de 10 a 150
+     usuários, 6 a 8 requisições por segundo com 8 processos PHP).
+   - Ensaiar com cronômetro: a meta é cerca de 1,5 minuto por slide.

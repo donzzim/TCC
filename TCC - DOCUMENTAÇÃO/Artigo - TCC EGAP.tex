@@ -1,0 +1,925 @@
+
+\documentclass[12pt,a4paper]{article}
+
+% ----------------------------------------------------------
+% Pacotes básicos
+% ----------------------------------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[brazilian]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{geometry}
+\usepackage{indentfirst}
+\usepackage{setspace}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xurl}
+\usepackage{caption}
+
+\geometry{top=3cm,bottom=2cm,left=3cm,right=2cm}
+\onehalfspacing
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0cm}
+\renewcommand{\arraystretch}{1.18}
+\setlist[itemize]{leftmargin=1.05cm,itemsep=0.08cm,topsep=0.10cm}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\renewcommand{\tablename}{Quadro}
+\renewcommand{\listtablename}{LISTA DE QUADROS}
+\addto\captionsbrazilian{%
+  \renewcommand{\tablename}{Quadro}%
+  \renewcommand{\listtablename}{LISTA DE QUADROS}%
+}
+\captionsetup[table]{name=Quadro,labelsep=period}
+
+\newcommand{\autor}{Lucas César Soares Santos}
+\newcommand{\instituicao}{Universidade Vila Velha}
+\newcommand{\localdefesa}{Vila Velha/ES}
+\newcommand{\anodefesa}{2026}
+\newcommand{\curso}{Engenharia de Computação}
+\newcommand{\orientador}{Abrantes Araújo Silva Filho}
+\newcommand{\titulotrabalho}{Desenvolvimento de Aplicação Mobile Integrada ao EGAP para Substituição do Inventário Patrimonial Manual}
+
+\hypersetup{
+  pdftitle={Desenvolvimento de Aplicação Mobile Integrada ao EGAP para Substituição do Inventário Patrimonial Manual},
+  pdfauthor={Lucas César Soares Santos},
+  pdfsubject={Substituição do inventário patrimonial manual por aplicação mobile integrada ao EGAP},
+  pdfkeywords={EGAP, inventário mobile, Laravel, Filament, Expo, React Native, gestão patrimonial, administração pública}
+}
+
+\begin{document}
+\hypersetup{pageanchor=false}
+
+% ----------------------------------------------------------
+% Capa
+% ----------------------------------------------------------
+\begin{titlepage}
+    \centering
+    {\large\textbf{\MakeUppercase{\instituicao}}\par}
+    \vspace{2.5cm}
+    {\large\textbf{\MakeUppercase{\autor}}\par}
+    \vspace{3.2cm}
+    {\Large\bfseries\MakeUppercase{\titulotrabalho}\par}
+    \vfill
+    {\large\MakeUppercase{\localdefesa}\par}
+    {\large\anodefesa\par}
+\end{titlepage}
+
+% ----------------------------------------------------------
+% Folha de rosto e folha de aprovação, conforme o modelo consultado
+% ----------------------------------------------------------
+\begin{titlepage}
+    \centering
+    {\large\textbf{\MakeUppercase{\autor}}\par}
+    \vspace{3cm}
+    {\Large\bfseries\MakeUppercase{\titulotrabalho}\par}
+    \vspace{3cm}
+    \hfill
+    \begin{minipage}{0.52\textwidth}
+        Trabalho de Conclusão de Curso apresentado à \instituicao, como requisito parcial para obtenção do grau no curso de \curso.
+
+        \vspace{0.5cm}
+        Orientação: \orientador.
+    \end{minipage}
+    \vfill
+    {\large\MakeUppercase{\localdefesa}\par}
+    {\large\anodefesa\par}
+\end{titlepage}
+
+\begin{titlepage}
+    \centering
+    {\large\textbf{\MakeUppercase{\autor}}\par}
+    \vspace{1.8cm}
+    {\Large\bfseries\MakeUppercase{\titulotrabalho}\par}
+    \vspace{1.8cm}
+    \begin{minipage}{\textwidth}
+        Trabalho de Conclusão de Curso apresentado à \instituicao, como requisito parcial para obtenção do grau no curso de \curso, sob orientação de \orientador.
+    \end{minipage}
+    \vspace{1.5cm}
+
+    {\large\textbf{BANCA EXAMINADORA}\par}
+    \vspace{1.3cm}
+    \rule{10cm}{0.4pt}\par
+    \orientador\ -- Orientador(a)\par
+    \vspace{1.1cm}
+    \rule{10cm}{0.4pt}\par
+    \textit{[Membro da banca]}\par
+    \vspace{1.1cm}
+    \rule{10cm}{0.4pt}\par
+    \textit{[Membro da banca]}\par
+    \vfill
+    {\large\localdefesa, \anodefesa\par}
+\end{titlepage}
+
+% Dedicatória, agradecimentos e epígrafe são opcionais e devem ser
+% acrescentados apenas com texto pessoal definido pelo autor.
+
+% ----------------------------------------------------------
+% Resumo
+% ----------------------------------------------------------
+\hypersetup{pageanchor=true}
+\pagenumbering{roman}
+\section*{Resumo}
+
+Este trabalho apresenta o desenvolvimento e a análise de uma aplicação mobile integrada ao EGAP para substituir o procedimento manual de registro e consolidação do inventário de bens móveis em unidades judiciárias. O problema investigado é a separação entre a verificação física do bem e seu lançamento no sistema, que exige anotações intermediárias e posterior transcrição. A proposta transfere esse registro para o dispositivo móvel utilizado durante a vistoria, preservando escopo de lotação, regras patrimoniais e rastreabilidade. A solução reúne uma API no backend Laravel 12 e um aplicativo Expo/React Native (E-Gap Mobile), com autenticação via Laravel Sanctum, escolha de setor entre as lotações do usuário, consulta de bens, leitura de plaqueta por câmera, registro de bens localizados, não localizados ou divergentes, fila de leituras para envio após recuperação da conexão e finalização controlada da atividade. O painel administrativo Filament mantém a gestão e o acompanhamento do inventário; pedidos de materiais são funcionalidades complementares.
+
+Metodologicamente, trata-se de pesquisa aplicada, qualitativa e descritiva, conduzida como estudo de caso tecnológico por análise documental do código-fonte, complementada por testes automatizados da API e por um teste de carga com até 150 usuários simultâneos. Os resultados mostraram 74 testes automatizados cobrindo autenticação, sessão, bens, conferência, pedidos e notificações; ausência de falhas de infraestrutura sob carga; e otimizações que reduziram consultas críticas do aplicativo de centenas de milissegundos para poucas dezenas. Não foram feitas medições de produtividade com usuários em campo; por isso, redução de retrabalho e ganho de confiabilidade operacional permanecem como impactos esperados a serem aferidos em implantação acompanhada.
+
+\noindent\textbf{Palavras-chave:} inventário patrimonial manual; aplicação mobile; conferência de bens; gestão patrimonial pública; EGAP.
+
+\clearpage
+\listoftables
+\clearpage
+\renewcommand{\contentsname}{SUMÁRIO}
+\begingroup
+\singlespacing
+\tableofcontents
+\endgroup
+\clearpage
+\pagenumbering{arabic}
+
+% ----------------------------------------------------------
+% Introdução
+% ----------------------------------------------------------
+\section{Introdução}
+
+A transformação digital na administração pública demanda que procedimentos fragmentados e pouco rastreáveis sejam apoiados por sistemas capazes de centralizar informações, padronizar rotinas e subsidiar decisões. Em organizações públicas com grande volume de bens, documentos, solicitações e fluxos internos, a modernização tecnológica não se resume à criação de telas digitais, mas envolve a reorganização de processos, a integração entre módulos, a definição de regras de negócio e a produção de registros confiáveis sobre as ações executadas.
+
+No setor público, a gestão patrimonial deve manter registros analíticos dos bens permanentes e apoiar o inventário das unidades administrativas, conforme estabelece a Lei n.º 4.320/1964 \cite{brasil4320}. A NBC TSP 07 também disciplina reconhecimento, mensuração e controle do ativo imobilizado público \cite{cfcnbctsp07}. Em unidades administrativas e judiciárias, computadores, mobiliários e equipamentos precisam ser incorporados, movimentados, inventariados e eventualmente baixados. Quando esses processos dependem de conferência manual ou de registro posterior das informações, aumentam-se os riscos de inconsistência e retrabalho.
+
+Nesse cenário, o EGAP se apresenta, no código-fonte analisado, como um sistema administrativo integrado voltado ao apoio de rotinas patrimoniais e operacionais. O projeto é composto por duas aplicações integradas: a aplicação web administrativa, que ocupa a raiz do repositório e é construída com Laravel 12 e Filament 4; e o aplicativo \texttt{egap-mobile} (E-Gap Mobile), construído com Expo e React Native para apoiar atividades de consulta, conferência e operação patrimonial em campo \cite{egap-repo}. O aplicativo é destinado aos servidores do Tribunal de Justiça do Espírito Santo (TJES) e também é publicado como aplicação web no próprio servidor, em \texttt{/egap-mobile}.
+
+O foco principal deste TCC é a substituição do inventário manual pela aplicação mobile integrada ao EGAP. Neste trabalho, inventário manual designa o procedimento em que os resultados da conferência física são anotados em meios intermediários e posteriormente transcritos para o sistema. A substituição proposta mantém a vistoria presencial e a responsabilidade do servidor, mas passa a registrar os resultados no aplicativo durante a conferência, com persistência no EGAP após validação pelo backend. A digitação de códigos permanece como alternativa quando a câmera não consegue ler a etiqueta.
+
+O aplicativo depende do backend, da API, da autenticação e das regras patrimoniais para executar esse fluxo. Esses componentes são analisados como suporte à substituição do procedimento manual. Os demais módulos administrativos são contextualizados apenas nas relações necessárias ao inventário; pedidos de materiais e outras operações complementares não constituem o objetivo central da pesquisa.
+
+A estrutura do trabalho toma como referência o modelo de TCC consultado da Faculdade Assis Gurgacz, organizando a investigação em introdução, referencial teórico, metodologia, análise, resultados, recomendações e conclusão \cite{modelo-fag}. O presente estudo adapta essa estrutura a um produto de software em evolução, delimitando a aplicação mobile como contribuição específica dentro do EGAP.
+
+\subsection{Formulação do tema}
+
+O tema deste trabalho é a substituição do procedimento manual de inventário patrimonial por uma aplicação móvel integrada ao EGAP. O estudo relaciona o registro digital durante a conferência física, a integração cliente-servidor e a rastreabilidade dos apontamentos, tendo como objeto concreto o aplicativo \texttt{egap-mobile} e os serviços da API \texttt{/mobile-api} necessários ao inventário.
+
+\subsection{Caracterização do problema}
+
+O processo de conferência patrimonial tradicionalmente exige que servidores verifiquem fisicamente os bens existentes em determinado setor, comparem os códigos patrimoniais com os registros do sistema e atualizem informações sobre localização, situação e divergências. Quando esse fluxo ocorre de forma manual ou com apoio apenas de telas administrativas convencionais, surgem limitações operacionais importantes.
+
+A primeira limitação está relacionada à distância entre o sistema e o local onde o trabalho é executado. A conferência de bens acontece fisicamente nos setores, salas, depósitos ou unidades administrativas, enquanto o sistema web tradicional é acessado em computadores fixos. Essa separação cria um fluxo indireto: o servidor observa o bem no ambiente físico, anota ou memoriza o código, consulta posteriormente o sistema e então registra a informação. Quanto maior esse intervalo, maior o risco de erro.
+
+A segunda limitação envolve a consulta individual de códigos patrimoniais. Em ambientes com grande quantidade de bens, a digitação manual de números, tombos, patrimônios anteriores ou identificadores alternativos pode gerar inconsistências. Além disso, bens com etiquetas desgastadas, formatos diferentes de identificação ou registros antigos dificultam a conferência.
+
+A terceira limitação diz respeito à rastreabilidade do inventário. Em um processo de conferência, não basta informar que determinado bem existe; é necessário registrar se ele pertence ao setor do usuário, se está em situação conferível, se já foi conferido, se está em transferência, se apresenta divergência ou se não foi localizado. Essas informações precisam ser persistidas de maneira consistente, respeitando ciclos de inventário e evitando duplicidade.
+
+A quarta limitação está ligada à consolidação dos registros. A substituição do procedimento manual precisa preservar a vinculação de cada apontamento ao inventário, ao setor e ao usuário responsável. Por isso, o aplicativo deve utilizar as mesmas regras e a mesma base patrimonial do EGAP, evitando uma consolidação paralela que exija nova transcrição.
+
+\subsubsection{Procedimento manual e fluxo proposto}
+
+O Quadro~\ref{tab:manual-mobile} compara o procedimento tomado como problema do projeto com o fluxo implementado. A comparação descreve a mudança de processo pretendida; não representa uma medição de desempenho nem comprova adoção institucional.
+
+\begin{table}[H]
+\centering
+\caption{Substituição do procedimento manual pelo fluxo mobile}
+\label{tab:manual-mobile}
+\begin{tabularx}{\textwidth}{L{3.5cm}YY}
+\toprule
+\textbf{Etapa} & \textbf{Procedimento manual} & \textbf{Fluxo com a aplicação mobile} \\
+\midrule
+Preparação & Consulta ou obtenção de uma relação de bens para orientar a vistoria. & Consulta dos bens e das pendências do setor no aplicativo. \\
+Identificação & Leitura visual e anotação do código para lançamento posterior. & Leitura pela câmera ou digitação diretamente no aplicativo. \\
+Registro & Anotações intermediárias sobre localização e ocorrências. & Registro de localizados, não localizados e divergências no fluxo de conferência. \\
+Consolidação & Transcrição e comparação posterior das anotações com o sistema. & Validação e gravação pela API na base do EGAP; leituras sem rede aguardam envio. \\
+Acompanhamento & Verificação das pendências após reunião e lançamento dos registros. & Consulta do resumo e das pendências já processadas pelo backend. \\
+Encerramento & Consolidação dos apontamentos antes de concluir a atividade. & Finalização pelo aplicativo, condicionada às regras e pendências do setor. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+A verificação da existência e das condições do bem permanece presencial nos dois fluxos. O que se substitui é o procedimento de anotação intermediária e transcrição posterior. Leituras mantidas na fila local ainda dependem de envio e validação para integrar o registro oficial; divergências, não localizados e finalização exigem conexão.
+
+\subsection{Formulação do problema}
+
+Diante desse contexto, a questão central que orienta este trabalho é:
+
+\begin{quote}
+Como substituir o procedimento manual de registro e consolidação do inventário patrimonial por uma aplicação mobile integrada ao EGAP, permitindo registrar a conferência em campo e preservando as regras patrimoniais, o escopo do usuário autenticado e a rastreabilidade das informações?
+\end{quote}
+
+Essa formulação evidencia que o desafio não se limita à criação de um aplicativo. O problema envolve integração entre camadas, segurança, autenticação, modelagem de dados, regras de negócio, interface mobile, usabilidade em campo e compatibilidade com fluxos administrativos existentes.
+
+\subsection{Proposta de solução}
+
+A solução implementada consiste em uma aplicação mobile integrada ao EGAP por meio de uma API específica sob o prefixo \texttt{/mobile-api}. A aplicação permite que o usuário autenticado consulte bens patrimoniais, visualize indicadores do seu setor, leia códigos utilizando a câmera do dispositivo, acompanhe a lista de bens vinculados ao seu escopo e realize ações de conferência de inventário.
+
+No backend, a API é construída em Laravel 12 e utiliza autenticação por Laravel Sanctum. A autenticação retorna um token associado ao usuário e cria uma sessão mobile presa a esse token, na qual o backend resolve o escopo operacional a partir das informações institucionais, como usuário, vínculo EGAP, unidade judiciária e setor. Como muitos servidores têm mais de uma lotação, o usuário escolhe o setor após o login e pode trocá-lo depois, sempre entre as suas próprias lotações. O aplicativo, portanto, não define por conta própria quais bens o usuário pode acessar. Essa decisão permanece no servidor, que atua como fonte de verdade das regras de negócio.
+
+A solução mobile contempla funcionalidades como:
+
+\begin{itemize}
+    \item autenticação por CPF, usuário ou e-mail, com geração de token de acesso;
+    \item escolha e troca do setor da sessão entre as lotações do usuário;
+    \item exibição de painel inicial com progresso da conferência, bens e valores do setor;
+    \item consulta manual de patrimônio por código e detalhe do bem com foto;
+    \item leitura de plaqueta por câmera;
+    \item listagem paginada de bens do setor com busca;
+    \item conferência do inventário em execução, com filtros por status;
+    \item validação e localização do bem numa única leitura;
+    \item fila de leituras feitas sem rede, reenviadas automaticamente;
+    \item registro de bens não localizados com justificativa;
+    \item registro de divergências com o valor encontrado por campo;
+    \item finalização da atividade do setor quando não houver pendências;
+    \item notificações para acompanhamento do inventário.
+\end{itemize}
+
+Como funcionalidades complementares, o aplicativo também permite criar e acompanhar pedidos de materiais e receber notificações desses pedidos.
+
+A proposta substitui a sequência de anotação intermediária e lançamento posterior pelo registro no aplicativo durante a vistoria. A conferência física continua a ser executada pelo servidor, enquanto a validação e a consolidação dos registros passam a ocorrer no EGAP. A efetividade dessa substituição em rotina institucional ainda deve ser avaliada em uso real.
+
+\subsection{Objetivos}
+
+\subsubsection{Objetivo geral}
+
+Desenvolver e analisar uma aplicação mobile integrada ao EGAP destinada a substituir o procedimento manual de registro e consolidação do inventário de bens móveis, permitindo a conferência em campo com validação das regras patrimoniais e rastreabilidade dos registros.
+
+\subsubsection{Objetivos específicos}
+
+\begin{itemize}
+    \item caracterizar o fluxo manual de inventário e as etapas intermediárias de anotação e transcrição que a solução pretende substituir;
+    \item definir o fluxo de conferência pelo aplicativo, desde a identificação do bem até a finalização da atividade do setor;
+    \item implementar e analisar a integração entre aplicativo, API e base patrimonial existente;
+    \item disponibilizar consulta, leitura por câmera, registro de localização, não localização e divergência, além de acompanhamento das pendências;
+    \item preservar a autorização por lotação e as regras patrimoniais no backend;
+    \item verificar os fluxos implementados por meio da análise do código e das evidências técnicas disponíveis;
+    \item estabelecer indicadores para avaliar, em piloto posterior, a substituição do procedimento manual quanto a tempo, retrabalho e qualidade dos registros.
+\end{itemize}
+
+\subsection{Justificativa}
+
+A gestão patrimonial em órgãos públicos exige precisão, controle e rastreabilidade. Bens permanentes representam recursos públicos e precisam ser acompanhados durante todo o ciclo de vida, desde a incorporação até eventual baixa, em coerência com os registros analíticos e o inventário exigidos pela legislação \cite{brasil4320}. Falhas de localização, divergências cadastrais e registros incompletos podem comprometer a confiabilidade das informações.
+
+A aplicação mobile se justifica por substituir as anotações intermediárias e a transcrição posterior pelo registro digital no local da conferência. O servidor utiliza o dispositivo para identificar o bem, consultar seus dados e registrar o resultado da vistoria. Essa mudança tem potencial para reduzir retrabalho e erros de transcrição, mantendo os controles institucionais no EGAP. Tais benefícios são esperados e dependem de medição em campo.
+
+Do ponto de vista técnico, a proposta é relevante por integrar Laravel 12, Filament 4, Laravel Sanctum, Expo, React Native, TypeScript, SecureStore e leitura por câmera, dependências constatadas no repositório. Do ponto de vista acadêmico, o trabalho documenta como uma aplicação mobile pode ser concebida não como produto isolado, mas como extensão de um sistema administrativo integrado, respeitando regras de negócio, camadas arquiteturais e dependências de um banco relacional legado.
+
+% ----------------------------------------------------------
+% Referencial teórico
+% ----------------------------------------------------------
+\section{Referencial teórico}
+
+Esta seção apresenta os fundamentos conceituais e tecnológicos que sustentam o desenvolvimento da aplicação mobile integrada ao EGAP. A revisão não se limita às ferramentas utilizadas, mas abrange também sistemas de informação administrativos, transformação digital no setor público, programação orientada a objetos, arquitetura de software, APIs, segurança, aplicações móveis corporativas e persistência relacional.
+
+\subsection{Sistemas de informação administrativos integrados}
+
+Sistemas de informação administrativos têm como objetivo apoiar atividades internas de uma organização, centralizando dados e padronizando processos. Em ambientes públicos, tais sistemas precisam lidar com exigências adicionais de rastreabilidade, prestação de contas, controle de acesso e aderência normativa. A informatização isolada de tarefas específicas pode gerar ganhos pontuais, mas os maiores benefícios tendem a surgir quando diferentes módulos compartilham dados e regras de negócio, em arquitetura coerente com os requisitos do domínio \cite{sommerville}.
+
+No contexto do EGAP, a integração é essencial porque os fluxos de patrimônio, almoxarifado, pedidos e agendamento se relacionam. Um pedido pode gerar necessidade de atendimento por bens permanentes ou itens de consumo; uma transferência patrimonial pode exigir termo de responsabilidade; uma movimentação pode impactar a localização de bens; e um inventário depende da consistência dos registros de unidade, setor e situação patrimonial. Assim, a aplicação mobile deve ser analisada como parte de um sistema integrado.
+
+\subsection{Transformação digital no setor público}
+
+A transformação digital no setor público não consiste apenas em substituir papel por telas digitais. Trata-se de redesenhar processos, melhorar serviços, aumentar transparência e fortalecer a capacidade institucional de gerir informações. A digitalização de processos administrativos deve evitar a simples reprodução de fluxos manuais ineficientes em ambiente eletrônico. Quando a tecnologia apenas transfere burocracias existentes para uma interface digital, sem repensar regras, estados e responsabilidades, o resultado pode ser pouca melhoria real.
+
+Nesse sentido, a aplicação mobile do EGAP representa uma evolução porque altera a forma de execução da conferência patrimonial. O processo deixa de depender de anotações e consultas posteriores e passa a permitir validação no momento da observação física do bem. Essa mudança aproxima a informação digital do evento administrativo concreto, fortalecendo a rastreabilidade.
+
+\subsection{Programação Orientada a Objetos}
+
+\subsubsection{Conceitos fundamentais}
+
+A Programação Orientada a Objetos (POO) organiza o software por meio de objetos que representam entidades e responsabilidades do domínio. Cada objeto reúne estado, expresso por atributos, e comportamento, definido por métodos; as classes estabelecem a estrutura comum a partir da qual esses objetos são construídos. Em sistemas administrativos, essa abordagem permite representar elementos como usuário, bem patrimonial, inventário, pedido e setor de forma próxima ao contexto real do sistema, favorecendo entendimento e evolução do código \cite{pressman,sommerville}.
+
+\subsubsection{Princípios da orientação a objetos}
+
+A abstração permite considerar apenas os dados e comportamentos relevantes para cada entidade. O encapsulamento mantém regras e validações associadas à responsabilidade que as executa, reduzindo alterações indevidas no estado do sistema. A herança possibilita especializar comportamentos comuns quando existe relação adequada entre classes, enquanto o polimorfismo permite tratar objetos diferentes por contratos comuns. Esses princípios devem ser aplicados com critério, buscando classes coesas, baixo acoplamento e regras de negócio localizadas em pontos claramente definidos.
+
+\subsubsection{Aplicação no EGAP}
+
+No EGAP, a orientação a objetos está presente no backend Laravel, principalmente nos models Eloquent e nos serviços de negócio. Os models representam entidades persistidas e seus relacionamentos, como patrimônio, inventário e atividade de conferência. Os serviços concentram operações que envolvem regras específicas, evitando que controllers ou a aplicação mobile assumam decisões críticas do domínio.
+
+Na conferência patrimonial, essa organização permite que ações como validar a leitura de um bem, registrar divergência e finalizar uma atividade sejam tratadas de modo consistente no backend. Assim, a POO contribui para a manutenção do sistema, o reaproveitamento controlado de comportamentos e a confiabilidade da integração entre o painel administrativo e o aplicativo mobile.
+
+\subsection{Arquitetura de software em sistemas administrativos}
+
+A arquitetura de software define a organização de componentes, responsabilidades, camadas e formas de comunicação dentro de um sistema. Em projetos administrativos integrados, a arquitetura precisa equilibrar produtividade, segurança, extensibilidade e aderência ao domínio \cite{pressman,sommerville}.
+
+No EGAP, a aplicação web utiliza Laravel e Filament para estruturar o backend e o painel administrativo. Laravel oferece recursos para roteamento, controllers, validação, autenticação e Eloquent ORM \cite{laravel,eloquent}. Filament atua como camada de construção de painéis administrativos, permitindo organizar recursos, tabelas, formulários, ações e navegação \cite{filament}. O painel configurado no projeto possui identificação \texttt{egap}, caminho \texttt{/egap}, autenticação por guard \texttt{egap}, login customizado e grupos de navegação relacionados aos módulos administrativos.
+
+A aplicação mobile, por sua vez, utiliza Expo e React Native para fornecer uma interface executável em dispositivos móveis. A comunicação com o backend ocorre por API REST protegida por token. Essa separação cria uma arquitetura cliente-servidor em que a lógica crítica permanece no backend e o mobile atua como interface operacional.
+
+\subsection{Laravel, MVC e Eloquent ORM}
+
+Laravel é um framework PHP que favorece a organização de aplicações web por meio de camadas e convenções. O padrão Model-View-Controller (MVC) separa a representação dos dados, a interface e o controle das requisições. No EGAP, essa separação é observada nos controllers da API mobile, nos models de domínio e nos serviços responsáveis por regras de negócio.
+
+O Eloquent ORM permite representar tabelas do banco como classes PHP e expressar relacionamentos entre entidades. Essa abordagem é útil em sistemas com grande quantidade de tabelas relacionais, como o EGAP, pois facilita consultas, carregamento de relações e transformação de registros em estruturas de resposta para a API. Ainda assim, em bases legadas, o uso do ORM exige cuidado com nomenclaturas, chaves, tipos de dados e padrões históricos já existentes.
+
+\subsection{Filament e painéis administrativos}
+
+Filament é utilizado para construção de painéis administrativos sobre Laravel, oferecendo recursos para CRUD, tabelas, filtros, formulários, ações e organização da navegação. Em sistemas como o EGAP, essa camada é importante porque muitos fluxos internos dependem de servidores administrativos que precisam cadastrar, validar, consultar, movimentar e auditar informações.
+
+A existência do painel administrativo sustenta a substituição do inventário manual pelo aplicativo. Enquanto o painel concentra gestão, parametrização e acompanhamento, o mobile permite executar o registro da conferência em campo sobre as mesmas regras e dados patrimoniais.
+
+\subsection{Livewire, Blade e interfaces reativas}
+
+Livewire e Blade integram o ecossistema Laravel para construção de interfaces dinâmicas no lado servidor. Blade atua como motor de templates e Livewire permite criar componentes interativos com estado, reduzindo a necessidade de JavaScript manual em determinadas telas administrativas. No contexto do EGAP, essas tecnologias favorecem a criação de páginas administrativas ricas, relatórios, dashboards e fluxos internos com menor fragmentação tecnológica.
+
+Embora o aplicativo mobile utilize React Native e não Livewire, a compreensão dessas tecnologias é relevante para analisar o sistema como um todo. O EGAP combina diferentes paradigmas de interface: painel administrativo web baseado em Laravel/Filament/Livewire e aplicativo mobile baseado em Expo/React Native.
+
+\subsection{APIs REST e integração cliente-servidor}
+
+APIs REST são utilizadas para comunicação entre aplicações cliente e backend. No projeto, a API mobile é agrupada sob o prefixo \texttt{/mobile-api}. Essa organização separa as rotas do aplicativo das demais rotas do sistema e permite aplicar autenticação, validação e contratos específicos.
+
+A API expõe o endpoint público \path{POST /mobile-api/login}, limitado a cinco tentativas por minuto, e endpoints protegidos por \texttt{auth:sanctum} para sessão, notificações, dashboard, bens, pedidos e conferência. Essa estrutura cria um contrato claro entre mobile e backend.
+
+\subsection{Autenticação por tokens e Laravel Sanctum}
+
+Laravel Sanctum fornece autenticação para SPAs, aplicações mobile e APIs baseadas em tokens \cite{sanctum}. Em aplicações mobile, o uso de token permite que o backend autentique requisições por meio do cabeçalho \texttt{Authorization: Bearer}. No EGAP, após o login, o backend gera um token associado ao usuário. O aplicativo o armazena com SecureStore em plataformas nativas e com \texttt{localStorage} na versão web; esses mecanismos têm propriedades de proteção distintas.
+
+A decisão de utilizar token exige atenção a revogação, proteção local, expiração e escopo. O backend deve validar cada requisição e não confiar em dados sensíveis enviados pelo cliente. Essa prática é observada no projeto quando o escopo do usuário é resolvido a partir do token e dos vínculos institucionais no backend, e não a partir de parâmetros livres enviados pelo aplicativo.
+
+\subsection{Expo, React Native e desenvolvimento mobile}
+
+React Native permite criar aplicações móveis utilizando JavaScript/TypeScript e componentes para plataformas nativas \cite{react-native}. Expo amplia esse ecossistema ao fornecer ferramentas e bibliotecas para recursos como câmera, armazenamento seguro e roteamento \cite{expo}.
+
+No EGAP, o mobile utiliza Expo Router para organização de rotas e Expo Camera para leitura de códigos; em execução nativa, a abstração de armazenamento persiste o token com Expo SecureStore \cite{expo-router,expo-camera,expo-securestore}. O acesso aos dados da API é feito por hooks com TanStack React Query, que mantém cache das respostas, e as listas longas usam FlashList, que renderiza apenas os itens visíveis. Essa escolha permite construir uma aplicação multiplataforma com acesso a recursos do dispositivo, mantendo integração com a API Laravel.
+
+\subsection{Leitura de códigos e mobilidade operacional}
+
+A leitura de códigos por câmera é um dos pontos que justifica a existência da aplicação mobile. Em um inventário patrimonial, a identificação do bem por etiqueta, tombo ou código patrimonial é tarefa recorrente. Ao permitir que o servidor use a câmera do celular, a solução busca reduzir digitação manual e tornar a validação mais direta.
+
+A mobilidade também altera a lógica de uso do sistema. O servidor pode percorrer os ambientes físicos e consultar imediatamente o status do bem. Isso torna a aplicação mobile especialmente adequada para inventários, vistorias e conferências em campo.
+
+\subsection{Persistência relacional e bases legadas}
+
+O EGAP utiliza o banco MySQL \texttt{emes-egap}, compartilhado com o sistema principal da instituição, acessado pelas conexões \texttt{emes} (sem prefixo) e \texttt{egap} (tabelas com prefixo \texttt{egap\_}), com models ligados a patrimônio, lotação, inventário, transferência, termos, pedidos e almoxarifado \cite{egap-repo,mysql}. Por ser compartilhado, o banco não teve sua estrutura alterada, com exceção de uma única tabela nova para as sessões do aplicativo. Em sistemas legados, nomes de campos antigos, relações implícitas e regras baseadas em identificadores fixos exigem cuidado na evolução do sistema.
+
+A aplicação mobile não cria uma base paralela de inventário. Ela grava e consulta informações no mesmo ecossistema de dados do EGAP, respeitando tabelas como \texttt{egap\_mat\_patrimonio}, \texttt{egap\_mat\_inventario}, \texttt{egap\_inv\_atividades} e \path{egap_mat_itensinventario}. Essa integração evita duplicidade e preserva compatibilidade com fluxos administrativos existentes.
+
+\subsection{Padrões de projeto e organização de regras de negócio}
+
+Padrões de projeto ajudam a organizar responsabilidades e reduzir acoplamento. No EGAP, observa-se o uso de uma camada de serviços para concentrar regras de negócio complexas. O \texttt{ConferenciaBensService}, por exemplo, centraliza operações como localizar inventário atual, buscar atividade do setor, validar leitura, localizar bem, registrar não localizado, registrar divergência e finalizar atividade. Essa separação evita que controllers fiquem sobrecarregados e torna a lógica mais reutilizável.
+
+O padrão \textit{Service Layer} é especialmente útil em APIs mobile, pois diferentes endpoints podem depender de regras comuns \cite{fowler-service}. Além disso, facilita futuras expansões, como integração com notificações, auditoria, logs ou processamento assíncrono.
+
+% ----------------------------------------------------------
+% Metodologia
+% ----------------------------------------------------------
+\section{Metodologia}
+
+\subsection{Natureza da pesquisa}
+
+Este trabalho caracteriza-se como pesquisa aplicada, exploratória e descritiva. É aplicada porque analisa uma solução tecnológica destinada a uma demanda prática de gestão patrimonial; exploratória porque examina o domínio e a arquitetura do sistema; e descritiva porque documenta componentes e fluxos implementados sem manipular variáveis ou produzir comparação estatística.
+
+\subsection{Abordagem metodológica}
+
+A abordagem adotada é predominantemente qualitativa, na modalidade de estudo de caso tecnológico. A avaliação concentra-se na compreensão dos fluxos, na análise da arquitetura e na aderência da solução às regras de negócio. Essa análise foi complementada por duas verificações técnicas: a execução dos testes automatizados da API e um teste de carga que mediu tempos de resposta e falhas sob uso simultâneo. Não foram coletados questionários de satisfação nem métricas de produtividade com usuários em campo; consequentemente, impactos operacionais são discutidos como hipóteses fundamentadas para validação posterior.
+
+\subsection{Contexto e objeto do estudo}
+
+O objeto do estudo é a substituição do procedimento manual de inventário de bens móveis pelo fluxo de conferência da aplicação mobile integrada ao EGAP. O recorte abrange identificação dos bens, registro de ocorrências, acompanhamento de pendências e finalização por setor. A arquitetura e o painel administrativo são examinados nas funções que sustentam esse fluxo. Pedidos, almoxarifado e demais módulos compõem o contexto de integração.
+
+\subsection{Fontes de informação}
+
+Foram utilizadas as seguintes fontes documentais:
+
+\begin{itemize}
+    \item repositório do EGAP, analisado inicialmente em 25 de maio de 2026 e revisado em 17 de novembro de 2026, após a reescrita do aplicativo e da API;
+    \item README, manifestos \texttt{composer.json} e \texttt{package.json} do projeto;
+    \item rotas, controllers, serviços, models e telas relacionadas à API e ao aplicativo mobile;
+    \item resultados dos testes automatizados da API (PHPUnit);
+    \item relatório do teste de carga realizado em 12 de novembro de 2026;
+    \item TCC de Seffrin e Cassenote, disponibilizado pela FAG, utilizado como referência de organização formal \cite{modelo-fag};
+    \item consulta à documentação oficial das tecnologias utilizadas;
+    \item legislação e norma contábil pertinentes ao controle patrimonial público.
+\end{itemize}
+
+\subsection{Etapas metodológicas}
+
+A pesquisa foi organizada nas seguintes etapas:
+
+\begin{enumerate}
+    \item caracterização documental do fluxo manual e das limitações de registro em campo;
+    \item definição do fluxo de inventário pelo aplicativo e das etapas manuais a substituir;
+    \item análise da arquitetura, da API e dos dados necessários à conferência;
+    \item análise das telas e regras de identificação, registro de ocorrências e finalização;
+    \item análise das verificações técnicas relatadas para a implementação;
+    \item comparação conceitual entre o procedimento manual e o fluxo mobile;
+    \item consolidação dos resultados técnicos e dos indicadores propostos para avaliação em campo.
+\end{enumerate}
+
+\subsection{Delimitação e limitações do estudo}
+
+O estudo limita-se às funcionalidades visíveis no código-fonte e nos arquivos de configuração do projeto e às verificações técnicas relatadas para a implementação. Não abrange auditoria de segurança, homologação institucional, implantação em produção, observação de servidores realizando inventário ou medição de produtividade em campo. Assim, a substituição do inventário manual é a finalidade da solução desenvolvida, e não uma implantação institucional já comprovada. O fluxo manual é uma descrição do procedimento tomado como problema do projeto; sua frequência, duração e taxa de erros ainda precisam de levantamento com os responsáveis. Também não se assume que todos os módulos administrativos estejam completos apenas por estarem representados no painel.
+
+% ----------------------------------------------------------
+% Coleta, interpretação e análise
+% ----------------------------------------------------------
+\section{Coleta, interpretação e análise dos dados}
+
+\subsection{Visão geral do repositório}
+
+O repositório EGAP possui duas aplicações principais. A primeira é o backend e painel administrativo, uma aplicação Laravel que ocupa a raiz do repositório. A segunda é a aplicação mobile, localizada no diretório \texttt{egap-mobile}, cujo build web é publicado em \texttt{public/egap-mobile} e servido pelo próprio Laravel. Essa organização evidencia uma estratégia de desenvolvimento integrada, na qual o backend centraliza regras de negócio e persistência, enquanto o aplicativo mobile consome serviços específicos da API \cite{egap-repo}.
+
+\begin{table}[H]
+\centering
+\caption{Estrutura geral do repositório EGAP}
+\begin{tabularx}{\textwidth}{L{4cm}Y}
+\toprule
+\textbf{Diretório} & \textbf{Finalidade} \\
+\midrule
+raiz (\texttt{app}, \texttt{routes}, \texttt{tests}) & Aplicação Laravel/Filament responsável pelo painel administrativo, API, regras de negócio, autenticação e acesso ao banco de dados. \\
+\texttt{egap-mobile} & Aplicação Expo/React Native responsável pela interface mobile de consulta, inventário, conferência, pedidos e notificações. \\
+\texttt{public/egap-mobile} & Build web do aplicativo, servido em \texttt{/egap-mobile} no mesmo domínio da API. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Arquitetura tecnológica do backend}
+
+O arquivo \texttt{composer.json} declara PHP \texttt{\^{}8.2}, Laravel 12, Filament 4 e Laravel Sanctum 4, além de ferramentas de desenvolvimento como Laravel Pint e PHPUnit \cite{egap-repo}. A restrição declarada para PHP não identifica, por si só, a versão efetivamente usada em cada ambiente de execução. Essa pilha oferece recursos para autenticação, roteamento, validação, ORM, middlewares, testes e construção de painéis.
+
+O painel Filament é configurado no arquivo \texttt{EgapPanelProvider.php}. A configuração define o painel com ID \texttt{egap}, caminho \texttt{/egap}, login customizado, tema escuro, modo SPA e guard de autenticação \texttt{egap}. Os recursos do painel interno são organizados em grupos que correspondem aos módulos do sistema.
+
+\begin{table}[H]
+\centering
+\caption{Elementos do painel administrativo EGAP}
+\begin{tabularx}{\textwidth}{L{4cm}Y}
+\toprule
+\textbf{Elemento} & \textbf{Descrição} \\
+\midrule
+ID do painel & \texttt{egap} \\
+Caminho & \texttt{/egap} \\
+Autenticação & Guard \texttt{egap} e login customizado \\
+Interface & Filament com modo SPA e navegação administrativa \\
+Grupos & Administração, Agendamento, Almoxarifado, Cadastro, Gestão Orçamentária, Patrimônio, Pedidos, Processo e Relatórios \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Módulos administrativos do EGAP}
+
+O módulo de Patrimônio reúne os cadastros de bens, inventários, transferências e termos que sustentam a conferência. Administração fornece usuários, vínculos e permissões, e Relatórios apoia o acompanhamento dos registros. Pedidos, Almoxarifado, Agendamento e Processos compõem o contexto administrativo relacionado, mas sua avaliação detalhada fica fora do recorte central. Para substituir o procedimento manual, o aplicativo precisa preservar principalmente os estados patrimoniais, o escopo do setor e os registros do inventário existente.
+
+\subsection{Modelo de autenticação e vínculo do usuário}
+
+A autenticação mobile é realizada pelo \texttt{MobileAuthController}. O controller recebe o login (CPF, usuário ou e-mail) e a senha, com o mesmo mapeamento do login do painel web, e só aceita usuários ativos com a permissão de acesso ao EGAP ou com perfil de administrador, a mesma regra do painel. Em caso de sucesso, gera um token Sanctum com nome \texttt{mobile-app} e inicia uma sessão mobile.
+
+Na primeira versão do aplicativo, a sessão usava apenas a lotação legada mais recente e não permitia trocar de setor, e a regra de escopo estava repetida em cada controller. A versão atual introduziu a classe \texttt{MobileEgapSession}, que guarda o mesmo contexto da sessão do painel web (vínculo EGAP, dados pessoais e setor escolhido) numa linha da tabela \texttt{egap\_mobile\_sessoes}, presa ao token do aparelho. A regra que decide qual setor vale foi extraída para o trait \texttt{ResolveLotacaoEgap}, usado tanto pela sessão web quanto pela mobile. Um middleware carrega a sessão uma vez por requisição e reavalia o acesso: se o usuário perder a permissão, recebe \texttt{403}; se perder a lotação escolhida, o setor volta para a principal.
+
+Esse fluxo é importante por três motivos. Primeiro, cada aparelho tem a sua sessão, e trocar de setor no celular não altera o painel web nem outro aparelho. Segundo, o aplicativo não define unidade nem setor nas rotas de dados: o setor só muda por uma rota própria, que recusa setores que não sejam lotação do usuário. Terceiro, ao apagar o token no logout, a sessão é removida em cascata.
+
+\subsection{API mobile}
+
+As rotas da API estão organizadas no arquivo \path{routes/egap_pwa.php}, sob o prefixo \texttt{mobile-api}, e os controllers em \path{app/Http/Controllers/Egap/MobileApi}. A rota de login é pública e limitada por tentativas, enquanto as demais são protegidas por \texttt{auth:sanctum} e pelo middleware de sessão mobile. A API é dividida em seis grupos: autenticação e sessão, notificações, dashboard, bens, conferência e pedidos. Todos os erros seguem um formato único, com mensagem e código (por exemplo, \texttt{sem\_acesso} ou \texttt{sem\_lotacao}).
+
+\begin{longtable}{L{2.0cm}L{4.7cm}L{6.4cm}}
+\caption{Principais endpoints da API mobile} \\
+\toprule
+\textbf{Método} & \textbf{Rota} & \textbf{Finalidade} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Método} & \textbf{Rota} & \textbf{Finalidade} \\
+\midrule
+\endhead
+POST & \path{/mobile-api/login} & Autentica usuário, gera token e inicia a sessão mobile. \\
+GET & \path{/mobile-api/sessao} & Retorna a sessão: usuário, vínculo EGAP, setor atual e lotações. \\
+PUT & \path{/mobile-api/sessao/setor} & Troca o setor da sessão (somente para uma lotação do usuário). \\
+POST & \path{/mobile-api/logout} & Apaga o token; a sessão é removida em cascata. \\
+GET & \path{/mobile-api/notificacoes} & Lista notificações do usuário com total de não lidas. \\
+POST & \path{/mobile-api/notificacoes/\{id\}/lida} & Marca uma notificação como lida. \\
+POST & \path{/mobile-api/notificacoes/lidas} & Marca todas as notificações como lidas. \\
+GET & \path{/mobile-api/dashboard} & Retorna resumo patrimonial, financeiro, da conferência e de pedidos. \\
+GET & \path{/mobile-api/bens} & Lista bens do setor com paginação, busca e foto. \\
+GET & \path{/mobile-api/bens/\{patrimonio\}} & Consulta bem por patrimônio, tombo ou identificador relacionado. \\
+GET & \path{/mobile-api/conferencia} & Retorna inventário atual, atividade do setor, prazo e resumo. \\
+GET & \path{/mobile-api/conferencia/bens} & Lista bens da conferência filtrados por status. \\
+POST & \path{/mobile-api/conferencia/leituras} & Valida o código lido e localiza o bem numa única chamada. \\
+POST & \path{/mobile-api/conferencia/nao-localizados} & Registra bens não localizados com justificativa. \\
+POST & \path{/mobile-api/conferencia/divergencias} & Registra divergências com o valor encontrado. \\
+POST & \path{/mobile-api/conferencia/finalizar} & Finaliza a atividade do setor quando não há pendências. \\
+GET & \path{/mobile-api/pedidos} & Lista pedidos do usuário em todos os setores. \\
+GET & \path{/mobile-api/pedidos/\{id\}} & Detalhe de um pedido do usuário, com itens. \\
+GET & \path{/mobile-api/pedidos/contexto} & Retorna complementos do setor para criação de pedido. \\
+GET & \path{/mobile-api/pedidos/materiais} & Catálogo de materiais de consumo ou permanentes. \\
+POST & \path{/mobile-api/pedidos} & Cria pedido mobile (funcionalidade complementar). \\
+\bottomrule
+\end{longtable}
+
+\subsection{Consulta e dashboard de bens}
+
+O \texttt{DashboardController} fornece o resumo do setor, e o \texttt{BensController} concentra a listagem e a consulta de bens. São consideradas elegíveis as situações \texttt{1}, \texttt{7} e \texttt{8}. A listagem de bens do setor filtra por \texttt{UnidadeJudiciaria}, \texttt{Setor} e \texttt{SituacaoBem}. A consulta individual normaliza o código informado (por exemplo, \texttt{104.552} digitado com espaços vira \texttt{104552}, com tolerância a zeros à esquerda), permitindo buscar por patrimônio, tombo, tombo SMARAPD ou patrimônio anterior. Após o teste de carga, essa busca passou a tentar primeiro as colunas indexadas e só depois as demais variações. O detalhe do bem informa se ele pertence ao setor da sessão e se está em situação elegível para conferência.
+
+Essa normalização é relevante porque sistemas patrimoniais frequentemente acumulam identificadores de diferentes períodos. Um mesmo bem pode ter código atual, código anterior ou tombo oriundo de outro sistema. Ao tratar essas variações no backend, a aplicação mobile oferece melhor usabilidade sem comprometer a consistência.
+
+\subsection{Conferência de bens}
+
+A conferência é centralizada no \texttt{ConferenciaBensService}. O serviço localiza o inventário atual, identifica ou cria a atividade do setor, lista bens esperados, associa bens a itens de inventário, valida leituras, registra localização, marca bens não localizados, registra divergências, recalcula resumo e finaliza atividade.
+
+Na versão atual, validar e localizar acontecem numa única chamada (\path{POST /conferencia/leituras}), o que reduz idas e voltas na rede durante o inventário. A lógica de validação classifica a leitura como \path{localizavel}, \path{ja_conferido}, \path{outro_setor}, \path{nao_cadastrado}, \path{situacao_nao_conferivel}, \path{em_transferencia} ou \path{cadastrado_manualmente}; as leituras localizáveis seguem para gravação e retornam como \path{localizado} ou \path{relocalizado}, quando o bem havia sido marcado como não localizado. Essa classificação fornece feedback ao aplicativo e orienta a ação do usuário. Somente o inventário com situação ``Em execução'' aceita gravações, o setor precisa estar na abrangência do inventário e a atividade fica bloqueada depois de finalizada, até ser reaberta no painel com justificativa.
+
+Outro ponto importante é o uso de transações. Ao registrar localização ou não localização, o sistema atualiza tanto itens de inventário quanto campos do bem patrimonial, preservando compatibilidade com o legado. O bloqueio com \texttt{lockForUpdate} no bem evita item duplicado quando o usuário toca duas vezes. Durante a revisão feita após o teste de carga, constatou-se que as transações eram abertas na conexão \texttt{egap}, enquanto os models gravavam na conexão \texttt{emes}; com isso, a transação não envolvia as gravações. As transações passaram a ser abertas na conexão dos models.
+
+Para setores sem sinal, como subsolos e almoxarifados, a leitura que falha por falta de rede fica numa fila no aparelho e é reenviada em ordem a cada 30 segundos e quando o aplicativo volta ao primeiro plano. Cada leitura guarda o setor em que foi feita, e o reenvio é seguro porque uma repetição retorna \path{ja_conferido}. Divergências, não localizados e finalização continuam exigindo conexão.
+
+\subsection{Funcionalidades complementares: pedidos e notificações}
+
+Além do inventário, o aplicativo permite consultar um catálogo, montar pedidos de materiais e acompanhar seu histórico, com validação pelo \texttt{PedidosMobileService}. Também apresenta as notificações de banco já utilizadas pelo painel web. Os avisos de abertura, prazo e reabertura do setor apoiam diretamente a conferência; os avisos de pedidos atendem ao fluxo complementar. Esses recursos compartilham autenticação e integração com o EGAP, mas não são evidências de substituição do inventário manual.
+
+\subsection{Aplicação mobile}
+
+A aplicação \texttt{egap-mobile} foi reescrita sobre Expo SDK 58, React Native 0.88, React 19, Expo Router e TypeScript em modo estrito. O arquivo \texttt{package.json} confirma dependências como \path{expo-camera}, \path{expo-router}, \path{expo-secure-store}, \path{@tanstack/react-query} e \path{@shopify/flash-list}. O código foi organizado em camadas: telas finas, hooks de dados, cliente HTTP tipado (com limite de 15 segundos por requisição) e provedores de sessão, tema e carrinho. Na versão anterior, algumas telas chegavam a cerca de 2.100 linhas.
+
+A estrutura de rotas inclui:
+
+\begin{itemize}
+    \item \texttt{/}: login e restauração da sessão;
+    \item \texttt{/setor}: escolha do setor;
+    \item abas Início, Bens, Conferência e Pedidos, com botão central para ler plaqueta;
+    \item \texttt{/leitura}: leitura por câmera ou digitação;
+    \item \texttt{/bem/[patrimonio]}: detalhe do bem;
+    \item \texttt{/pedidos/novo}, \texttt{/pedidos/carrinho} e \texttt{/pedidos/[id]}: catálogo, carrinho e detalhe do pedido;
+    \item \texttt{/notificacoes}, \texttt{/perfil}, \texttt{/tutorial} e \texttt{/erro}.
+\end{itemize}
+
+Em plataformas nativas, o aplicativo armazena o token com SecureStore; na versão web, usa \texttt{localStorage}. Qualquer resposta \texttt{401} apaga o token e volta ao login. O aplicativo também mantém as últimas leituras feitas no aparelho, como recurso de conveniência, sem substituir os registros oficiais do backend. A interface oferece tema claro e escuro.
+
+\subsection{Evidências e limites da verificação técnica}
+
+A inspeção direta evidencia a implementação: o arquivo de rotas registra endpoints protegidos por Sanctum e pelo middleware de sessão; o controller de autenticação cria e revoga tokens; os controllers de dados recebem o escopo já resolvido pela sessão; os serviços de conferência e pedidos gravam operações transacionais; e as telas React Native acionam essas operações. Diferentemente da primeira análise, em que havia apenas um teste ligado à autenticação, a API passou a ter uma suíte de testes automatizados que cobre autenticação, sessão, bens, conferência, pedidos e notificações, cujos números são apresentados na seção de Resultados.
+
+Assim, o resultado verificável nesta pesquisa é a existência de uma solução implementada, testada e arquiteturalmente integrada. Eficiência em uso real, redução de erro de digitação e melhoria de rastreabilidade operacional ainda demandam aplicação piloto, protocolo de teste e coleta de indicadores antes e depois da adoção.
+
+% ----------------------------------------------------------
+% Modelagem da solução
+% ----------------------------------------------------------
+\subsection{Modelagem da solução proposta}
+
+\subsubsection{Arquitetura em camadas}
+
+A solução pode ser compreendida em quatro camadas principais:
+
+\begin{enumerate}
+    \item \textbf{Camada de apresentação mobile}: telas React Native responsáveis por login, dashboard, consulta, listagem, conferência e pedidos.
+    \item \textbf{Camada de comunicação}: cliente HTTP responsável por enviar requisições à API, anexar token e tratar erros.
+    \item \textbf{Camada de aplicação backend}: controllers Laravel que validam requisições, autenticam usuários e acionam serviços.
+    \item \textbf{Camada de domínio e persistência}: services, models Eloquent e banco de dados EGAP.
+\end{enumerate}
+
+\subsubsection{Fluxo de autenticação}
+
+O fluxo de autenticação ocorre da seguinte forma:
+
+\begin{enumerate}
+    \item usuário informa CPF, usuário ou e-mail e a senha no aplicativo;
+    \item mobile envia credenciais para \texttt{POST /mobile-api/login};
+    \item backend verifica a senha, se o usuário está ativo e se tem acesso ao EGAP;
+    \item backend gera token Sanctum e cria a sessão mobile, resolvendo vínculo EGAP (pelo CPF), lotações e setor principal;
+    \item em dispositivo nativo, o mobile salva o token com SecureStore;
+    \item se houver mais de uma lotação, o usuário escolhe o setor (\texttt{PUT /sessao/setor});
+    \item requisições futuras enviam o token no cabeçalho Authorization, e o backend obtém o escopo da sessão.
+\end{enumerate}
+
+\subsubsection{Fluxo de conferência patrimonial}
+
+O fluxo de conferência pode ser representado conceitualmente como:
+
+\begin{enumerate}
+    \item usuário acessa tela de conferência;
+    \item mobile consulta \texttt{/conferencia};
+    \item backend retorna inventário, atividade, prazo do setor e resumo;
+    \item mobile lista bens filtrados por status;
+    \item usuário lê ou digita o código da plaqueta;
+    \item backend valida a leitura e, quando possível, localiza o bem em transação;
+    \item sem rede, a leitura fica na fila do aparelho e é reenviada depois;
+    \item mobile apresenta o resultado ou a ação possível;
+    \item usuário registra divergências e não localizados com justificativa;
+    \item resumo é recalculado;
+    \item atividade é finalizada quando não há pendências.
+\end{enumerate}
+
+\subsubsection{Entidades centrais do domínio}
+
+\begin{table}[H]
+\centering
+\caption{Entidades centrais para a solução mobile}
+\begin{tabularx}{\textwidth}{L{6.2cm}Y}
+\toprule
+\textbf{Entidade/Tabela} & \textbf{Papel no fluxo} \\
+\midrule
+\texttt{users} & Usuário utilizado na autenticação Laravel/Sanctum. \\
+\texttt{user\_lotacao} e \texttt{setores} & Lotações do usuário, setor principal e unidade de cada setor. \\
+\path{personal_access_tokens} & Tokens Sanctum de cada aparelho. \\
+\path{egap_mobile_sessoes} & Sessão mobile presa ao token (única tabela nova do projeto). \\
+\path{egap_mat_infousers} & Liga o CPF do usuário ao seu identificador no EGAP. \\
+\texttt{egap\_mat\_lotacao} & Lotação legada, usada quando não há registro em \texttt{user\_lotacao}. \\
+\path{egap_mat_patrimonio} & Cadastro principal de bens móveis. \\
+\path{egap_mat_inventario} & Representa ciclos de inventário. \\
+\path{egap_inv_atividades} & Representa atividades de conferência por unidade/setor. \\
+\path{egap_mat_itensinventario} & Registra apontamentos de conferência. \\
+\path{egap_ped_pedidos}, \path{egap_ped_itempedido} e \path{egap_ped_fases} & Pedidos, itens e histórico de fases. \\
+\texttt{notifications} & Notificações do inventário e dos pedidos. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{Regras de negócio essenciais}
+
+A solução mobile depende das seguintes regras:
+
+\begin{itemize}
+    \item o backend é a fonte de verdade para usuário, setor e unidade, e o setor só muda entre as lotações do usuário;
+    \item bens do setor são filtrados por unidade judiciária, setor e situação elegível (1, 7 e 8);
+    \item consulta direta pode localizar bem fora do escopo, mas deve informar se pertence ao setor;
+    \item somente o inventário em execução aceita gravações, e o setor precisa estar na sua abrangência;
+    \item não localizado exige justificativa;
+    \item divergência exige observação;
+    \item atividade finalizada ou bloqueada não deve permitir novas escritas, e só é finalizada sem pendências;
+    \item operações de conferência e pedidos devem ocorrer em transação na conexão dos models;
+    \item histórico local do mobile não substitui auditoria oficial;
+    \item pedidos devem validar complemento, tipo, materiais, quantidades e justificativas no backend.
+\end{itemize}
+
+% ----------------------------------------------------------
+% Desenvolvimento e implementação
+% ----------------------------------------------------------
+\subsection{Desenvolvimento e implementação}
+
+\subsubsection{Backend Laravel}
+
+No backend, a implementação organiza responsabilidades entre rotas, controllers e services. As rotas definem a superfície pública da API. Os controllers validam requisições e acionam serviços. Os services concentram regras de negócio que dependem de múltiplas entidades.
+
+Essa organização evita que a lógica de conferência fique dispersa entre telas ou controllers. Por exemplo, a verificação de bem já conferido, bem de outro setor ou bem em situação não conferível permanece centralizada no backend. O aplicativo apenas apresenta a resposta e solicita a ação do usuário quando permitido.
+
+\subsubsection{Aplicativo mobile}
+
+No mobile, a implementação prioriza três fluxos principais: login, consulta de bens e conferência. A tela principal apresenta informações resumidas do usuário e indicadores do setor. A tela de bens permite busca, paginação e atualização. A tela de conferência apresenta métricas e permite validar leituras.
+
+A leitura pela câmera visa reduzir erros de digitação e apoiar a operação. Entretanto, o aplicativo também mantém consulta manual, importante para casos em que a etiqueta não pode ser lida ou o dispositivo não consegue capturar o código.
+
+\subsubsection{Tratamento de erros}
+
+O cliente HTTP mobile diferencia erros de API e falhas de rede. Essa distinção melhora a experiência do usuário, pois uma credencial inválida, uma ausência de vínculo ou uma falha de conexão exigem mensagens e tratamentos distintos: um \texttt{401} leva de volta ao login, e falhas de rede ou do servidor abrem uma tela de erro com opção de tentar novamente. A URL da API é externalizada em variável de ambiente; no build publicado, ela é relativa (\texttt{/mobile-api}), pois o aplicativo e a API ficam no mesmo domínio.
+
+\subsubsection{Segurança e escopo}
+
+A segurança da solução depende de três decisões principais:
+
+\begin{enumerate}
+    \item uso de token Sanctum para autenticação das requisições;
+    \item armazenamento local do token em SecureStore nas plataformas nativas, com tratamento distinto na versão web;
+    \item resolução de escopo no backend, por meio da sessão mobile, e não no cliente.
+\end{enumerate}
+
+Complementarmente, o login é limitado a cinco tentativas por minuto por login e IP, e o acesso do usuário é reavaliado a cada requisição.
+
+A terceira decisão é a mais importante do ponto de vista do domínio. Se o aplicativo pudesse enviar livremente o setor ou a unidade, um usuário poderia tentar consultar dados fora do seu escopo. Ao resolver essas informações no backend, o sistema reduz esse risco.
+
+\subsubsection{Compatibilidade com o legado}
+
+O EGAP opera sobre uma base de dados com características legadas e compartilhada com o sistema principal da instituição. A solução mobile respeita essa realidade ao utilizar models, campos e tabelas existentes, sem criar colunas nem índices; a única tabela nova é a de sessões mobile. Os serviços de conferência e de pedidos mantiveram o mesmo contrato de escopo usado pelo painel web, de modo que as regras de negócio não precisaram ser duplicadas. Em operações de conferência, além de criar itens de inventário, o sistema atualiza campos no cadastro do bem para manter compatibilidade com rotinas já existentes.
+
+Essa estratégia reduz o risco de ruptura. Em vez de criar um módulo isolado, a aplicação mobile funciona como uma nova interface sobre regras e dados já reconhecidos pelo sistema.
+
+% ----------------------------------------------------------
+% Resultados
+% ----------------------------------------------------------
+\section{Resultados}
+
+Esta seção reúne o que foi obtido com o desenvolvimento e com as verificações descritas na metodologia: as funcionalidades entregues, os testes automatizados, o teste de carga e as correções que esses testes motivaram. Os resultados se referem ao estado do repositório em 17 de novembro de 2026.
+
+\subsection{Funcionalidades entregues}
+
+O aplicativo e a API foram reescritos mantendo as finalidades e as regras de negócio da primeira versão, e passaram a seguir o mesmo modelo de sessão do painel web. O Quadro~\ref{tab:funcionalidades} resume o que foi implementado.
+
+\begin{table}[H]
+\centering
+\caption{Funcionalidades entregues no aplicativo E-Gap Mobile}
+\label{tab:funcionalidades}
+\begin{tabularx}{\textwidth}{L{3.4cm}Y}
+\toprule
+\textbf{Área} & \textbf{Resultado} \\
+\midrule
+Sessão & Login por CPF, usuário ou e-mail; sessão por aparelho; escolha e troca de setor entre as lotações do usuário, sem afetar o painel web. \\
+Início & Progresso da conferência, quantidade de bens, valores de aquisição e atual do setor, pedidos em análise e últimas leituras. \\
+Bens & Lista paginada com busca e foto do material; detalhe do bem com indicação de pertencer ao setor. \\
+Conferência & Leitura de plaqueta por câmera ou digitação, filtros por status, prazo do setor, divergências com valor encontrado, não localizados com justificativa, fila de leituras sem rede e finalização do setor. \\
+Pedidos & Catálogo com fotos, carrinho salvo no aparelho, pedidos de consumo e permanentes, histórico de todos os setores e detalhe do pedido. \\
+Notificações & Avisos do inventário e dos pedidos, contador de não lidas e abertura da tela relacionada. \\
+Distribuição & Build web servido em \texttt{/egap-mobile}, no mesmo domínio da API, além da execução nativa via Expo. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Um resultado relevante para a instituição é que toda a solução foi construída sem alterar a estrutura do banco compartilhado: fora a tabela \texttt{egap\_mobile\_sessoes}, todas as funcionalidades usam colunas que já existiam. Além disso, a regra de escolha de lotação passou a ser única para web e mobile, e os serviços de conferência e pedidos são os mesmos usados pelo painel.
+
+\subsection{Testes automatizados}
+
+A API conta com 74 testes automatizados (PHPUnit), executados sobre o banco real dentro de transações desfeitas ao final de cada teste, com usuários fictícios criados na hora. Na execução de 17 de novembro de 2026, todos passaram, somando 400 verificações (asserções). O Quadro~\ref{tab:testes} detalha a distribuição.
+
+\begin{table}[H]
+\centering
+\caption{Testes automatizados da API mobile}
+\label{tab:testes}
+\begin{tabularx}{\textwidth}{L{5.0cm}cY}
+\toprule
+\textbf{Arquivo} & \textbf{Testes} & \textbf{O que verifica} \\
+\midrule
+\texttt{AutenticacaoTest} & 13 & Login por usuário, e-mail e CPF; senha errada; usuário inativo ou sem acesso; limite de tentativas; troca de setor; logout; perda de acesso após o login. \\
+\texttt{MobileEgapSessionTest} & 11 & Setor principal por padrão, recusa de setor alheio, tokens independentes, isolamento em relação à sessão web, lotação legada. \\
+\texttt{MobileSessaoTabelaTest} & 2 & Estrutura da tabela de sessões e remoção junto com o token. \\
+\texttt{BensTest} & 11 & Apenas bens do setor da sessão, limite de paginação, detalhe do bem, formato do dashboard. \\
+\texttt{ConferenciaTest} & 15 & Leitura que localiza e repetição como já conferido, normalização do código, outro setor, código inexistente, não localizados, divergências. \\
+\texttt{PedidosTest} & 13 & Catálogo, justificativas obrigatórias, item inválido sem gravação parcial, setor enviado pelo cliente ignorado, histórico de todos os setores. \\
+\texttt{NotificacoesTest} & 5 & Lista apenas as do usuário e marcação de lidas. \\
+\texttt{ImagemMaterialTest} & 2 & URL das fotos de materiais. \\
+\texttt{AppWebTest} & 2 & Build web servido em \texttt{/egap-mobile}. \\
+\midrule
+\textbf{Total} & \textbf{74} & 400 asserções, todas aprovadas. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Também foram executados os testes das regras compartilhadas com o painel: o teste do ciclo completo de inventário (abertura, avisos, conferência pelo aplicativo e pelo painel, finalização e conclusão), com 24 testes e 230 asserções, e o teste da regra de lotação, com 5 testes; todos foram aprovados. No aplicativo, a verificação foi feita por checagem de tipos do TypeScript e pelo lint da configuração Expo.
+
+\subsection{Desempenho e estabilidade}
+
+Em 12 de novembro de 2026, foi realizado um teste de carga em ambiente local (Laravel 12, PHP 8.5 e MySQL 8.0) sobre a base \texttt{emes-egap} com cerca de 8,8 GB. Usuários virtuais repetiram ações reais, dois terços no aplicativo (listar bens, conferência, pedidos) e um terço no painel, em degraus de 10 a 150 usuários simultâneos. Também foi feito um teste isolado do MySQL com as consultas mais pesadas em paralelo.
+
+Os principais achados foram:
+
+\begin{itemize}
+    \item em cerca de 3.800 requisições, não houve nenhuma falha de infraestrutura (tempo esgotado, conexão recusada ou falta de memória), e a latência voltou ao normal cerca de 30 segundos após o pico;
+    \item com 8 processos PHP, a capacidade ficou em 6 a 8 requisições por segundo; acima de cerca de 30 usuários virtuais, as requisições passaram a formar fila;
+    \item cerca de 600 ms de cada requisição eram apenas inicialização do framework; com os caches de produção do Laravel e do Filament, esse tempo caiu para cerca de 215 ms;
+    \item o MySQL saturou em cerca de 18 consultas pesadas por segundo, principalmente buscas textuais em tabelas com centenas de milhares de linhas do painel.
+\end{itemize}
+
+A partir desses achados, foram feitas otimizações nas consultas usadas pelo aplicativo e pelo painel, sem alterar o banco, conforme o Quadro~\ref{tab:otimizacoes}.
+
+\begin{table}[H]
+\centering
+\caption{Otimizações aplicadas após o teste de carga}
+\label{tab:otimizacoes}
+\begin{tabularx}{\textwidth}{YL{2.6cm}L{2.0cm}}
+\toprule
+\textbf{Consulta} & \textbf{Antes} & \textbf{Depois} \\
+\midrule
+Transferências validadas (dashboard e conferência do aplicativo) & 340--670 ms & cerca de 40 ms \\
+Consulta de bem por patrimônio (\texttt{GET /bens/\{patrimonio\}}) & cerca de 280 ms & cerca de 4 ms \\
+Estoque atual (painel) & cerca de 185 ms & cerca de 1 ms \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Além das otimizações, foram adicionados caches de curta duração para permissões, gráficos do painel inicial, totais de paginação e transferências do aplicativo, este último invalidado sempre que um termo ou transferência é salvo.
+
+\subsection{Defeitos encontrados e corrigidos}
+
+As verificações revelaram dois defeitos, ambos corrigidos. O primeiro, de integridade: as transações de conferência e de pedidos eram abertas na conexão \texttt{egap}, enquanto os models gravavam na conexão \texttt{emes}; assim, um erro no meio de um pedido poderia deixar o cabeçalho e parte dos itens gravados. As transações passaram a usar a conexão dos models, e há teste que confirma que um item inválido não deixa pedido gravado pela metade. O segundo, funcional: a busca na tela de movimentação de estoque do painel retornava erro 500 por referenciar uma coluna inexistente.
+
+\subsection{Síntese dos resultados}
+
+Em relação aos objetivos específicos, a implementação disponibiliza as etapas necessárias ao fluxo mobile: identificação do usuário e do setor, consulta dos bens, leitura de códigos, registro de ocorrências e finalização controlada. O Quadro~\ref{tab:manual-mobile} explicita como essas etapas substituem anotações intermediárias e transcrição posterior. A arquitetura e os testes dão suporte técnico a esse fluxo; pedidos e demais módulos são complementares. Permanecem sem comprovação em campo a substituição na rotina institucional e seus impactos sobre tempo, retrabalho e taxa de erros, que dependem de um piloto com usuários reais.
+
+% ----------------------------------------------------------
+% Sugestões e recomendações
+% ----------------------------------------------------------
+\section{Sugestões e recomendações}
+
+As recomendações a seguir decorrem das capacidades observadas na implementação e dos impactos que ela pretende alcançar. Como não houve avaliação de campo neste trabalho, elas indicam benefícios a verificar em implantação acompanhada, e não resultados estatisticamente comprovados.
+
+\subsection{Piloto para medir redução de retrabalho}
+
+A aplicação mobile foi desenhada para substituir anotações intermediárias e lançamento posterior pelo registro durante a conferência física. Recomenda-se comparar o procedimento manual com o aplicativo em setores de características e volumes de bens comparáveis, registrando quantidade e condição das etiquetas, conectividade e experiência dos participantes. Os indicadores propostos são tempo total e tempo por bem, quantidade de transcrições posteriores, registros corrigidos e pendências ao final da vistoria. No fluxo mobile, devem ser observadas também leituras recusadas e pendentes de sincronização. A comparação deve usar os mesmos critérios de início e término, incluindo a consolidação dos registros; somente essa medição permitirá afirmar redução efetiva de retrabalho.
+
+\subsection{Monitoramento da rastreabilidade}
+
+As ações persistentes de conferência registram no backend inventário, atividade, usuário e momento da operação. Recomenda-se avaliar relatórios de auditoria e retenção de histórico para que alterações posteriores não eliminem a evidência da conferência. A rastreabilidade é essencial em processos públicos, nos quais alterações devem ser justificáveis.
+
+\subsection{Cobertura de testes e padronização das regras}
+
+Ao centralizar regras no backend, a solução fornece uma única lógica de validação para os clientes mobile. A suíte atual já cobre os fluxos principais da API; recomenda-se ampliá-la para cenários concorrentes, inventários de múltiplos setores e testes automatizados das telas do aplicativo, hoje verificadas apenas por checagem de tipos e lint.
+
+\subsection{Preparação do ambiente de produção}
+
+O teste de carga mostrou que cerca de 600 ms de cada requisição eram gastos apenas na inicialização do Laravel sem cache de produção. Recomenda-se executar \texttt{php artisan optimize} e \texttt{php artisan filament:optimize} no deploy, usar cache persistente, e levantar com a equipe de infraestrutura o número de processos PHP e o limite de conexões do MySQL de produção, de forma que um pico de acessos vire fila e não queda. Os índices que ajudariam nas consultas mais pesadas ficam como recomendação ao administrador do banco, já que o banco compartilhado não é alterado pelo projeto.
+
+\subsection{Evoluções planejáveis}
+
+A integração mobile permite planejar novos recursos vinculados ao EGAP, como leitura de QR Code em termos, assinatura digital de movimentações, notificações push no aparelho, extensão da fila offline para divergências e não localizados, permissão própria para o aplicativo no lugar da permissão geral do EGAP e dashboards gerenciais. Cada evolução deve preservar autorização no backend e compatibilidade com os dados existentes.
+
+\subsection{Riscos e limitações}
+
+Apesar dos avanços, algumas limitações permanecem. A solução depende de conectividade para a maior parte das operações: apenas as leituras de plaqueta podem ser feitas sem rede. Sob pico de acessos, o servidor testado formou fila a partir de cerca de 30 usuários virtuais simultâneos. Também existem desafios ligados à qualidade dos dados legados, etiquetas patrimoniais antigas, situações cadastrais inconsistentes e possíveis divergências entre localização física e localização registrada. Além disso, a manutenção da aplicação exige cuidado para preservar compatibilidade com a base existente.
+
+% ----------------------------------------------------------
+% Comparação com fluxo anterior
+% ----------------------------------------------------------
+\subsection{Matriz de aderência entre problemas e solução}
+
+\begin{longtable}{L{4.2cm}L{4.2cm}L{4.7cm}}
+\caption{Relação entre problemas identificados e respostas da solução} \\
+\toprule
+\textbf{Problema} & \textbf{Resposta da solução} & \textbf{Impacto esperado} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Problema} & \textbf{Resposta da solução} & \textbf{Impacto esperado} \\
+\midrule
+\endhead
+Anotações intermediárias e transcrição posterior & Registro da conferência no aplicativo e gravação pela API no EGAP & Substituição do procedimento manual de registro e consolidação \\
+Digitação manual de códigos patrimoniais & Leitura por câmera e consulta normalizada por diferentes identificadores & Redução de erros e maior agilidade \\
+Consulta distante do local físico do bem & Aplicativo mobile em campo & Registro mais próximo do evento real \\
+Dificuldade de identificar bens fora do escopo & Backend retorna se o bem pertence ao setor do usuário & Maior clareza operacional \\
+Registros duplicados de conferência & Serviço verifica item existente e usa transação & Maior consistência \\
+Ausência de justificativa para não localizado & API exige justificativa & Melhoria de auditoria \\
+Divergências sem descrição & API exige observação & Melhor qualidade da informação \\
+Dependência de regras no cliente & Backend centraliza escopo e validações & Mais segurança e manutenção \\
+Usuário com mais de uma lotação preso a um setor & Sessão mobile com escolha e troca de setor validada no backend & Conferência no setor correto \\
+Setores sem sinal de rede & Fila local de leituras, sujeitas à validação no reenvio & Continuidade da coleta de códigos; demais registros dependem de conexão \\
+Falta de aviso sobre prazos e pedidos & Notificações do inventário e dos pedidos & Menos pendências esquecidas \\
+Consolidação separada da conferência & Uso da mesma base patrimonial e das regras do EGAP & Menor necessidade de transcrição e conciliação posterior \\
+\bottomrule
+\end{longtable}
+
+% ----------------------------------------------------------
+% Conclusão
+% ----------------------------------------------------------
+\section{Conclusão}
+
+Este trabalho apresentou o desenvolvimento e a análise de uma aplicação mobile integrada ao EGAP destinada a substituir o procedimento manual de registro e consolidação do inventário patrimonial. A questão de pesquisa foi tratada pela implementação de um fluxo em que o servidor identifica o bem e registra a conferência no próprio local da vistoria, enquanto a API valida e persiste os apontamentos na base institucional. A vistoria física permanece necessária; a mudança proposta concentra-se na substituição das anotações intermediárias e da transcrição posterior pelo uso do aplicativo.
+
+O objetivo geral foi atendido quanto ao desenvolvimento e à análise técnica da solução: o aplicativo E-Gap Mobile e a API \texttt{mobile-api} disponibilizam consulta dos bens do setor, leitura de plaquetas, registro de localizados, não localizados e divergências, acompanhamento das pendências e finalização da atividade. A escolha de setor é limitada às lotações do usuário. Essas capacidades constituem a base técnica para substituir o fluxo manual, mas não comprovam que a substituição já tenha ocorrido na rotina institucional.
+
+Três decisões de arquitetura se mostraram centrais. A primeira foi manter o backend como única fonte de verdade sobre usuário, setor e unidade: o aplicativo nunca envia o setor nas rotas de dados, e os testes confirmam que um setor enviado pelo cliente é ignorado. A segunda foi espelhar no mobile o modelo de sessão do painel web, com a regra de lotação extraída para um único componente usado pelos dois lados, o que eliminou a duplicação de regras e permitiu a troca de setor. A terceira foi não alterar a estrutura do banco compartilhado, resolvendo tudo com as tabelas existentes e uma única tabela nova; essa restrição exigiu mais cuidado na escrita das consultas, mas reduziu o risco para o sistema principal da instituição.
+
+As verificações também mostraram o valor de testar além da leitura do código. O teste de carga não derrubou a aplicação, mas revelou gargalos que só aparecem com uso simultâneo, e a revisão feita a partir dele encontrou um defeito de integridade nas transações que a simples inspeção não havia apontado. Corrigidos esses pontos, as consultas mais usadas pelo aplicativo passaram a responder em poucas dezenas de milissegundos. Por outro lado, ficou claro que o desempenho em produção depende de configurações do servidor, como os caches do framework e o número de processos PHP, que precisam ser acertadas no deploy.
+
+O trabalho tem limitações. Os ganhos esperados com o aplicativo, como menos digitação, menos retrabalho e registros mais confiáveis, não foram medidos com servidores em campo, e o teste de carga foi feito em ambiente local. Por isso, esses impactos devem ser entendidos como hipóteses fundamentadas, e não como resultados comprovados.
+
+Como continuidade, recomenda-se conduzir um piloto em um ciclo real de inventário, comparando o procedimento manual com o fluxo mobile até a consolidação dos registros. Também se recomenda ampliar a cobertura de operações sem rede, os testes das telas e a preparação do ambiente de produção. A contribuição principal do trabalho é disponibilizar um fluxo digital integrado para substituir o registro manual do inventário; a confirmação dos benefícios operacionais e da adoção depende de avaliação acompanhada com os servidores.
+
+% ----------------------------------------------------------
+% Referências
+% ----------------------------------------------------------
+\clearpage
+\addcontentsline{toc}{section}{Referências}
+\begin{thebibliography}{99}
+
+\bibitem{brasil4320}
+BRASIL. \textbf{Lei n.º 4.320, de 17 de março de 1964}. Estatui normas gerais de direito financeiro para elaboração e controle dos orçamentos e balanços. Disponível em: \url{https://www.planalto.gov.br/ccivil_03/leis/l4320compilado.htm}. Acesso em: 25 maio 2026.
+
+\bibitem{cfcnbctsp07}
+CONSELHO FEDERAL DE CONTABILIDADE. \textbf{NBC TSP 07: ativo imobilizado}. Brasília: CFC, 2017. Disponível em: \url{https://www1.cfc.org.br/sisweb/SRE/docs/NBCTSP07.pdf}. Acesso em: 25 maio 2026.
+
+\bibitem{modelo-fag}
+SEFFRIN, Leila Regina; CASSENOTE, Randerson Willian. \textbf{Estudo para implementação de sistema de informação na empresa Central Presentes}. Trabalho de Conclusão de Curso (Bacharelado em Administração) -- Faculdade Assis Gurgacz, Cascavel, 2012. Disponível em: \url{https://www.fag.edu.br/upload/graduacao/tcc/51378dfda49de.pdf}. Acesso em: 25 maio 2026.
+
+\bibitem{laravel}
+LARAVEL. \textbf{Laravel 12.x Documentation}. Disponível em: \url{https://laravel.com/docs/12.x}. Acesso em: 17 nov. 2026.
+
+\bibitem{sanctum}
+LARAVEL. \textbf{Laravel Sanctum: Laravel 12.x Documentation}. Disponível em: \url{https://laravel.com/docs/12.x/sanctum}. Acesso em: 17 nov. 2026.
+
+\bibitem{eloquent}
+LARAVEL. \textbf{Eloquent ORM: Laravel 12.x Documentation}. Disponível em: \url{https://laravel.com/docs/12.x/eloquent}. Acesso em: 17 nov. 2026.
+
+\bibitem{filament}
+FILAMENT. \textbf{Filament 4.x Documentation}. Disponível em: \url{https://filamentphp.com/docs/4.x}. Acesso em: 17 nov. 2026.
+
+\bibitem{expo}
+EXPO. \textbf{Expo Documentation}. Disponível em: \url{https://docs.expo.dev}. Acesso em: 25 maio 2026.
+
+\bibitem{expo-camera}
+EXPO. \textbf{Camera: Expo Documentation}. Disponível em: \url{https://docs.expo.dev/versions/latest/sdk/camera/}. Acesso em: 25 maio 2026.
+
+\bibitem{expo-securestore}
+EXPO. \textbf{SecureStore: Expo Documentation}. Disponível em: \url{https://docs.expo.dev/versions/latest/sdk/securestore/}. Acesso em: 25 maio 2026.
+
+\bibitem{expo-router}
+EXPO. \textbf{Introduction to Expo Router}. Disponível em: \url{https://docs.expo.dev/router/introduction/}. Acesso em: 25 maio 2026.
+
+\bibitem{react-native}
+REACT NATIVE. \textbf{React Native Documentation}. Disponível em: \url{https://reactnative.dev/docs}. Acesso em: 25 maio 2026.
+
+\bibitem{mysql}
+ORACLE. \textbf{MySQL Reference Manual}. Disponível em: \url{https://dev.mysql.com/doc/}. Acesso em: 25 maio 2026.
+
+\bibitem{sommerville}
+SOMMERVILLE, I. \textbf{Software Engineering}. 9. ed. Pearson, 2011.
+
+\bibitem{pressman}
+PRESSMAN, R. S.; MAXIM, B. R. \textbf{Software Engineering: A Practitioner's Approach}. 8. ed. McGraw-Hill, 2014.
+
+\bibitem{fowler-service}
+FOWLER, M. \textbf{Service Layer}. In: Patterns of Enterprise Application Architecture. Disponível em: \url{https://martinfowler.com/eaaCatalog/serviceLayer.html}. Acesso em: 25 maio 2026.
+
+\bibitem{egap-repo}
+CÉSAR, Lucas. \textbf{EGAP: sistema administrativo e inventário mobile}. Código-fonte do projeto em repositório local. Versões analisadas em: 25 maio 2026 e 17 nov. 2026.
+
+\end{thebibliography}
+
+\end{document}

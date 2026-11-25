@@ -1,0 +1,867 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[brazil]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{geometry}
+\usepackage{indentfirst}
+\usepackage{setspace}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xurl}
+
+\geometry{top=2cm,bottom=2cm,left=2cm,right=2cm}
+\setstretch{1.15}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0.10cm}
+\renewcommand{\arraystretch}{1.15}
+\setlist[itemize]{leftmargin=1.05cm,itemsep=0.08cm,topsep=0.10cm}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\hypersetup{
+  pdftitle={Desenvolvimento de um Aplicativo Mobile para Conferência de Bens Patrimoniais Integrado ao EGAP},
+  pdfauthor={Lucas César},
+  pdfsubject={Gestão patrimonial pública e desenvolvimento mobile},
+  pdfkeywords={EGAP, inventário patrimonial, aplicativo mobile, Laravel, React Native, API REST}
+}
+
+\title{\textbf{Desenvolvimento de um Aplicativo Mobile para Conferência de Bens Patrimoniais Integrado ao EGAP}}
+\author{Lucas César\\Universidade Vila Velha}
+\date{2025}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este trabalho apresenta o desenvolvimento de uma solução mobile integrada ao
+EGAP, sistema de gestão administrativa e patrimonial utilizado em contexto do
+Poder Público, com foco na conferência de bens móveis durante inventários. O
+problema abordado decorre da separação entre a vistoria física, realizada nos
+setores, e o registro digital, tradicionalmente dependente de anotações ou
+acesso posterior a computador. A solução proposta é composta por um aplicativo
+desenvolvido com Expo e React Native e por uma API construída em Laravel,
+autenticada com Laravel Sanctum e integrada à base relacional legada. O estudo
+caracteriza-se como pesquisa aplicada, exploratória e descritiva, conduzida por
+meio de estudo de caso tecnológico e análise da implementação. Foram
+implementadas funcionalidades de autenticação, consulta patrimonial, leitura
+por câmera ou digitação, listagem dos bens vinculados ao setor, registro de
+localização, não localização e divergência, acompanhamento de métricas e
+finalização controlada da atividade. As regras sensíveis permanecem no
+backend, que resolve o escopo do servidor autenticado, valida estados e grava
+alterações em transação. Como resultado preliminar, a aplicação fornece uma
+base funcional para aproximar o registro da conferência do local em que o bem
+é verificado, aumentar a rastreabilidade do processo e reduzir etapas manuais,
+sem substituir os controles institucionais existentes.
+
+\noindent\textbf{Palavras-chave:} gestão patrimonial; inventário; aplicativo
+mobile; Poder Público; Laravel; React Native; API REST.
+\end{abstract}
+
+\tableofcontents
+\clearpage
+
+\section{Introdução}
+
+A gestão de bens permanentes no setor público exige que informações sobre
+identificação, localização e responsabilidade estejam disponíveis para
+controle, prestação de contas e tomada de decisão. A Lei n.º 4.320/1964
+determina a existência de registros analíticos dos bens de caráter permanente
+e estabelece que o levantamento dos bens móveis e imóveis tenha por base o
+inventário analítico de cada unidade administrativa \cite{brasil4320}. A NBC
+TSP 07, por sua vez, disciplina o ativo imobilizado no setor público e reforça
+a importância de identificação, mensuração e controle dos ativos
+\cite{cfcnbctsp07}.
+
+Nesse domínio, o EGAP (Sistema de Gestão Administrativa Patrimonial) é uma
+aplicação institucional que reúne operações de cadastro, patrimônio, pedidos,
+almoxarifado, relatórios e administração. O sistema existente utiliza Laravel
+11 e Filament 3 na camada web administrativa e mantém dados patrimoniais em
+banco relacional MySQL/MariaDB. Entre suas estruturas estão os bens móveis, os
+ciclos de inventário, as atividades por setor e os itens efetivamente
+registrados durante a conferência.
+
+Embora o sistema desktop forneça o núcleo administrativo, a conferência física
+de bens é uma atividade de campo. O servidor precisa circular pelo setor,
+localizar etiquetas, comparar características observadas e registrar
+ocorrências. Quando a inserção dos dados depende de papel, planilha ou retorno
+a uma estação de trabalho, cria-se um intervalo entre a observação física e o
+registro digital. Esse intervalo favorece retrabalho, esquecimento de
+justificativas, duplicidade de registros e menor visibilidade sobre o progresso
+do inventário.
+
+Este artigo descreve o desenvolvimento do \textit{Inventário Mobile}, módulo
+mobile integrado ao EGAP para apoiar a conferência setorial de bens
+patrimoniais. O aplicativo foi construído em Expo/React Native e se comunica
+com uma API Laravel por HTTP, utilizando autenticação por token com Laravel
+Sanctum. A implementação prioriza uma decisão arquitetural: o celular é a
+interface operacional de campo, mas o backend continua responsável por
+autenticação, escopo, validações patrimoniais, transações e persistência.
+
+\subsection{Descrição e formulação do problema}
+
+O problema investigado consiste na ausência de uma interface móvel integrada ao
+EGAP para que servidores executem a conferência patrimonial no próprio ambiente
+em que os bens se encontram. Sem esse suporte, a verificação física e a
+atualização do inventário podem ocorrer em momentos ou meios distintos,
+dificultando a rastreabilidade das ações e a atualização imediata dos
+indicadores do setor.
+
+Assim, formula-se a seguinte questão de pesquisa: \textit{como desenvolver uma
+solução mobile integrada ao EGAP que permita realizar a conferência de bens
+patrimoniais em campo, preservando o escopo do usuário autenticado, as regras
+do sistema legado e a integridade dos registros de inventário?}
+
+\subsection{Objetivos}
+
+O objetivo geral deste trabalho é desenvolver uma solução mobile integrada ao
+EGAP para apoiar a conferência de bens móveis em inventários patrimoniais
+setoriais.
+
+Como objetivos específicos, definem-se:
+
+\begin{itemize}
+  \item analisar o processo de conferência e as estruturas patrimoniais já
+  existentes no EGAP;
+  \item definir uma arquitetura cliente-servidor que mantenha as regras
+  críticas no backend institucional;
+  \item implementar autenticação mobile e resolução segura do setor e da
+  unidade do usuário;
+  \item implementar consulta, leitura e registro de estados de conferência por
+  meio de uma API;
+  \item disponibilizar uma interface mobile para consulta, indicadores,
+  conferência e encerramento da atividade;
+  \item analisar qualitativamente os resultados iniciais, limitações e
+  possibilidades de evolução da solução.
+\end{itemize}
+
+\subsection{Justificativa e delimitação}
+
+A proposta é relevante por tratar uma necessidade operacional diretamente
+relacionada ao controle de patrimônio público: registrar com maior proximidade
+temporal e espacial aquilo que foi observado na vistoria. A mobilidade permite
+que a leitura de um patrimônio, o apontamento de divergência e a consulta de
+pendências ocorram durante a conferência, enquanto a integração com o sistema
+existente preserva regras e dados já utilizados institucionalmente.
+
+O trabalho concentra-se na conferência de bens móveis vinculados à unidade e ao
+setor do usuário autenticado. Fazem parte do recorte: autenticação, consulta,
+listagem, leitura de código, registro de localização, não localização,
+divergência, métricas e finalização da atividade. A primeira versão não tem
+como objetivo executar transferência patrimonial definitiva, alterar
+automaticamente dados cadastrais divergentes, operar em modo offline,
+disponibilizar assinatura eletrônica ou avaliar quantitativamente ganhos de
+tempo em produção.
+
+\section{Referencial Teórico}
+
+\subsection{Patrimônio público e inventário de bens móveis}
+
+No setor público, o patrimônio permanente precisa ser controlado tanto sob a
+perspectiva contábil quanto sob a perspectiva administrativa. Os artigos 94 e
+96 da Lei n.º 4.320/1964 associam a caracterização individual do bem, a
+responsabilidade por sua guarda e o inventário da unidade administrativa
+\cite{brasil4320}. A conferência física, portanto, não é mera listagem: ela
+apoia a confirmação da existência, da localização e das condições dos ativos
+registrados.
+
+A NBC TSP 07 define o ativo imobilizado como ativo tangível mantido para uso na
+produção ou fornecimento de bens e serviços, para fins administrativos ou em
+outras hipóteses previstas pela norma. Seu tratamento envolve reconhecimento,
+mensuração e depreciação, o que depende de registros confiáveis ao longo da
+vida do bem \cite{cfcnbctsp07}. Uma aplicação para conferência não substitui o
+tratamento contábil, mas melhora a coleta da informação operacional que o
+suporta.
+
+Nesse contexto, estados como localizado, não localizado, divergente ou em
+transferência são úteis para representar ocorrências verificadas durante o
+inventário. O registro de justificativa e de autoria das alterações permite que
+uma ocorrência seja posteriormente analisada por responsáveis administrativos,
+sem confundir a observação em campo com uma alteração definitiva do cadastro
+mestre.
+
+\subsection{Arquitetura de software, MVC e camada de serviço}
+
+Arquitetura de software corresponde à organização de elementos de uma solução,
+às responsabilidades atribuídas a esses elementos e às relações necessárias
+para atender aos atributos de qualidade do sistema. Em uma aplicação
+institucional, manutenibilidade, confiabilidade, segurança e evolução são
+especialmente relevantes, pois o software precisa conviver com regras
+administrativas e dados persistentes \cite{bass2021}.
+
+O padrão \textit{Model-View-Controller} (MVC) separa a representação dos
+dados, a interação do usuário e a coordenação das requisições. No EGAP, os
+\textit{models} Eloquent representam entidades persistidas; os
+\textit{controllers} da API recebem requisições e formatam respostas; e a
+interface administrativa ou o aplicativo mobile apresentam informações e
+ações. O Laravel fornece roteamento, injeção de dependências, validação e o
+Eloquent ORM para essa organização \cite{laravelrouting,laraveleloquent}.
+
+Para a conferência, apenas a separação controller/model seria insuficiente,
+pois localizar inventário, calcular pendências, impedir duplicidade e efetuar
+gravações consistentes formam regras de negócio reutilizáveis. O padrão
+\textit{Service Layer} organiza essas operações em um serviço de aplicação que
+define a fronteira do caso de uso e coordena respostas e persistência
+\cite{fowlerServiceLayer}. A implementação analisada concretiza esse princípio
+no \texttt{ConferenciaBensService}, evitando que a regra patrimonial fique
+dispersa nas telas mobile.
+
+\subsection{Banco de dados relacional e transações}
+
+O modelo relacional, introduzido por Codd, representa informações por relações
+e busca independência entre a organização lógica dos dados e os detalhes de
+armazenamento \cite{codd1970}. Tal abordagem é apropriada ao inventário
+patrimonial porque bens, inventários, atividades, unidades e registros de
+conferência possuem vínculos estruturados e precisam ser consultados de forma
+consistente.
+
+O MySQL é um sistema gerenciador de banco de dados relacional; com o mecanismo
+InnoDB, disponibiliza transações e mecanismos de integridade aplicáveis a
+operações que não devem permanecer parcialmente gravadas
+\cite{mysqlTransactions,mysqlForeignKeys}. No EGAP, confirmar a localização de
+um bem envolve criar um item de inventário, atualizar campos legados do bem e
+recalcular a quantidade inventariada. Essas alterações são executadas em
+transação na conexão institucional. Conforme a documentação do Laravel, a
+operação \texttt{DB::transaction} efetiva o conjunto de operações apenas em
+caso de sucesso e realiza \textit{rollback} em caso de exceção
+\cite{laraveldatabase}.
+
+\subsection{API REST, HTTP e HTTPS}
+
+REST (\textit{Representational State Transfer}) é um estilo arquitetural para
+sistemas distribuídos descrito por Fielding, no qual recursos são manipulados
+por representações e por uma interface uniforme, favorecendo separação entre
+cliente e servidor \cite{fielding2000}. O aplicativo do presente trabalho não
+acessa diretamente as tabelas patrimoniais; ele solicita recursos e ações à
+API, como consultar bens ou registrar uma ocorrência de conferência.
+
+HTTP é um protocolo de aplicação sem estado baseado na troca de requisições e
+respostas. A RFC 9110 define os métodos, códigos de resposta e semântica
+compartilhada pelas versões modernas do protocolo \cite{rfc9110}. Na API do
+EGAP, métodos \texttt{GET} são utilizados em consultas e métodos
+\texttt{POST} registram operações de domínio como localizar, declarar
+divergência ou finalizar atividade. Erros de validação, autorização ou conflito
+podem ser comunicados ao cliente por respostas HTTP correspondentes.
+
+Em implantação real, a comunicação que inclui credenciais e tokens deve ocorrer
+por HTTPS. O esquema HTTPS identifica comunicação HTTP protegida por TLS; o TLS
+1.3 foi padronizado para proteger a comunicação contra interceptação e
+adulteração em trânsito \cite{rfc9110,rfc8446}. O uso de HTTPS complementa,
+mas não substitui, autenticação, autorização e controle de escopo no backend.
+
+\subsection{Autenticação por token e escopo de acesso}
+
+Laravel Sanctum oferece autenticação para aplicações mobile e APIs simples por
+meio de tokens enviados no cabeçalho \texttt{Authorization}. Tokens podem ser
+emitidos e revogados, e rotas podem ser protegidas pelo middleware
+\texttt{auth:sanctum} \cite{laravelsanctum}. Essa abordagem permite que a API
+permaneça sem sessão de navegador e reconheça o usuário que realizou cada
+requisição.
+
+No domínio patrimonial, autenticar não é suficiente. O sistema precisa
+determinar em qual unidade e setor o servidor pode conferir bens. Assim, o
+EGAP resolve o escopo no backend a partir do usuário vinculado e de sua
+lotação; o aplicativo não envia setor ou unidade como autoridade para a
+operação. Essa decisão reduz a possibilidade de apontamentos feitos
+arbitrariamente sobre bens de outro setor.
+
+\subsection{Aplicações mobile com React Native e Expo}
+
+React Native permite compor interfaces para plataformas móveis utilizando
+componentes React que interagem com elementos nativos das plataformas
+\cite{reactnativeDocs}. No projeto, TypeScript adiciona tipagem aos contratos
+de API e aos estados da interface, contribuindo para explicitar os formatos
+esperados nas operações de conferência.
+
+Expo fornece bibliotecas e ferramentas sobre React Native. O Expo Router
+organiza a navegação por arquivos: telas armazenadas no diretório
+\texttt{app} tornam-se rotas do aplicativo, modelo utilizado para login,
+painel, listagem e conferência \cite{expoRouter}. O pacote
+\texttt{expo-camera} viabiliza leitura de códigos por câmera
+\cite{expoCamera}; já \texttt{expo-secure-store} armazena pares chave-valor de
+forma protegida no dispositivo, utilizando mecanismos da plataforma móvel
+\cite{expoSecureStore}. No aplicativo desenvolvido, o token de acesso é
+armazenado por essa biblioteca em Android e iOS; na variante web de
+desenvolvimento, há uma estratégia distinta baseada em armazenamento do
+navegador, que não deve ser tratada como equivalente de segurança para
+produção mobile.
+
+\section{Metodologia}
+
+\subsection{Natureza e abordagem da pesquisa}
+
+Este trabalho caracteriza-se como pesquisa aplicada, pois busca solucionar um
+problema operacional concreto: apoiar digitalmente a conferência de bens
+patrimoniais em campo. Possui caráter exploratório e descritivo, uma vez que
+analisa um sistema existente, identifica seus fluxos e descreve a construção de
+um módulo integrado. A abordagem é qualitativa, pois os resultados desta etapa
+são analisados pela cobertura funcional e pelas decisões arquiteturais
+implementadas, sem experimento estatístico com usuários finais.
+
+Como estratégia, adotou-se um estudo de caso tecnológico sobre o EGAP e o
+Inventário Mobile. O objeto do estudo é a conferência setorial de bens móveis,
+considerando o vínculo do usuário, o inventário vigente, os itens esperados e
+as ocorrências registradas.
+
+\subsection{Procedimentos executados}
+
+A elaboração da solução e deste artigo foi organizada nas seguintes etapas:
+
+\begin{itemize}
+  \item levantamento do problema de conferência patrimonial e delimitação das
+  operações que poderiam ser executadas em dispositivo móvel;
+  \item análise da aplicação Laravel/Filament existente, dos modelos
+  patrimoniais e das tabelas legadas relacionadas a inventário;
+  \item definição dos contratos de API e da regra de escopo por usuário
+  autenticado;
+  \item implementação incremental do backend e do aplicativo Expo/React
+  Native;
+  \item inspeção dos fluxos implementados para autenticação, consulta, leitura,
+  registro de ocorrência e encerramento;
+  \item revisão bibliográfica e documental em normas públicas, literatura
+  primária e documentação oficial das ferramentas empregadas.
+\end{itemize}
+
+\subsection{Requisitos funcionais e não funcionais}
+
+Os requisitos identificados para o recorte de conferência são apresentados na
+Tabela \ref{tab:requisitos}.
+
+\begin{table}[H]
+\centering
+\caption{Requisitos principais da solução}
+\label{tab:requisitos}
+\small
+\begin{tabularx}{\textwidth}{L{1.3cm} Y Y}
+\toprule
+\textbf{ID} & \textbf{Requisito} & \textbf{Justificativa} \\
+\midrule
+RF01 & Autenticar o servidor no aplicativo e emitir token de acesso. &
+Identificar autoria e proteger endpoints. \\
+RF02 & Resolver unidade e setor no backend. &
+Impedir que o cliente escolha livremente o escopo patrimonial. \\
+RF03 & Listar bens elegíveis do setor e apresentar indicadores. &
+Orientar a vistoria e acompanhar progresso. \\
+RF04 & Consultar ou ler código patrimonial por digitação ou câmera. &
+Atender etiquetas legíveis e situações em que a leitura óptica falhe. \\
+RF05 & Registrar bem localizado, não localizado ou divergente. &
+Representar os resultados reais da vistoria com evidência textual quando
+necessário. \\
+RF06 & Finalizar somente atividade sem pendências impeditivas. &
+Evitar encerramento incompleto do setor. \\
+RNF01 & Proteger comunicação em produção com HTTPS e token. &
+Reduzir exposição de credenciais e dados administrativos. \\
+RNF02 & Executar gravações relacionadas em transação. &
+Manter consistência entre tabelas legadas e itens do inventário. \\
+RNF03 & Manter compatibilidade com o banco e o painel já existentes. &
+Permitir adoção incremental sem substituir o EGAP desktop. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Fontes de evidência e limitações metodológicas}
+
+A descrição técnica foi fundamentada no código-fonte do backend, nas rotas da
+API, nos serviços de domínio, nos modelos Eloquent, no aplicativo mobile e nos
+arquivos de dependências do projeto \cite{egapRepositorio}. As tecnologias e
+conceitos foram confrontados com documentação oficial e fontes normativas ou
+primárias.
+
+Nesta versão, não foram realizados testes de usabilidade controlados,
+comparação temporal entre inventário manual e mobile ou implantação
+experimental acompanhada por métricas. Assim, expressões como redução de
+retrabalho indicam finalidade e potencial da solução, e não resultado
+quantitativo comprovado.
+
+\section{Desenvolvimento da Solução}
+
+\subsection{Visão arquitetural}
+
+A solução é organizada em três camadas principais:
+
+\begin{itemize}
+  \item \textbf{Aplicativo mobile}: interface de campo desenvolvida com Expo,
+  React Native, Expo Router e TypeScript; captura ações do servidor e apresenta
+  retorno da API;
+  \item \textbf{API e regras de aplicação}: aplicação Laravel que autentica,
+  resolve escopo, valida operações, aplica regras de inventário e devolve
+  respostas JSON;
+  \item \textbf{Persistência institucional}: base MySQL/MariaDB já utilizada
+  pelo EGAP, contendo bens, inventários, atividades e registros da conferência.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\caption{Arquitetura lógica da conferência mobile}
+\label{fig:arquitetura}
+\fbox{\begin{minipage}{0.92\textwidth}
+\centering
+\textbf{Servidor em campo}\\
+Aplicativo Expo / React Native\\
+Login, consulta, câmera, lista, registro e finalização\\[0.25cm]
+$\downarrow$ \quad HTTPS + JSON + token Sanctum \quad $\uparrow$\\[0.25cm]
+\textbf{API Laravel / Service Layer}\\
+\texttt{MobileAuthController} \quad \texttt{ConferenciaBensController}\\
+\texttt{UsersConnectionService} \quad \texttt{ConferenciaBensService}\\[0.25cm]
+$\downarrow$ \quad Eloquent / transações \quad $\uparrow$\\[0.25cm]
+\textbf{Base relacional EGAP}\\
+\texttt{mat\_patrimonio} \quad \texttt{mat\_inventario} \quad
+\texttt{inv\_atividades} \quad \texttt{mat\_itensinventario}
+\end{minipage}}
+\end{figure}
+
+Essa arquitetura reduz o acoplamento do cliente ao legado: mudanças de
+apresentação mobile não precisam reproduzir regras de inventário, enquanto a
+API pode continuar operando sobre as estruturas institucionais existentes.
+
+\subsection{Tecnologias empregadas}
+
+A Tabela \ref{tab:tecnologias} apresenta as tecnologias identificadas nos
+arquivos \texttt{composer.json} e \texttt{package.json} da implementação. O
+backend utiliza PHP, linguagem documentada pelo PHP Group \cite{phpManual}, e
+o painel web utiliza Filament 3.x, cujos painéis reúnem páginas, recursos,
+formulários, tabelas e widgets sobre o ecossistema Laravel \cite{filamentDocs}.
+
+\begin{table}[H]
+\centering
+\caption{Tecnologias empregadas no projeto}
+\label{tab:tecnologias}
+\small
+\begin{tabularx}{\textwidth}{L{2.0cm} L{3.4cm} L{2.0cm} Y}
+\toprule
+\textbf{Camada} & \textbf{Tecnologia} & \textbf{Versão} & \textbf{Finalidade} \\
+\midrule
+Backend & PHP & \texttt{\^{}8.2} & Linguagem de execução do servidor. \\
+Backend & Laravel & \texttt{\^{}11.0} & Framework web, rotas, validação,
+ORM e API. \\
+Backend & Filament & \texttt{3.3} & Painel administrativo web do EGAP. \\
+Backend & Laravel Sanctum & \texttt{\^{}4.0} & Autenticação por token da API
+mobile. \\
+Dados & MySQL/MariaDB & --- & Persistência relacional da conexão
+\texttt{egap}. \\
+Mobile & Expo & \texttt{\~{}54.0.33} & Plataforma e módulos nativos do
+aplicativo. \\
+Mobile & React Native & \texttt{0.81.5} & Interface móvel multiplataforma. \\
+Mobile & TypeScript & \texttt{\~{}5.9.2} & Tipagem da interface e dos
+contratos. \\
+Mobile & Expo Router & \texttt{\~{}6.0.23} & Navegação baseada em arquivos. \\
+Mobile & \texttt{expo-camera} & \texttt{\~{}17.0.10} & Leitura de códigos
+patrimoniais. \\
+Mobile & \texttt{expo-secure-store} & \texttt{\~{}15.0.8} & Persistência do
+token em dispositivos móveis. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Modelo de dados da conferência}
+
+A solução reutiliza tabelas patrimoniais existentes. Essa decisão preserva o
+histórico e a compatibilidade com o painel administrativo, mas requer que a
+API respeite nomenclaturas e estados já consolidados no legado.
+
+\begin{table}[H]
+\centering
+\caption{Entidades centrais para a conferência}
+\label{tab:entidades}
+\small
+\begin{tabularx}{\textwidth}{L{3.5cm} Y Y}
+\toprule
+\textbf{Tabela} & \textbf{Conteúdo relevante} & \textbf{Papel no fluxo mobile} \\
+\midrule
+\texttt{mat\_patrimonio} & Cadastro principal do bem, patrimônio, descrição,
+localização, situação e campos de inventário. & Origem dos bens esperados e
+alvo da atualização compatível com o legado. \\
+\texttt{mat\_inventario} & Ciclo de inventário, número, ano, início, término
+e situação. & Determina o inventário considerado atual pela API. \\
+\texttt{inv\_atividades} & Atividade do inventário por unidade e setor,
+situação e quantidade inventariada. & Controla abertura, edição e conclusão da
+conferência setorial. \\
+\texttt{mat\_itensinventario} & Registro individual conferido, estado,
+observação, responsável e dados copiados do bem. & Armazena localização, não
+localização e divergência. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+O serviço consulta bens elegíveis por unidade e setor e aceita situações
+patrimoniais identificadas no código pelos valores \texttt{1}, \texttt{7} e
+\texttt{8}. Também considera estados de transferência já representados no
+legado. O item de inventário mantém uma fotografia de informações do bem
+durante a conferência, como número patrimonial, descrição, marca, modelo,
+estado de conservação e observação, o que favorece posterior auditoria da
+ocorrência.
+
+\subsection{Autenticação e determinação do escopo}
+
+O endpoint público \texttt{POST /mobile-api/login} recebe credenciais. O
+\texttt{MobileAuthController} tenta autenticar, primeiro, usuários da tabela
+local \texttt{users} e, quando necessário, usuários do ambiente EGAP legado.
+A senha é verificada com o mecanismo de hash do Laravel. Após encontrar um
+vínculo válido, o backend emite um token Sanctum denominado
+\texttt{mobile-app}.
+
+O \texttt{UsersConnectionService} relaciona o usuário autenticado a dados
+institucionais por CPF e consulta sua lotação mais recente. A partir disso, a
+API obtém \texttt{id\_egap}, unidade judiciária e setor. Em todas as rotas de
+consulta e conferência, esses dados são reconstruídos no servidor a partir do
+token; portanto, a aplicação mobile não pode escolher outro setor apenas
+alterando o corpo da requisição.
+
+No cliente, o token é inserido no cabeçalho
+\texttt{Authorization: Bearer <token>} de cada requisição autenticada. Em
+Android e iOS, o app persiste o token com \texttt{expo-secure-store}; no
+logout, a API revoga o token atual e o aplicativo remove a sessão local.
+
+\subsection{Contratos da API mobile}
+
+As rotas de conferência e consulta foram agrupadas sob
+\texttt{/mobile-api}. A Tabela \ref{tab:rotas} resume os contratos relevantes
+ao recorte deste trabalho.
+
+\begin{longtable}{L{1.45cm} L{4.8cm} L{7.55cm}}
+\caption{Endpoints utilizados na conferência patrimonial}
+\label{tab:rotas}\\
+\toprule
+\textbf{Método} & \textbf{Endpoint} & \textbf{Responsabilidade} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Método} & \textbf{Endpoint} & \textbf{Responsabilidade} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+POST & \texttt{/login} & Autenticar usuário e retornar token e dados do
+servidor. \\
+GET & \texttt{/me} & Validar sessão autenticada e atualizar identificação do
+usuário. \\
+POST & \texttt{/logout} & Revogar o token em uso. \\
+GET & \texttt{/dashboard} & Obter indicadores patrimoniais e resumo da
+conferência atual. \\
+GET & \texttt{/bens} & Listar, pesquisar e paginar bens elegíveis do setor. \\
+GET & \texttt{/bens/\{codigo\}} & Consultar detalhes de um patrimônio,
+inclusive para leitura no painel. \\
+GET & \texttt{/conferencia/atual} & Obter inventário, atividade setorial e
+métricas. \\
+GET & \texttt{/conferencia/bens} & Listar bens esperados acompanhados de
+estado de conferência. \\
+POST & \texttt{/conferencia/validar-leitura} & Normalizar e validar o código
+lido ou digitado antes de qualquer gravação. \\
+POST & \texttt{/conferencia/localizar} & Confirmar localização do bem em
+transação. \\
+POST & \texttt{/conferencia/nao-localizados} & Registrar bens não encontrados,
+exigindo justificativa. \\
+POST & \texttt{/conferencia/divergencias} & Registrar inconsistência do bem
+ou bem físico sem cadastro, exigindo observação. \\
+POST & \texttt{/conferencia/finalizar} & Finalizar a atividade quando não
+restarem pendências impeditivas. \\
+\end{longtable}
+
+\subsection{Interface e fluxo da conferência}
+
+O aplicativo possui rotas para login, painel patrimonial, listagem de bens e
+conferência. No painel, o servidor visualiza indicadores de bens e valores,
+consulta patrimônios manualmente ou por câmera e mantém histórico local das
+consultas recentes. A lista de bens oferece pesquisa e paginação para o escopo
+do usuário.
+
+A tela de conferência representa o caso de uso principal. Ao ser aberta, ela
+obtém o inventário atual, a atividade e os bens esperados. A interface
+apresenta métricas de total, localizados, pendentes, não localizados,
+divergentes, em transferência e cadastrados manualmente. Em seguida, o fluxo
+operacional ocorre conforme as etapas abaixo:
+
+\begin{enumerate}
+  \item o servidor lê a etiqueta pela câmera ou digita o número patrimonial;
+  \item o aplicativo envia o código para validação no backend;
+  \item a API verifica cadastro, setor, situação, transferência e eventual
+  registro prévio;
+  \item quando permitido, o servidor confirma localização ou registra uma
+  ocorrência acompanhada de justificativa ou observação;
+  \item o backend grava o resultado e recalcula o resumo da atividade;
+  \item concluída a vistoria, a finalização somente é aceita caso não existam
+  pendências impeditivas.
+\end{enumerate}
+
+\begin{table}[H]
+\centering
+\caption{Resultados de leitura tratados pelo backend}
+\label{tab:leitura}
+\small
+\begin{tabularx}{\textwidth}{L{3.6cm} Y}
+\toprule
+\textbf{Resultado} & \textbf{Interpretação operacional} \\
+\midrule
+\texttt{localizavel} & Bem do setor, elegível e disponível para confirmação
+de localização. \\
+\texttt{ja\_conferido} & Bem ou código sem cadastro já possui apontamento no
+inventário corrente. \\
+\texttt{outro\_setor} & Bem existe, mas não pertence ao escopo setorial do
+servidor. \\
+\texttt{nao\_cadastrado} & Código físico não corresponde a bem localizado no
+cadastro; pode originar divergência documentada. \\
+\texttt{situacao\_nao\_conferivel} & Bem possui estado que impede confirmação
+ordinária. \\
+\texttt{em\_transferencia} & Bem está em fluxo de transferência e não deve ser
+localizado automaticamente. \\
+\texttt{cadastrado\_manualmente} & Bem exige atenção adicional, embora a API
+permita continuidade controlada. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Regras de integridade e rastreabilidade}
+
+A confirmação de localização é realizada em transação. O serviço recupera o
+bem com bloqueio para atualização, verifica a existência de item prévio, cria
+o registro em \texttt{mat\_itensinventario}, atualiza os campos de inventário
+em \texttt{mat\_patrimonio} e recalcula a quantidade inventariada da
+atividade. Esse fluxo diminui o risco de confirmações concorrentes gerarem
+itens duplicados.
+
+Para o estado não localizado, a justificativa é obrigatória tanto na validação
+da requisição quanto no serviço. Para divergência, a observação é obrigatória,
+podendo informar campos divergentes. O serviço também registra como divergente
+um código encontrado fisicamente sem cadastro associado, mantendo o código e a
+observação sem inventar uma entidade patrimonial inexistente.
+
+A finalização consulta o resumo calculado no servidor. Havendo bens pendentes,
+a API devolve conflito e preserva a atividade em aberto. Após finalização,
+novas operações de escrita são bloqueadas. Assim, o aplicativo não determina
+sozinho se o inventário terminou: a decisão decorre do estado persistido e das
+regras centrais do backend.
+
+\section{Resultados Preliminares e Discussão}
+
+\subsection{Funcionalidades implementadas}
+
+A inspeção da implementação permite identificar os seguintes resultados
+funcionais já presentes:
+
+\begin{itemize}
+  \item autenticação mobile integrada a usuário local ou vínculo EGAP legado,
+  com token Sanctum e validação de lotação;
+  \item painel mobile com identificação do escopo, indicadores patrimoniais,
+  consulta individual e leitura por câmera;
+  \item lista paginada dos bens elegíveis do setor com busca por informações
+  patrimoniais;
+  \item tela de conferência com métricas, filtros por estado, leitura manual ou
+  óptica e ações operacionais;
+  \item API dedicada para validação, localização, não localização,
+  divergência e finalização;
+  \item centralização das regras de inventário em serviço Laravel e persistência
+  transacional nas tabelas já utilizadas pelo EGAP.
+\end{itemize}
+
+Comparada a um processo em que a conferência física é separada do lançamento
+digital, a solução fornece meios técnicos para registrar ocorrências durante a
+vistoria e obter retorno imediato da validação. Esse é o principal resultado
+preliminar: uma interface de campo integrada ao sistema institucional, sem
+transferir para o dispositivo decisões sensíveis sobre escopo e consistência
+dos dados.
+
+\subsection{Aderência ao problema e contribuições}
+
+O problema formulado envolve mobilidade sem perda de governança. A solução
+atende a esse recorte de três maneiras. Primeiro, utiliza a câmera e uma
+interface própria para reduzir a distância entre localização física e registro.
+Segundo, não confia ao cliente a determinação da unidade ou setor, pois o
+escopo é derivado da autenticação. Terceiro, preserva as tabelas e estados do
+sistema existente, permitindo que o inventário mobile se integre à operação
+administrativa já disponível no EGAP.
+
+Do ponto de vista de arquitetura, o uso de API e camada de serviço torna a
+funcionalidade reutilizável por mais de uma interface e facilita testes
+posteriores. Do ponto de vista administrativo, justificativas, observações,
+autoria e bloqueio após conclusão são elementos de rastreabilidade compatíveis
+com a responsabilidade inerente ao patrimônio público.
+
+\subsection{Limitações observadas}
+
+A solução ainda possui limitações relevantes. Não há evidência, nesta etapa, de
+testes com servidores em ambiente operacional ou de medição de tempo, erro ou
+satisfação. Portanto, ganhos de eficiência precisam ser validados em estudo
+posterior. Também não existe sincronização offline; a conferência depende de
+conectividade com a API.
+
+Além disso, a aplicação se integra a um esquema legado, com estados e colunas
+preexistentes que aumentam a complexidade de validação. A divergência é
+registrada como ocorrência, e não altera automaticamente dados mestres do bem,
+decisão adequada para controle, mas que exige tratamento administrativo
+posterior. Por fim, o armazenamento seguro de token aplica-se aos aplicativos
+nativos; eventual uso web precisa considerar controles próprios de segurança.
+
+\subsection{Trabalhos futuros}
+
+Como continuidade, recomenda-se:
+
+\begin{itemize}
+  \item implementar testes automatizados para regras de escopo, transação,
+  duplicidade e finalização;
+  \item realizar avaliação de usabilidade com servidores que executam
+  inventários e comparar indicadores antes e depois da adoção;
+  \item estudar modo offline com fila local e sincronização auditável;
+  \item incorporar evidências adicionais, como imagens de divergências, sob
+  regras institucionais de armazenamento e proteção de dados;
+  \item avaliar alertas e painéis gerenciais para acompanhamento da conclusão
+  por unidade e setor.
+\end{itemize}
+
+\section{Conclusão}
+
+Este artigo apresentou o desenvolvimento de um aplicativo mobile para
+conferência patrimonial integrado ao EGAP. A proposta partiu de uma dificuldade
+prática: a conferência é realizada onde os bens estão localizados, enquanto o
+registro eletrônico pode depender de processos posteriores e manuais. Para
+enfrentar essa lacuna, foi implementada uma arquitetura formada por aplicativo
+Expo/React Native, API Laravel autenticada por Sanctum e persistência
+relacional compatível com as tabelas existentes.
+
+A solução trata funcionalidades específicas do inventário: identificar o
+servidor e seu escopo, consultar bens, ler códigos, registrar localização, não
+localização ou divergência, atualizar métricas e impedir finalização com
+pendências. A análise do código evidencia que regras sensíveis foram
+centralizadas no backend e que operações críticas utilizam transações, escolhas
+coerentes com rastreabilidade e integridade exigidas no domínio patrimonial
+público.
+
+Como resultado preliminar, o Inventário Mobile constitui uma base funcional
+para tornar a conferência mais próxima do ambiente real da vistoria e mais
+integrada ao EGAP. A comprovação de benefícios operacionais, contudo, depende
+de testes, implantação acompanhada e métricas com usuários reais. Desse modo,
+o trabalho estabelece o núcleo técnico da solução e define um caminho de
+evolução responsável para a digitalização da conferência patrimonial.
+
+\clearpage
+\addcontentsline{toc}{section}{Referências}
+\begin{thebibliography}{99}
+
+\bibitem{bass2021}
+BASS, Len; CLEMENTS, Paul; KAZMAN, Rick.
+\textbf{Software Architecture in Practice}. 4. ed. Boston: Addison-Wesley,
+2021.
+
+\bibitem{brasil4320}
+BRASIL. \textbf{Lei n.º 4.320, de 17 de março de 1964}. Estatui normas gerais
+de direito financeiro para elaboração e controle dos orçamentos e balanços.
+Disponível em:
+\url{https://www.planalto.gov.br/ccivil_03/leis/l4320compilado.htm}.
+Acesso em: 25 maio 2026.
+
+\bibitem{cfcnbctsp07}
+CONSELHO FEDERAL DE CONTABILIDADE. \textbf{NBC TSP 07: Ativo Imobilizado}.
+Brasília: CFC, 2017. Disponível em:
+\url{https://portalrestore.cfc.org.br/tecnica/normas-brasileiras-de-contabilidade/nbc-tsp-do-setor-publico/}.
+Acesso em: 25 maio 2026.
+
+\bibitem{codd1970}
+CODD, Edgar F. A relational model of data for large shared data banks.
+\textbf{Communications of the ACM}, v. 13, n. 6, p. 377--387, 1970.
+Disponível em:
+\url{https://research.ibm.com/publications/a-relational-model-of-data-for-large-shared-data-banks}.
+Acesso em: 25 maio 2026.
+
+\bibitem{egapRepositorio}
+EGAP. \textbf{Código-fonte da aplicação Laravel e do aplicativo Inventário
+Mobile}. Repositório local do projeto, versão analisada em 25 maio 2026.
+
+\bibitem{expoCamera}
+EXPO. \textbf{Camera: Expo Documentation}. Disponível em:
+\url{https://docs.expo.dev/versions/latest/sdk/camera/}.
+Acesso em: 25 maio 2026.
+
+\bibitem{expoRouter}
+EXPO. \textbf{Introduction to Expo Router}. Disponível em:
+\url{https://docs.expo.dev/router/introduction/}.
+Acesso em: 25 maio 2026.
+
+\bibitem{expoSecureStore}
+EXPO. \textbf{SecureStore: Expo Documentation}. Disponível em:
+\url{https://docs.expo.dev/versions/latest/sdk/securestore/}.
+Acesso em: 25 maio 2026.
+
+\bibitem{fielding2000}
+FIELDING, Roy Thomas. \textbf{Architectural Styles and the Design of
+Network-based Software Architectures}. 2000. Tese (Doutorado) -- University of
+California, Irvine, 2000. Disponível em:
+\url{https://ics.uci.edu/~fielding/pubs/dissertation/fielding_dissertation.pdf}.
+Acesso em: 25 maio 2026.
+
+\bibitem{filamentDocs}
+FILAMENT. \textbf{Getting Started: Filament 3.x Panels Documentation}.
+Disponível em:
+\url{https://filamentphp.com/docs/3.x/panels/getting-started}.
+Acesso em: 25 maio 2026.
+
+\bibitem{fowlerServiceLayer}
+FOWLER, Martin. \textbf{Service Layer}. In: Patterns of Enterprise Application
+Architecture. Disponível em:
+\url{https://martinfowler.com/eaaCatalog/serviceLayer.html}.
+Acesso em: 25 maio 2026.
+
+\bibitem{laraveldatabase}
+LARAVEL. \textbf{Database: Getting Started -- Laravel 11.x Documentation}.
+Disponível em: \url{https://laravel.com/docs/11.x/database}.
+Acesso em: 25 maio 2026.
+
+\bibitem{laraveleloquent}
+LARAVEL. \textbf{Eloquent ORM -- Laravel 11.x Documentation}. Disponível em:
+\url{https://laravel.com/docs/11.x/eloquent}.
+Acesso em: 25 maio 2026.
+
+\bibitem{laravelrouting}
+LARAVEL. \textbf{Routing -- Laravel 11.x Documentation}. Disponível em:
+\url{https://laravel.com/docs/11.x/routing}.
+Acesso em: 25 maio 2026.
+
+\bibitem{laravelsanctum}
+LARAVEL. \textbf{Laravel Sanctum -- Laravel 11.x Documentation}. Disponível em:
+\url{https://laravel.com/docs/11.x/sanctum}.
+Acesso em: 25 maio 2026.
+
+\bibitem{mysqlForeignKeys}
+MYSQL. \textbf{MySQL 8.4 Reference Manual: FOREIGN KEY Constraints}.
+Disponível em:
+\url{https://dev.mysql.com/doc/refman/8.4/en/create-table-foreign-keys.html}.
+Acesso em: 25 maio 2026.
+
+\bibitem{mysqlTransactions}
+MYSQL. \textbf{MySQL 8.4 Reference Manual: InnoDB Transaction Model}.
+Disponível em:
+\url{https://dev.mysql.com/doc/refman/8.4/en/innodb-transaction-model.html}.
+Acesso em: 25 maio 2026.
+
+\bibitem{phpManual}
+PHP GROUP. \textbf{PHP Manual: Documentation}. Disponível em:
+\url{https://www.php.net/docs.php}.
+Acesso em: 25 maio 2026.
+
+\bibitem{reactnativeDocs}
+REACT NATIVE. \textbf{Introduction: React Native Documentation}. Disponível
+em: \url{https://reactnative.dev/docs/getting-started}.
+Acesso em: 25 maio 2026.
+
+\bibitem{rfc8446}
+RESCORLA, Eric. \textbf{The Transport Layer Security (TLS) Protocol Version
+1.3}. RFC 8446. Internet Engineering Task Force, 2018. Disponível em:
+\url{https://www.rfc-editor.org/rfc/rfc8446}.
+Acesso em: 25 maio 2026.
+
+\bibitem{rfc9110}
+FIELDING, Roy; NOTTINGHAM, Mark; RESCHKE, Julian.
+\textbf{HTTP Semantics}. RFC 9110. Internet Engineering Task Force, 2022.
+Disponível em: \url{https://www.rfc-editor.org/rfc/rfc9110}.
+Acesso em: 25 maio 2026.
+
+\end{thebibliography}
+
+\end{document}
